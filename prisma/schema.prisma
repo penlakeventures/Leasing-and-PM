@@ -1,0 +1,339 @@
+// Pen Lake Ventures — Leasing & PM system
+// Phase 1 schema, translated from docs/phase0_data_model.md.
+// Scope: leasing and property management only. Development/construction stays out.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Users & auth
+// ---------------------------------------------------------------------------
+
+// Two users today (Ryan, Alina), both full access. Role is a plain string
+// (not an enum) so new roles — e.g. an outsourced PM company with scoped
+// access — can be introduced later without a schema migration.
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  handledCommunications CommunicationLog[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// 1. Project entity — the 7 single-purpose corporations, each the legal
+//    owner of one property.
+// ---------------------------------------------------------------------------
+model ProjectEntity {
+  id           String   @id @default(cuid())
+  internalName String   @unique // e.g. "Killarney23" — matches financial statements
+  websiteCode  String   @unique // e.g. "KLY2337" — matches penventures.ca
+  neighbourhood String
+  address      String
+  occupancyDate DateTime
+  cmhcLoanRef  String? // optional, for later linking to renewal-ladder tracking
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  units             Unit[]
+  complianceRecords ComplianceRecord[]
+
+  @@map("project_entities")
+}
+
+// ---------------------------------------------------------------------------
+// 2. Unit
+// ---------------------------------------------------------------------------
+enum UnitType {
+  TOWN
+  SUITE
+  BARN
+}
+
+enum CmhcDesignation {
+  MARKET
+  AFFORDABLE
+}
+
+enum TenancyType {
+  EXTERNAL
+  INTERNAL // e.g. the barn — a Pen-to-Pen payment, flagged for financial reporting clarity
+}
+
+model Unit {
+  id              String          @id @default(cuid())
+  projectEntityId String
+  projectEntity   ProjectEntity   @relation(fields: [projectEntityId], references: [id], onDelete: Restrict)
+  unitType        UnitType
+  bedrooms        Int
+  sqft            Int?
+  cmhcDesignation CmhcDesignation
+  baseRent        Decimal         @db.Decimal(10, 2)
+  currentRent     Decimal         @db.Decimal(10, 2)
+  tenancyType     TenancyType     @default(EXTERNAL)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  leases    Lease[]
+  leads     Lead[]
+  tickets   MaintenanceTicket[]
+
+  @@index([projectEntityId])
+  @@map("units")
+}
+
+// ---------------------------------------------------------------------------
+// 3. Tenant
+// ---------------------------------------------------------------------------
+model Tenant {
+  id                  String  @id @default(cuid())
+  name                String
+  phone               String?
+  email                String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  leases          LeaseTenant[]
+  tickets         MaintenanceTicket[]
+  communications  CommunicationLog[]
+
+  @@map("tenants")
+}
+
+// ---------------------------------------------------------------------------
+// 4. Lease (+ join table for multiple tenants per lease)
+// ---------------------------------------------------------------------------
+model Lease {
+  id                  String    @id @default(cuid())
+  unitId              String
+  unit                Unit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  startDate           DateTime
+  endDate             DateTime?
+  periodic            Boolean   @default(false) // month-to-month / periodic tenancy with no fixed end date
+  rentAmount           Decimal   @db.Decimal(10, 2)
+  signedDate           DateTime?
+  documentLink         String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  tenants         LeaseTenant[]
+  securityDeposit SecurityDeposit?
+
+  @@index([unitId])
+  @@map("leases")
+}
+
+model LeaseTenant {
+  leaseId  String
+  lease    Lease  @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([leaseId, tenantId])
+  @@map("lease_tenants")
+}
+
+// ---------------------------------------------------------------------------
+// 5. Security deposit
+// ---------------------------------------------------------------------------
+model SecurityDeposit {
+  id                String    @id @default(cuid())
+  leaseId           String    @unique
+  lease             Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  amount            Decimal   @db.Decimal(10, 2) // capped at one month's rent per Alberta RTA; cannot increase later
+  dateReceived      DateTime
+  trustAccountRef   String? // points at the dedicated trust sub-account
+  interestRateYear  Int? // the calendar year whose AB-regulation interest rate applies
+  interestAccrued   Decimal?  @db.Decimal(10, 2)
+  dateReturned      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  deductions SecurityDepositDeduction[]
+
+  @@map("security_deposits")
+}
+
+// Itemized deductions from a returned deposit.
+model SecurityDepositDeduction {
+  id                String          @id @default(cuid())
+  securityDepositId String
+  securityDeposit   SecurityDeposit @relation(fields: [securityDepositId], references: [id], onDelete: Cascade)
+  description       String
+  amount            Decimal         @db.Decimal(10, 2)
+  createdAt         DateTime        @default(now())
+
+  @@map("security_deposit_deductions")
+}
+
+// Alberta-regulation deposit interest rate by year. A lookup table (not a
+// hardcoded constant) because the rate is re-set annually — 0% for 2026.
+model DepositInterestRate {
+  year        Int   @id
+  ratePercent Decimal @db.Decimal(5, 3)
+
+  @@map("deposit_interest_rates")
+}
+
+// Statistics Canada annual CPI, by year — the cap on affordable-unit rent
+// escalation under CMHC MLI Select. A lookup table so it is entered, not
+// hardcoded, each year.
+model CpiRate {
+  year        Int     @id
+  ratePercent Decimal @db.Decimal(5, 3)
+
+  @@map("cpi_rates")
+}
+
+// ---------------------------------------------------------------------------
+// 6. Lead
+// ---------------------------------------------------------------------------
+enum LeadSource {
+  RENTFASTER
+  FACEBOOK_MARKETPLACE
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  TOURING
+  APPLIED
+  SCREENED
+  LEASED
+  LOST
+}
+
+model Lead {
+  id           String     @id @default(cuid())
+  source       LeadSource
+  unitId       String? // null = general interest, not tied to a specific unit
+  unit         Unit?      @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
+  status       LeadStatus @default(NEW)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  communications CommunicationLog[]
+
+  @@index([unitId])
+  @@map("leads")
+}
+
+// ---------------------------------------------------------------------------
+// 7. Maintenance ticket
+// ---------------------------------------------------------------------------
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  NEW
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+}
+
+model MaintenanceTicket {
+  id          String         @id @default(cuid())
+  unitId      String
+  unit        Unit           @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  tenantId    String?
+  tenant      Tenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  description String
+  priority    TicketPriority @default(MEDIUM)
+  status      TicketStatus   @default(NEW)
+  vendorId    String?
+  vendor      Vendor?        @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  cost        Decimal?       @db.Decimal(10, 2)
+  createdAt   DateTime       @default(now())
+  resolvedAt  DateTime?
+
+  @@index([unitId])
+  @@index([status])
+  @@map("maintenance_tickets")
+}
+
+// ---------------------------------------------------------------------------
+// 8. Vendor
+// ---------------------------------------------------------------------------
+model Vendor {
+  id          String   @id @default(cuid())
+  name        String
+  type        String // e.g. handyman, plumber
+  contactPhone String?
+  contactEmail String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tickets MaintenanceTicket[]
+
+  @@map("vendors")
+}
+
+// ---------------------------------------------------------------------------
+// 9. Communication log
+// ---------------------------------------------------------------------------
+enum CommChannel {
+  TEXT
+  EMAIL
+  CALL
+}
+
+enum CommDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model CommunicationLog {
+  id          String        @id @default(cuid())
+  tenantId    String?
+  tenant      Tenant?       @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  leadId      String?
+  lead        Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  channel     CommChannel
+  direction   CommDirection
+  timestamp   DateTime      @default(now())
+  summary     String
+  handledById String? // null = handled by an automated agent/integration
+  handledBy   User?         @relation(fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([leadId])
+  @@map("communication_logs")
+}
+
+// ---------------------------------------------------------------------------
+// 10. Compliance record (CMHC annual reporting)
+// ---------------------------------------------------------------------------
+model ComplianceRecord {
+  id                          String        @id @default(cuid())
+  projectEntityId             String
+  projectEntity               ProjectEntity @relation(fields: [projectEntityId], references: [id], onDelete: Restrict)
+  year                        Int
+  affordableUnitRentsReported Json // snapshot of rents for affordable units that year
+  submittedDate               DateTime?
+  createdAt                   DateTime      @default(now())
+
+  @@unique([projectEntityId, year])
+  @@map("compliance_records")
+}
