@@ -100,11 +100,17 @@ just checked for any of the above fields still missing and backfilled
 run the import before those fields existed).
 
 Known gaps from that import, worth fixing when the info is available:
-- Every unit was set to **MARKET** — the rent roll doesn't say which are
-  the CMHC-affordable units under MLI Select. Mark the real ones under
-  **Units**.
 - Only the first tenant listed on each lease got a phone number — the
   contact PDF has one number per unit, not per person.
+
+`src/lib/cmhc-designations.ts` + `GET /api/import-cmhc-designations` set
+each unit's real CMHC Market/Affordable designation, from the user's
+compliance-tracking spreadsheet — replacing the MARKET-for-everyone
+default the rent-roll import had to use since that file didn't carry
+this. Pure metadata update (doesn't touch tenants/leases/rent), so
+always safe to re-run. **Killarney23 and Glenbrook30 (16 units) aren't
+in that spreadsheet at all** — they're still defaulted to MARKET, not
+confirmed; re-run this once their real designations are available.
 - 4 security deposits had no date on file in the source and fell back to
   the lease start date instead.
 
