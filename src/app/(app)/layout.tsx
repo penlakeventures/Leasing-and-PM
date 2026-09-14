@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { Nav } from "@/components/nav";
 import { SignOutButton } from "@/components/sign-out-button";
+import Link from "next/link";
 
 export default async function AppLayout({
   children,
@@ -19,9 +20,12 @@ export default async function AppLayout({
           <p className="text-xs text-neutral-500">Leasing &amp; Property Management</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-neutral-600">
+          <Link
+            href="/account/password"
+            className="text-sm text-neutral-600 hover:text-neutral-900 hover:underline"
+          >
             {session?.user?.name}
-          </span>
+          </Link>
           <SignOutButton />
         </div>
       </header>

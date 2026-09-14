@@ -112,7 +112,7 @@ async function main() {
     });
   }
   console.log(
-    '  → seeded with temporary password "ChangeMe123!" — change it after first login.',
+    '  → seeded with temporary password "ChangeMe123!" — change it after first login via the link with your name, top right (/account/password).',
   );
 
   console.log("Seeding projects & units…");

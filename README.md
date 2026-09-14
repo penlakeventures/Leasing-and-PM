@@ -59,7 +59,8 @@ npm run db:seed        # optional — loads the real 7-project portfolio
 npm run dev
 ```
 
-Seeded login (change immediately — see `prisma/seed.ts`):
+Seeded login — **change these immediately**, before entering any real
+tenant/lease data. Click your name (top right) → Change password:
 
 - `ryan@penventures.ca` / `ChangeMe123!`
 - `alina@penventures.ca` / `ChangeMe123!`
