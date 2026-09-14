@@ -45,9 +45,14 @@ for a pick once scaffolded):
 - **Hosting**: Railway or Render, per the context doc — both give a managed
   Postgres + app deploy with no server admin. Set `DATABASE_URL`,
   `AUTH_SECRET`, and `NEXTAUTH_URL` (your production URL) as environment
-  variables; run `npx prisma migrate deploy` as (or before) the start
-  command, then `npm run db:seed` once if you want the real-portfolio seed
-  data in production too.
+  variables. `railway.json` in the repo root already tells Railway to run
+  `npx prisma migrate deploy` before `npm run start` on every deploy, so
+  pending migrations apply automatically — no dashboard config needed for
+  that. Run `npm run db:seed` once against production (e.g. via
+  `railway run npm run db:seed`) if you want the real-portfolio seed data
+  there too. Render doesn't read `railway.json`; set its start command to
+  the same `npx prisma migrate deploy && npm run start` in its dashboard
+  if you deploy there instead.
 
 ## Getting started
 
