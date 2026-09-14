@@ -85,6 +85,28 @@ correctly, set the current year's rates under **Rates** in the nav
 (Statistics Canada CPI, and the Alberta deposit interest rate — 2026 is
 pre-seeded at 0% per the source doc).
 
+## Real-portfolio import (one-time, already run in production)
+
+`src/lib/rent-roll-data.ts` holds the real 75-unit portfolio — units,
+tenants, leases, and security deposits — generated from the 2026 rent
+roll and tenant contact list the user provided, replacing the
+placeholder numbers from the initial seed. `GET /api/import-rent-roll`
+(behind normal login, unlike `/api/seed`) applies it; safe to re-run —
+any project that already has a lease on file is skipped rather than
+overwritten, so it won't clobber real work entered through the app.
+
+Known gaps from that import, worth fixing when the info is available:
+- Every unit was set to **MARKET** — the rent roll doesn't say which are
+  the CMHC-affordable units under MLI Select. Mark the real ones under
+  **Units**.
+- Only the first tenant listed on each lease got a phone number — the
+  contact PDF has one number per unit, not per person.
+- The rent roll's "Last month rent prepaid" and "Pets" columns aren't
+  tracked anywhere in the app yet — ask if those should become real
+  fields.
+- 4 security deposits had no date on file in the source and fell back to
+  the lease start date instead.
+
 ## What's *not* in Phase 1
 
 Carried forward from the open items in `docs/phase0_data_model.md`:
