@@ -5,8 +5,11 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isLoginPage = req.nextUrl.pathname === "/login";
   const isAuthApi = req.nextUrl.pathname.startsWith("/api/auth");
+  // /api/seed is deliberately public — it's the bootstrap step run before
+  // any users exist, guarded by its own SEED_TOKEN check instead of login.
+  const isSeedApi = req.nextUrl.pathname === "/api/seed";
 
-  if (isAuthApi) return NextResponse.next();
+  if (isAuthApi || isSeedApi) return NextResponse.next();
 
   if (!isLoggedIn && !isLoginPage) {
     const loginUrl = new URL("/login", req.nextUrl.origin);

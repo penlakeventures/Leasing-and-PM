@@ -44,15 +44,25 @@ for a pick once scaffolded):
 - **Tailwind CSS** for styling.
 - **Hosting**: Railway or Render, per the context doc — both give a managed
   Postgres + app deploy with no server admin. Set `DATABASE_URL`,
-  `AUTH_SECRET`, and `NEXTAUTH_URL` (your production URL) as environment
-  variables. `railway.json` in the repo root already tells Railway to run
-  `npx prisma migrate deploy` before `npm run start` on every deploy, so
-  pending migrations apply automatically — no dashboard config needed for
-  that. Run `npm run db:seed` once against production (e.g. via
-  `railway run npm run db:seed`) if you want the real-portfolio seed data
-  there too. Render doesn't read `railway.json`; set its start command to
-  the same `npx prisma migrate deploy && npm run start` in its dashboard
-  if you deploy there instead.
+  `AUTH_SECRET`, `NEXTAUTH_URL` (your production URL), and `SEED_TOKEN`
+  (any random string) as environment variables. `railway.json` in the repo
+  root already tells Railway to run `npx prisma migrate deploy` before
+  `npm run start` on every deploy, so pending migrations apply
+  automatically — no dashboard config needed for that. Render doesn't read
+  `railway.json`; set its start command to the same
+  `npx prisma migrate deploy && npm run start` in its dashboard if you
+  deploy there instead.
+
+  Migrations create the empty tables, but nothing creates the two user
+  accounts or loads the real portfolio until you visit, once, in a
+  browser: `https://<your-deployed-url>/api/seed?token=<your SEED_TOKEN>`.
+  That's the same seed data `npm run db:seed` loads locally — this is just
+  a no-terminal-required way to trigger it in production (there's a
+  chicken-and-egg problem otherwise: the app has no users yet, so nothing
+  behind login can help create the first ones). It's safe to visit more
+  than once — every write is an upsert, so re-running does nothing
+  destructive. Prefer a terminal? `railway run npm run db:seed` does the
+  same thing using Railway's CLI instead.
 
 ## Getting started
 
