@@ -8,7 +8,7 @@ import { checkRentEscalation } from "@/lib/rules";
 function parseUnitForm(formData: FormData) {
   return {
     projectEntityId: formData.get("projectEntityId") as string,
-    unitType: formData.get("unitType") as "TOWN" | "SUITE" | "BARN",
+    unitNumber: (formData.get("unitNumber") as string).trim(),
     bedrooms: Number(formData.get("bedrooms")),
     sqft: formData.get("sqft") ? Number(formData.get("sqft")) : null,
     cmhcDesignation: formData.get("cmhcDesignation") as

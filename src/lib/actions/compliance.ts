@@ -13,12 +13,12 @@ export async function createComplianceRecord(formData: FormData) {
 
   const affordableUnits = await prisma.unit.findMany({
     where: { projectEntityId, cmhcDesignation: "AFFORDABLE" },
-    select: { id: true, unitType: true, bedrooms: true, currentRent: true },
+    select: { id: true, unitNumber: true, bedrooms: true, currentRent: true },
   });
 
   const snapshot = affordableUnits.map((u) => ({
     unitId: u.id,
-    unitType: u.unitType,
+    unitNumber: u.unitNumber,
     bedrooms: u.bedrooms,
     rent: Number(u.currentRent),
   }));

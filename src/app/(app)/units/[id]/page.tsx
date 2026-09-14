@@ -17,7 +17,10 @@ export default async function UnitDetailPage({
   const [unit, projects] = await Promise.all([
     prisma.unit.findUnique({
       where: { id },
-      include: { leases: { orderBy: { startDate: "desc" } } },
+      include: {
+        leases: { orderBy: { startDate: "desc" } },
+        projectEntity: true,
+      },
     }),
     prisma.projectEntity.findMany({
       orderBy: { internalName: "asc" },
@@ -31,7 +34,10 @@ export default async function UnitDetailPage({
 
   return (
     <div className="space-y-8">
-      <PageHeader title={`${unit.unitType} · ${unit.bedrooms} bd`} />
+      <PageHeader
+        title={`${unit.projectEntity.internalName} — Unit ${unit.unitNumber}`}
+        description={`${unit.bedrooms} bd`}
+      />
       <UnitForm
         action={updateWithId}
         projects={projects}

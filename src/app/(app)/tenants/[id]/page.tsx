@@ -47,7 +47,7 @@ export default async function TenantDetailPage({
                 <Td>{lease.unit.projectEntity.internalName}</Td>
                 <Td>
                   <Link href={`/leases/${lease.id}`} className="underline">
-                    {lease.unit.unitType}
+                    Unit {lease.unit.unitNumber}
                   </Link>
                 </Td>
                 <Td>{lease.startDate.toLocaleDateString()}</Td>

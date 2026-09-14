@@ -153,14 +153,20 @@ export async function runSeed(prisma: PrismaClient): Promise<string[]> {
       Math.round((p.monthlyRentRoll / (p.towns * 2 + p.suites)) * 100) / 100;
     const townRent = Math.round(suiteRent * 2 * 100) / 100;
 
-    // ~25% of units affordable under MLI Select, concentrated in suites.
+    // ~25% of units affordable under MLI Select, concentrated in the
+    // smaller (1-bedroom) units.
     const affordableCount = Math.round(0.25 * (p.towns + p.suites));
+
+    // Placeholder unit numbers (1, 2, 3, …) — not real addresses/unit
+    // numbers, since those weren't in the source docs. Rename these to the
+    // real rent-roll unit numbers once that's on hand.
+    let unitNumber = 1;
 
     for (let i = 0; i < p.towns; i++) {
       await prisma.unit.create({
         data: {
           projectEntityId: project.id,
-          unitType: "TOWN",
+          unitNumber: String(unitNumber++),
           bedrooms: 3,
           cmhcDesignation: "MARKET",
           baseRent: townRent,
@@ -175,7 +181,7 @@ export async function runSeed(prisma: PrismaClient): Promise<string[]> {
       await prisma.unit.create({
         data: {
           projectEntityId: project.id,
-          unitType: "SUITE",
+          unitNumber: String(unitNumber++),
           bedrooms: 1,
           cmhcDesignation: affordable ? "AFFORDABLE" : "MARKET",
           baseRent: suiteRent,
@@ -189,7 +195,7 @@ export async function runSeed(prisma: PrismaClient): Promise<string[]> {
       await prisma.unit.create({
         data: {
           projectEntityId: project.id,
-          unitType: "BARN",
+          unitNumber: "Barn",
           bedrooms: p.barn.bedrooms,
           cmhcDesignation: "MARKET",
           baseRent: p.barn.rent,

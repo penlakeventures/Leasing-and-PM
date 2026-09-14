@@ -74,8 +74,8 @@ export default async function DashboardPage() {
               {depositsPastDue.map((d) => (
                 <li key={d.id} className="flex justify-between">
                   <span>
-                    {d.lease.unit.projectEntity.internalName} —{" "}
-                    {d.lease.unit.unitType.toLowerCase()}
+                    {d.lease.unit.projectEntity.internalName} — Unit{" "}
+                    {d.lease.unit.unitNumber}
                   </span>
                   <Link
                     href={`/leases/${d.lease.id}`}

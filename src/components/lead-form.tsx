@@ -7,7 +7,7 @@ export function LeadForm({
   error,
 }: {
   action: (formData: FormData) => void;
-  units: { id: string; unitType: string; projectEntity: { internalName: string } }[];
+  units: { id: string; unitNumber: string; projectEntity: { internalName: string } }[];
   defaultValues?: {
     source: string;
     unitId: string | null;
@@ -39,7 +39,7 @@ export function LeadForm({
               <option value="">General interest</option>
               {units.map((u) => (
                 <option key={u.id} value={u.id}>
-                  {u.projectEntity.internalName} — {u.unitType}
+                  {u.projectEntity.internalName} — Unit {u.unitNumber}
                 </option>
               ))}
             </Select>

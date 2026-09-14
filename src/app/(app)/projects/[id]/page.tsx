@@ -16,7 +16,7 @@ export default async function ProjectDetailPage({
   const { error } = await searchParams;
   const project = await prisma.projectEntity.findUnique({
     where: { id },
-    include: { units: true },
+    include: { units: { orderBy: { unitNumber: "asc" } } },
   });
   if (!project) notFound();
 
@@ -43,7 +43,7 @@ export default async function ProjectDetailPage({
         <Table>
           <thead>
             <tr>
-              <Th>Type</Th>
+              <Th>Unit #</Th>
               <Th>Bedrooms</Th>
               <Th>Designation</Th>
               <Th>Current rent</Th>
@@ -54,7 +54,7 @@ export default async function ProjectDetailPage({
               <tr key={u.id} className="hover:bg-neutral-50">
                 <Td>
                   <Link href={`/units/${u.id}`} className="underline">
-                    {u.unitType}
+                    {u.unitNumber}
                   </Link>
                 </Td>
                 <Td>{u.bedrooms}</Td>

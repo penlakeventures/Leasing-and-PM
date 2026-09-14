@@ -42,7 +42,7 @@ export default async function TicketsPage() {
           {tickets.map((t) => (
             <tr key={t.id} className="hover:bg-neutral-50">
               <Td>
-                {t.unit.projectEntity.internalName} — {t.unit.unitType}
+                {t.unit.projectEntity.internalName} — Unit {t.unit.unitNumber}
               </Td>
               <Td>
                 <Link href={`/tickets/${t.id}`} className="underline">

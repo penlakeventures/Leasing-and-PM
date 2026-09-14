@@ -11,7 +11,7 @@ export function UnitForm({
   projects: { id: string; internalName: string }[];
   defaultValues?: {
     projectEntityId: string;
-    unitType: string;
+    unitNumber: string;
     bedrooms: number;
     sqft: number | null;
     cmhcDesignation: string;
@@ -46,16 +46,17 @@ export function UnitForm({
               ))}
             </Select>
           </Field>
-          <Field label="Unit type" htmlFor="unitType">
-            <Select
-              id="unitType"
-              name="unitType"
-              defaultValue={defaultValues?.unitType ?? "TOWN"}
-            >
-              <option value="TOWN">Town</option>
-              <option value="SUITE">Suite</option>
-              <option value="BARN">Barn</option>
-            </Select>
+          <Field
+            label="Unit number"
+            htmlFor="unitNumber"
+            hint="How this unit is identified on the rent roll, e.g. &quot;203&quot;"
+          >
+            <Input
+              id="unitNumber"
+              name="unitNumber"
+              required
+              defaultValue={defaultValues?.unitNumber}
+            />
           </Field>
           <Field label="Bedrooms" htmlFor="bedrooms">
             <Input

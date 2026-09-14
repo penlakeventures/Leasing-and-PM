@@ -10,7 +10,7 @@ export function TicketForm({
   error,
 }: {
   action: (formData: FormData) => void;
-  units: { id: string; unitType: string; projectEntity: { internalName: string } }[];
+  units: { id: string; unitNumber: string; projectEntity: { internalName: string } }[];
   tenants: { id: string; name: string }[];
   vendors: { id: string; name: string }[];
   defaultValues?: {
@@ -39,7 +39,7 @@ export function TicketForm({
               <option value="">Select a unit…</option>
               {units.map((u) => (
                 <option key={u.id} value={u.id}>
-                  {u.projectEntity.internalName} — {u.unitType}
+                  {u.projectEntity.internalName} — Unit {u.unitNumber}
                 </option>
               ))}
             </Select>

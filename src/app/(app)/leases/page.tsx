@@ -36,7 +36,7 @@ export default async function LeasesPage() {
               <Td>{l.unit.projectEntity.internalName}</Td>
               <Td>
                 <Link href={`/leases/${l.id}`} className="underline">
-                  {l.unit.unitType}
+                  {l.unit.unitNumber}
                 </Link>
               </Td>
               <Td>{l.tenants.map((t) => t.tenant.name).join(", ") || "—"}</Td>

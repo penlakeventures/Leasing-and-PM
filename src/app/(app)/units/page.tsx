@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default async function UnitsPage() {
   const units = await prisma.unit.findMany({
-    orderBy: [{ projectEntity: { internalName: "asc" } }, { unitType: "asc" }],
+    orderBy: [{ projectEntity: { internalName: "asc" } }, { unitNumber: "asc" }],
     include: { projectEntity: true },
   });
 
@@ -12,14 +12,14 @@ export default async function UnitsPage() {
     <div>
       <PageHeader
         title="Units"
-        description="Towns, suites, and the barn — across all 7 projects."
+        description="Every unit across all 7 projects."
         action={<LinkButton href="/units/new">+ New unit</LinkButton>}
       />
       <Table>
         <thead>
           <tr>
             <Th>Project</Th>
-            <Th>Type</Th>
+            <Th>Unit #</Th>
             <Th>Bedrooms</Th>
             <Th>Designation</Th>
             <Th>Current rent</Th>
@@ -32,7 +32,7 @@ export default async function UnitsPage() {
               <Td>{u.projectEntity.internalName}</Td>
               <Td>
                 <Link href={`/units/${u.id}`} className="underline">
-                  {u.unitType}
+                  {u.unitNumber}
                 </Link>
               </Td>
               <Td>{u.bedrooms}</Td>

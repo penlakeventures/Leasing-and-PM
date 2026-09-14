@@ -46,7 +46,7 @@ export default async function LeadsPage() {
               <Td>{l.source.replace("_", " ")}</Td>
               <Td>
                 {l.unit
-                  ? `${l.unit.projectEntity.internalName} — ${l.unit.unitType}`
+                  ? `${l.unit.projectEntity.internalName} — Unit ${l.unit.unitNumber}`
                   : "General"}
               </Td>
               <Td>

@@ -56,12 +56,6 @@ model ProjectEntity {
 // ---------------------------------------------------------------------------
 // 2. Unit
 // ---------------------------------------------------------------------------
-enum UnitType {
-  TOWN
-  SUITE
-  BARN
-}
-
 enum CmhcDesignation {
   MARKET
   AFFORDABLE
@@ -76,7 +70,7 @@ model Unit {
   id              String          @id @default(cuid())
   projectEntityId String
   projectEntity   ProjectEntity   @relation(fields: [projectEntityId], references: [id], onDelete: Restrict)
-  unitType        UnitType
+  unitNumber      String // how this unit is identified on the real rent roll/address (e.g. "203") — the project address plus this uniquely identifies the unit, so a separate town/suite category isn't needed
   bedrooms        Int
   sqft            Int?
   cmhcDesignation CmhcDesignation
