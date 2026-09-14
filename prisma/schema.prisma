@@ -119,6 +119,8 @@ model Lease {
   endDate             DateTime?
   periodic            Boolean   @default(false) // month-to-month / periodic tenancy with no fixed end date
   rentAmount           Decimal   @db.Decimal(10, 2)
+  lastMonthRentPrepaid Decimal?  @db.Decimal(10, 2)
+  pets                 String? // free text, e.g. "dog, cat"
   signedDate           DateTime?
   documentLink         String?
   createdAt            DateTime  @default(now())

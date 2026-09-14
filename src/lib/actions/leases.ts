@@ -8,6 +8,7 @@ import { checkRentEscalation } from "@/lib/rules";
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
   const signedDateRaw = formData.get("signedDate") as string;
+  const prepaidRaw = formData.get("lastMonthRentPrepaid") as string;
   return {
     unitId: formData.get("unitId") as string,
     tenantIds: formData.getAll("tenantIds") as string[],
@@ -15,6 +16,8 @@ function parseLeaseForm(formData: FormData) {
     endDate: endDateRaw ? new Date(endDateRaw) : null,
     periodic: formData.get("periodic") === "on",
     rentAmount: Number(formData.get("rentAmount")),
+    lastMonthRentPrepaid: prepaidRaw ? Number(prepaidRaw) : null,
+    pets: (formData.get("pets") as string)?.trim() || null,
     signedDate: signedDateRaw ? new Date(signedDateRaw) : null,
     documentLink: (formData.get("documentLink") as string)?.trim() || null,
   };
@@ -58,6 +61,8 @@ export async function createLease(formData: FormData) {
       endDate: data.endDate,
       periodic: data.periodic,
       rentAmount: data.rentAmount,
+      lastMonthRentPrepaid: data.lastMonthRentPrepaid,
+      pets: data.pets,
       signedDate: data.signedDate,
       documentLink: data.documentLink,
       tenants: {
@@ -95,6 +100,8 @@ export async function updateLease(id: string, formData: FormData) {
         endDate: data.endDate,
         periodic: data.periodic,
         rentAmount: data.rentAmount,
+        lastMonthRentPrepaid: data.lastMonthRentPrepaid,
+        pets: data.pets,
         signedDate: data.signedDate,
         documentLink: data.documentLink,
         tenants: {

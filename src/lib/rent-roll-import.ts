@@ -3,13 +3,16 @@
 // real unit numbers, real tenants, real leases, real security deposits.
 //
 // Safety: a project's units are only reset (deleted + recreated) if NONE
-// of its existing units already have a lease attached. If real work has
-// already been entered against a project (e.g. a test lease), that
-// project is skipped entirely and reported, rather than risking deleting
-// something real — Unit->Lease and Unit->MaintenanceTicket are both
-// onDelete: Restrict at the DB level as a second line of defence, so an
-// unexpected attachment fails the delete loudly instead of silently
-// discarding data.
+// of its existing units already have a lease attached. If a project
+// already has real leases (either from an earlier run of this same
+// import, or real work entered through the app), it's never deleted —
+// instead this backfills any of rentRollUnits' fields that are still
+// null on the matching existing lease (currently just
+// lastMonthRentPrepaid and pets, added after the first import already
+// ran in production), matched by the unit's unitNumber. Unit->Lease and
+// Unit->MaintenanceTicket are both onDelete: Restrict at the DB level as
+// a second line of defence, so an unexpected attachment fails the
+// delete loudly instead of silently discarding data.
 
 import type { PrismaClient } from "@prisma/client";
 import { projectAddresses, rentRollUnits } from "@/lib/rent-roll-data";
@@ -43,7 +46,9 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
   let leasesCreated = 0;
   let depositsCreated = 0;
   let depositDatesAssumed = 0;
-  const skippedProjects: string[] = [];
+  let leasesBackfilled = 0;
+  let backfillMisses = 0;
+  const backfilledProjects: string[] = [];
 
   for (const [internalName, units] of byProject) {
     const project = await prisma.projectEntity.findUnique({
@@ -59,11 +64,52 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
       include: { _count: { select: { leases: true } } },
     });
     const hasRealData = existingUnits.some((u) => u._count.leases > 0);
+
     if (hasRealData) {
+      // Already imported (or has real leases entered through the app) —
+      // don't touch units/tenants/leases/deposits. Just backfill any
+      // newer rentRollUnits fields that are still null on the existing
+      // lease, matched by unitNumber.
+      let backfilledHere = 0;
+      for (const u of units) {
+        const unit = existingUnits.find((e) => e.unitNumber === u.unitNumber);
+        if (!unit) {
+          backfillMisses++;
+          continue;
+        }
+        const lease = await prisma.lease.findFirst({
+          where: { unitId: unit.id },
+          orderBy: { startDate: "desc" },
+        });
+        if (!lease) {
+          backfillMisses++;
+          continue;
+        }
+        // Only actually changes anything when the lease is missing a value
+        // AND the rent roll has one to fill it with — a lease that's null
+        // because the source genuinely had no data (e.g. "n/a") is already
+        // correct and shouldn't be reported as needing a backfill.
+        const needsPrepaid =
+          lease.lastMonthRentPrepaid === null && u.lastMonthRentPrepaid !== null;
+        const needsPets = lease.pets === null && u.pets !== null;
+        if (needsPrepaid || needsPets) {
+          await prisma.lease.update({
+            where: { id: lease.id },
+            data: {
+              ...(needsPrepaid && { lastMonthRentPrepaid: u.lastMonthRentPrepaid }),
+              ...(needsPets && { pets: u.pets }),
+            },
+          });
+          leasesBackfilled++;
+          backfilledHere++;
+        }
+      }
       say(
-        `  ⚠ Skipped ${internalName} — it already has a lease on file (real work in progress). Import it manually or ask to re-run just this project.`,
+        backfilledHere > 0
+          ? `  → ${internalName}: already imported — backfilled ${backfilledHere} lease(s) with newer fields.`
+          : `  → ${internalName}: already imported and up to date — nothing to do.`,
       );
-      skippedProjects.push(internalName);
+      backfilledProjects.push(internalName);
       continue;
     }
 
@@ -73,7 +119,6 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
       say(
         `  ⚠ Skipped ${internalName} — its existing units couldn't be deleted (something's still attached to one of them). Nothing changed for this project.`,
       );
-      skippedProjects.push(internalName);
       continue;
     }
 
@@ -109,6 +154,8 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
           startDate: new Date(u.leaseStart),
           periodic: true, // rent roll has no lease end date — treated as ongoing
           rentAmount: u.rent,
+          lastMonthRentPrepaid: u.lastMonthRentPrepaid,
+          pets: u.pets,
           tenants: { create: tenantIds.map((tenantId) => ({ tenantId })) },
           securityDeposit: {
             create: {
@@ -130,18 +177,27 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
   say(
     `Summary: ${unitsCreated} units, ${tenantsCreated} tenants, ${leasesCreated} leases, ${depositsCreated} security deposits created.`,
   );
-  if (skippedProjects.length > 0) {
-    say(`Projects skipped (had existing real data): ${skippedProjects.join(", ")}`);
+  if (backfilledProjects.length > 0) {
+    say(
+      `Already-imported projects checked for backfill: ${backfilledProjects.join(", ")} (${leasesBackfilled} lease(s) updated).`,
+    );
   }
-  say(
-    `${depositDatesAssumed} security deposit(s) had no date on file — used the lease start date instead.`,
-  );
-  say(
-    "Every unit was set to MARKET — the rent roll doesn't say which are the CMHC-affordable units. Mark the real ones as AFFORDABLE under Units once you know which they are.",
-  );
-  say(
-    "Only the first tenant listed on each lease got a phone number — the contact list has one number per unit, not per person.",
-  );
+  if (backfillMisses > 0) {
+    say(
+      `⚠ ${backfillMisses} rent-roll row(s) couldn't be matched to an existing unit/lease during backfill — check those manually.`,
+    );
+  }
+  if (unitsCreated > 0) {
+    say(
+      `${depositDatesAssumed} security deposit(s) had no date on file — used the lease start date instead.`,
+    );
+    say(
+      "Every unit was set to MARKET — the rent roll doesn't say which are the CMHC-affordable units. Mark the real ones as AFFORDABLE under Units once you know which they are.",
+    );
+    say(
+      "Only the first tenant listed on each lease got a phone number — the contact list has one number per unit, not per person.",
+    );
+  }
 
   return log;
 }

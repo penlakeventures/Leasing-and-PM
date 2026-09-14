@@ -18,6 +18,8 @@ export function LeaseForm({
     endDate: Date | null;
     periodic: boolean;
     rentAmount: unknown;
+    lastMonthRentPrepaid: unknown;
+    pets: string | null;
     signedDate: Date | null;
     documentLink: string | null;
   };
@@ -93,6 +95,31 @@ export function LeaseForm({
               id="documentLink"
               name="documentLink"
               defaultValue={defaultValues?.documentLink ?? ""}
+            />
+          </Field>
+          <Field
+            label="Last month's rent prepaid"
+            htmlFor="lastMonthRentPrepaid"
+            hint="Optional"
+          >
+            <Input
+              id="lastMonthRentPrepaid"
+              name="lastMonthRentPrepaid"
+              type="number"
+              step="0.01"
+              min={0}
+              defaultValue={
+                defaultValues?.lastMonthRentPrepaid
+                  ? String(defaultValues.lastMonthRentPrepaid)
+                  : ""
+              }
+            />
+          </Field>
+          <Field label="Pets" htmlFor="pets" hint='Optional, e.g. "dog, cat"'>
+            <Input
+              id="pets"
+              name="pets"
+              defaultValue={defaultValues?.pets ?? ""}
             />
           </Field>
         </div>

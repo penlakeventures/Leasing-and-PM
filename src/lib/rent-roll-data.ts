@@ -16,6 +16,8 @@ export type RentRollUnit = {
   deposit: number;
   depositDate: string; // ISO date
   depositDateAssumed: boolean; // true if the source had no date and this falls back to leaseStart
+  lastMonthRentPrepaid: number | null;
+  pets: string | null;
 };
 
 export const projectAddresses: Record<string, string> = 
@@ -42,6 +44,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3000,
     depositDate: "2021-11-15T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog, cat",
   },
   {
     project: "Killarney23",
@@ -55,6 +59,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1600,
     depositDate: "2025-12-11T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Killarney23",
@@ -68,6 +74,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3000,
     depositDate: "2026-03-31T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog",
   },
   {
     project: "Killarney23",
@@ -81,6 +89,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1650,
     depositDate: "2025-09-07T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1600,
+    pets: null,
   },
   {
     project: "Killarney23",
@@ -94,6 +104,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3700,
     depositDate: "2020-11-25T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog",
   },
   {
     project: "Killarney23",
@@ -107,6 +119,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-01-10T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: null,
   },
   {
     project: "Killarney23",
@@ -120,6 +134,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3000,
     depositDate: "2023-08-14T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3000,
+    pets: null,
   },
   {
     project: "Killarney23",
@@ -133,6 +149,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1600,
     depositDate: "2026-03-01T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog",
   },
   {
     project: "Glenbrook30",
@@ -146,6 +164,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3150,
     depositDate: "2025-06-02T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3150,
+    pets: "dog",
   },
   {
     project: "Glenbrook30",
@@ -159,6 +179,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1650,
     depositDate: "2025-10-15T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Glenbrook30",
@@ -172,6 +194,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3050,
     depositDate: "2024-03-22T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog",
   },
   {
     project: "Glenbrook30",
@@ -185,6 +209,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1700,
     depositDate: "2025-07-03T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1700,
+    pets: "2 dogs",
   },
   {
     project: "Glenbrook30",
@@ -198,6 +224,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3050,
     depositDate: "2025-07-22T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3050,
+    pets: "dog",
   },
   {
     project: "Glenbrook30",
@@ -211,6 +239,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1650,
     depositDate: "2025-04-12T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1650,
+    pets: "cat",
   },
   {
     project: "Glenbrook30",
@@ -224,6 +254,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2850,
     depositDate: "2026-04-28T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 2850,
+    pets: "dog",
   },
   {
     project: "Glenbrook30",
@@ -237,6 +269,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1700,
     depositDate: "2025-06-26T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1700,
+    pets: "dog, cat",
   },
   {
     project: "Killarney26",
@@ -250,6 +284,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3150,
     depositDate: "2024-07-11T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3150,
+    pets: null,
   },
   {
     project: "Killarney26",
@@ -263,6 +299,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1600,
     depositDate: "2026-02-18T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog",
   },
   {
     project: "Killarney26",
@@ -276,6 +314,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2950,
     depositDate: "2025-06-25T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: null,
+    pets: "cat, dog",
   },
   {
     project: "Killarney26",
@@ -289,6 +329,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1600,
     depositDate: "2025-09-13T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1600,
+    pets: "1 dog",
   },
   {
     project: "Killarney26",
@@ -302,6 +344,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2950,
     depositDate: "2026-06-28T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Killarney26",
@@ -315,6 +359,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1650,
     depositDate: "2024-09-17T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1650,
+    pets: "2 cats",
   },
   {
     project: "Killarney26",
@@ -328,6 +374,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3000,
     depositDate: "2025-04-14T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3000,
+    pets: "2 dogs",
   },
   {
     project: "Killarney26",
@@ -341,6 +389,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1600,
     depositDate: "2026-03-09T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Killarney25",
@@ -354,6 +404,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3150,
     depositDate: "2024-02-29T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3150,
+    pets: "dog",
   },
   {
     project: "Killarney25",
@@ -367,6 +419,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1650,
     depositDate: "2024-02-27T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1650,
+    pets: "dog",
   },
   {
     project: "Killarney25",
@@ -380,6 +434,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3100,
     depositDate: "2024-02-28T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "2 dogs",
   },
   {
     project: "Killarney25",
@@ -393,6 +449,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1600,
     depositDate: "2026-08-02T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1600,
+    pets: null,
   },
   {
     project: "Killarney25",
@@ -406,6 +464,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3050,
     depositDate: "2025-09-13T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog",
   },
   {
     project: "Killarney25",
@@ -419,6 +479,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1600,
     depositDate: "2026-01-24T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1600,
+    pets: null,
   },
   {
     project: "Killarney25",
@@ -432,6 +494,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3150,
     depositDate: "2024-04-17T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog",
   },
   {
     project: "Killarney25",
@@ -445,6 +509,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-10-27T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "2 dogs",
   },
   {
     project: "Killarney27",
@@ -458,6 +524,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3250,
     depositDate: "2024-07-26T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "1 dog",
   },
   {
     project: "Killarney27",
@@ -471,6 +539,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1650,
     depositDate: "2026-01-28T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Killarney27",
@@ -484,6 +554,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3100,
     depositDate: "2024-08-28T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Killarney27",
@@ -497,6 +569,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1650,
     depositDate: "2024-08-11T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1700,
+    pets: null,
   },
   {
     project: "Killarney27",
@@ -510,6 +584,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3100,
     depositDate: "2024-08-06T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Killarney27",
@@ -523,6 +599,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1500,
     depositDate: "2026-07-26T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Killarney27",
@@ -536,6 +614,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3250,
     depositDate: "2024-08-01T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3250,
+    pets: null,
   },
   {
     project: "Killarney27",
@@ -549,6 +629,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1700,
     depositDate: "2025-04-09T00:00:00",
     depositDateAssumed: true,
+    lastMonthRentPrepaid: 0,
+    pets: "1 dog",
   },
   {
     project: "Inglewood14",
@@ -562,6 +644,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2550,
     depositDate: "2024-12-02T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 2550,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -575,6 +659,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2024-11-04T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -588,6 +674,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2500,
     depositDate: "2024-11-01T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "2 cats",
   },
   {
     project: "Inglewood14",
@@ -601,6 +689,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-06-01T00:00:00",
     depositDateAssumed: true,
+    lastMonthRentPrepaid: 1550,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -614,6 +704,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2750,
     depositDate: "2024-10-30T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: null,
+    pets: "cat",
   },
   {
     project: "Inglewood14",
@@ -627,6 +719,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1450,
     depositDate: "2024-11-19T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1450,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -640,6 +734,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2650,
     depositDate: "2024-12-03T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: null,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -653,6 +749,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2024-11-28T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -666,6 +764,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2700,
     depositDate: "2024-11-18T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: "dog",
   },
   {
     project: "Inglewood14",
@@ -679,6 +779,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2024-11-27T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -692,6 +794,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2650,
     depositDate: "2024-11-19T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -705,6 +809,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-12-13T00:00:00",
     depositDateAssumed: true,
+    lastMonthRentPrepaid: 1600,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -718,6 +824,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2730,
     depositDate: "2024-11-14T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: null,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -731,6 +839,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-09-15T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: null,
   },
   {
     project: "Inglewood14",
@@ -744,6 +854,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 0,
     depositDate: "2025-02-01T00:00:00",
     depositDateAssumed: true,
+    lastMonthRentPrepaid: 0,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -757,6 +869,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3000,
     depositDate: "2025-08-15T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3000,
+    pets: "dog",
   },
   {
     project: "Shaganappi31",
@@ -770,6 +884,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-09-10T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: "dog",
   },
   {
     project: "Shaganappi31",
@@ -783,6 +899,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2700,
     depositDate: "2025-09-14T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 2700,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -796,6 +914,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1650,
     depositDate: "2024-04-04T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1650,
+    pets: "cat",
   },
   {
     project: "Shaganappi31",
@@ -809,6 +929,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2750,
     depositDate: "2025-08-27T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 2750,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -822,6 +944,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1500,
     depositDate: "2025-09-13T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1500,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -835,6 +959,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2900,
     depositDate: "2025-09-09T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: null,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -848,6 +974,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1500,
     depositDate: "2025-09-07T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: "dog",
   },
   {
     project: "Shaganappi31",
@@ -861,6 +989,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3200,
     depositDate: "2025-07-07T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3200,
+    pets: "dog, cat",
   },
   {
     project: "Shaganappi31",
@@ -874,6 +1004,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1600,
     depositDate: "2025-07-28T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1600,
+    pets: "dog",
   },
   {
     project: "Shaganappi31",
@@ -887,6 +1019,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3000,
     depositDate: "2025-08-29T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3000,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -900,6 +1034,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-07-22T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: "cat",
   },
   {
     project: "Shaganappi31",
@@ -913,6 +1049,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2850,
     depositDate: "2025-09-04T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: null,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -926,6 +1064,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-08-27T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: "dog",
   },
   {
     project: "Shaganappi31",
@@ -939,6 +1079,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2800,
     depositDate: "2025-09-14T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 2800,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -952,6 +1094,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1550,
     depositDate: "2025-07-27T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1550,
+    pets: "cat",
   },
   {
     project: "Shaganappi31",
@@ -965,6 +1109,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 2550,
     depositDate: "2025-10-02T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 2450,
+    pets: "$75 storage",
   },
   {
     project: "Shaganappi31",
@@ -978,6 +1124,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1500,
     depositDate: "2025-08-02T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1500,
+    pets: null,
   },
   {
     project: "Shaganappi31",
@@ -991,6 +1139,8 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 3050,
     depositDate: "2025-07-27T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 3000,
+    pets: "cat",
   },
   {
     project: "Shaganappi31",
@@ -1004,5 +1154,7 @@ export const rentRollUnits: RentRollUnit[] = [
     deposit: 1500,
     depositDate: "2025-08-13T00:00:00",
     depositDateAssumed: false,
+    lastMonthRentPrepaid: 1500,
+    pets: null,
   },
 ];
