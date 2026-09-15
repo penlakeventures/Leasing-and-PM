@@ -13,8 +13,19 @@ export default auth((req) => {
   // its own RENTFASTER_INBOUND_TOKEN check instead.
   const isRentFasterInboundApi =
     req.nextUrl.pathname === "/api/leads/rentfaster-inbound";
+  // Same idea for the Facebook Messenger webhook: called by Meta, not a
+  // signed-in person, guarded by the verify-token handshake (GET) and
+  // signature verification (POST) instead.
+  const isMessengerWebhook =
+    req.nextUrl.pathname === "/api/leads/facebook-messenger-webhook";
 
-  if (isAuthApi || isSeedApi || isRentFasterInboundApi) return NextResponse.next();
+  if (
+    isAuthApi ||
+    isSeedApi ||
+    isRentFasterInboundApi ||
+    isMessengerWebhook
+  )
+    return NextResponse.next();
 
   if (!isLoggedIn && !isLoginPage) {
     const loginUrl = new URL("/login", req.nextUrl.origin);

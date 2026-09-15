@@ -319,6 +319,7 @@ enum CommChannel {
   TEXT
   EMAIL
   CALL
+  MESSENGER
 }
 
 enum CommDirection {
@@ -338,6 +339,10 @@ model CommunicationLog {
   summary     String
   handledById String? // null = handled by an automated agent/integration
   handledBy   User?         @relation(fields: [handledById], references: [id], onDelete: SetNull)
+  // Dedupe key for auto-captured entries (e.g. a Messenger message ID) so
+  // a webhook retry logs the same message once, not twice. Null for
+  // manually-entered communications.
+  externalRef String?       @unique
 
   @@index([tenantId])
   @@index([leadId])

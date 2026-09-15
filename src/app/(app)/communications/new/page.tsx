@@ -50,6 +50,7 @@ export default async function NewCommunicationPage({
                 <option value="TEXT">Text</option>
                 <option value="EMAIL">Email</option>
                 <option value="CALL">Call</option>
+                <option value="MESSENGER">Messenger</option>
               </Select>
             </Field>
             <Field label="Direction" htmlFor="direction">

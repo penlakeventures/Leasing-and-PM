@@ -20,7 +20,7 @@ export async function createCommunication(formData: FormData) {
     data: {
       tenantId,
       leadId,
-      channel: formData.get("channel") as "TEXT" | "EMAIL" | "CALL",
+      channel: formData.get("channel") as "TEXT" | "EMAIL" | "CALL" | "MESSENGER",
       direction: formData.get("direction") as "INBOUND" | "OUTBOUND",
       timestamp: timestampRaw ? new Date(timestampRaw) : new Date(),
       summary: (formData.get("summary") as string).trim(),

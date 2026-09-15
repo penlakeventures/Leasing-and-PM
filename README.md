@@ -121,7 +121,7 @@ market rate too — all 75 units now have a confirmed designation. Pure
 metadata update (doesn't touch tenants/leases/rent), so always safe to
 re-run.
 
-## RentFaster lead capture (webhook built, email pipeline not wired up yet)
+## RentFaster lead capture (live in production)
 
 `POST /api/leads/rentfaster-inbound?token=<RENTFASTER_INBOUND_TOKEN>` turns
 a RentFaster lead-inquiry email into a `Lead` record — contact info,
@@ -134,29 +134,48 @@ either a JSON or form-encoded body (`subject`, `text`, `replyTo`/`Reply-To`
 Idempotent, keyed on RentFaster's own per-lead reply-to token — safe to
 receive the same email more than once.
 
-Parsing lives in `src/lib/rentfaster-lead-parse.ts`, built and tested
-against a real sample email — but that was the HTML rendering, not the
-actual plain-text body RentFaster sends, so it's worth re-checking against
-a real delivered email once the pipeline below is live, in case the exact
-layout differs.
+Parsing lives in `src/lib/rentfaster-lead-parse.ts`. Pipeline: RentFaster's
+emails land at `leasing@penventures.ca` (Google Workspace) → a Gmail filter
+forwards a *copy* (inbox untouched — no "skip the inbox") to a Postmark
+inbound stream → Postmark's webhook POSTs to the URL above. Live and
+verified end-to-end in production as of this write-up.
 
-**Still needed** to actually receive these: an inbound-email-parsing
-service (e.g. Postmark, Mailgun) pointed at the URL above, plus an email
-forwarding rule so RentFaster's notifications (currently landing at
-`leasing@penventures.ca`) reach it. Not set up yet.
+## Facebook Marketplace lead capture (webhook built, Meta app review pending)
+
+`POST /api/leads/facebook-messenger-webhook` turns Messenger messages on
+the business's Facebook Page into `Lead` records — one lead per sender
+(keyed on their page-scoped ID), with each new message appended to that
+lead's `message` field as a running conversation rather than creating a
+new lead every time. Also logs an inbound `CommunicationLog` entry per
+message (channel `MESSENGER`), deduped by Messenger's own message ID so a
+webhook retry doesn't log the same message twice. `GET` on the same URL
+handles Meta's one-time verification handshake. Every `POST` is checked
+against Meta's `X-Hub-Signature-256` header (HMAC using `FACEBOOK_APP_SECRET`)
+before anything is processed. Logic lives in
+`src/lib/facebook-messenger-webhook.ts`; tested against realistic Meta
+payloads (valid/invalid signature, a new lead, a follow-up message
+appending to the same lead, a redelivered message being a no-op, and a
+non-message event like a delivery receipt being ignored without error).
+
+Contact name is a best-effort Graph API lookup (`FACEBOOK_PAGE_ACCESS_TOKEN`)
+— Messenger's webhook payload never includes it directly, and Meta doesn't
+guarantee the lookup succeeds even with the token, so a lead with no name
+attached is expected, not a bug.
+
+**Still needed**: messages currently land in a personal Facebook profile's
+Messenger, not a Page's — the Messenger Platform API only works for a Page,
+so Marketplace listings need to move there first. Beyond that: a Meta
+Developer/Business Manager account, an App with the Messenger product
+added, connecting it to the Page, and submitting for App Review to request
+the `pages_messaging` permission (this is the slow part — real calendar
+days to weeks, possibly requiring Business Verification). None of that is
+started yet as of this write-up.
 
 ## What's *not* in Phase 1
 
 Carried forward from the open items in `docs/phase0_data_model.md`:
 
-- **Gmail API integration** for lead intake — not wired up yet. Communication
-  logs are entered manually for now, except RentFaster leads once the
-  pipeline above is connected.
 - **SingleKey** tenant screening — deferred to Phase 2 per the source docs.
-- **Facebook Marketplace** intake automation — leads are entered manually;
-  the legitimate path is Meta's Messenger Platform API on the business's own
-  Page, which needs a Meta Developer/Business account and app review, not
-  just code.
 - Trust sub-account setup for deposits is a banking/accounting task, not a
   code task — the `trustAccountRef` field is ready to hold that reference
   once it exists.
