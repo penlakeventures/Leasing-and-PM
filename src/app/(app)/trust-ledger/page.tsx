@@ -17,7 +17,14 @@ export default async function TrustLedgerPage() {
       },
       deductions: true,
     },
-    orderBy: { dateReceived: "desc" },
+    // Same project order as the Projects/Units/Leases pages, then unit
+    // number within a project, then most-recent-first for a unit's own
+    // deposit history.
+    orderBy: [
+      { lease: { unit: { projectEntity: { displayOrder: "asc" } } } },
+      { lease: { unit: { unitNumber: "asc" } } },
+      { dateReceived: "desc" },
+    ],
   });
 
   const held = deposits.filter((d) => !d.dateReturned);
