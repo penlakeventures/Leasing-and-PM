@@ -140,7 +140,7 @@ forwards a *copy* (inbox untouched — no "skip the inbox") to a Postmark
 inbound stream → Postmark's webhook POSTs to the URL above. Live and
 verified end-to-end in production as of this write-up.
 
-## Facebook Marketplace lead capture (webhook built, Meta app review pending)
+## Facebook Marketplace lead capture (webhook built, currently unreachable — see below)
 
 `POST /api/leads/facebook-messenger-webhook` turns Messenger messages on
 the business's Facebook Page into `Lead` records — one lead per sender
@@ -162,14 +162,22 @@ Contact name is a best-effort Graph API lookup (`FACEBOOK_PAGE_ACCESS_TOKEN`)
 guarantee the lookup succeeds even with the token, so a lead with no name
 attached is expected, not a bug.
 
-**Still needed**: messages currently land in a personal Facebook profile's
-Messenger, not a Page's — the Messenger Platform API only works for a Page,
-so Marketplace listings need to move there first. Beyond that: a Meta
-Developer/Business Manager account, an App with the Messenger product
-added, connecting it to the Page, and submitting for App Review to request
-the `pages_messaging` permission (this is the slow part — real calendar
-days to weeks, possibly requiring Business Verification). None of that is
-started yet as of this write-up.
+**Blocked, not just pending**: this isn't a review-time problem — Meta's
+Messenger Platform API fundamentally cannot access a personal profile's
+inbox for any third-party app, under any permission, and Facebook doesn't
+allow a business Page to post to Marketplace's housing/rental category
+(confirmed directly against Facebook, not assumed). Since Marketplace
+messages land in a personal profile's Messenger, there's currently no
+legitimate way to automate this specific channel — anything that could
+(browser automation, scripting the personal account) would risk that
+account getting flagged or banned, which is off the table by design.
+
+Decision (for now): leave Facebook Marketplace leads fully manual, same
+as before this webhook existed. The code above stays in place — it's
+ready to turn on if either constraint changes (a syndication partner with
+an official Marketplace distribution + its own lead-notification emails,
+which would need no Meta review at all; or a shift in Facebook's own
+rules).
 
 ## What's *not* in Phase 1
 
