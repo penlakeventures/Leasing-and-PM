@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Table, Th, Td, LinkButton, EmptyState } from "@/components/ui";
+import { Table, Th, Td, LinkButton, EmptyState } from "@/components/ui";
 import Link from "next/link";
 
 export default async function VendorsPage() {
@@ -7,10 +7,9 @@ export default async function VendorsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Vendors"
-        action={<LinkButton href="/vendors/new">+ New vendor</LinkButton>}
-      />
+      <div className="mb-6 flex justify-end">
+        <LinkButton href="/vendors/new">+ New vendor</LinkButton>
+      </div>
       <Table>
         <thead>
           <tr>

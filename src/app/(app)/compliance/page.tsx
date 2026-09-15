@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Table, Th, Td, LinkButton, Badge, EmptyState, Input, Button } from "@/components/ui";
+import { Table, Th, Td, LinkButton, Badge, EmptyState, Input, Button } from "@/components/ui";
 import { markSubmitted, deleteComplianceRecord } from "@/lib/actions/compliance";
 
 export default async function CompliancePage() {
@@ -10,11 +10,9 @@ export default async function CompliancePage() {
 
   return (
     <div>
-      <PageHeader
-        title="Compliance"
-        description="CMHC annual reporting — affordable-unit rents, by project and year."
-        action={<LinkButton href="/compliance/new">+ New record</LinkButton>}
-      />
+      <div className="mb-6 flex justify-end">
+        <LinkButton href="/compliance/new">+ New record</LinkButton>
+      </div>
       <Table>
         <thead>
           <tr>

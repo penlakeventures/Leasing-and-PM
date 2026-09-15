@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
+import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
 import { TOUR_TIMEZONE } from "@/lib/google-calendar";
 import Link from "next/link";
 
@@ -31,11 +31,9 @@ export default async function LeadsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Leads"
-        description="RentFaster and Facebook Marketplace inquiries."
-        action={<LinkButton href="/leads/new">+ New lead</LinkButton>}
-      />
+      <div className="mb-6 flex justify-end">
+        <LinkButton href="/leads/new">+ New lead</LinkButton>
+      </div>
       <Table>
         <thead>
           <tr>

@@ -1,4 +1,4 @@
-import { PageHeader, Card, Button, LinkButton } from "@/components/ui";
+import { Card, Button, LinkButton } from "@/components/ui";
 import { getActiveConnection } from "@/lib/google-calendar";
 import { disconnectCalendar } from "@/lib/actions/calendar";
 
@@ -12,10 +12,6 @@ export default async function CalendarSettingsPage({
 
   return (
     <div>
-      <PageHeader
-        title="Calendar"
-        description="Connects tour scheduling to a Google Calendar — tour bookings on lead pages create real events here."
-      />
       <Card>
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">

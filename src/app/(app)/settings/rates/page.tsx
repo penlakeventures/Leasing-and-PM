@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Card, Field, Input, Button, Table, Th, Td } from "@/components/ui";
+import { Card, Field, Input, Button, Table, Th, Td } from "@/components/ui";
 import { upsertCpiRate, upsertDepositInterestRate } from "@/lib/actions/rates";
 
 export default async function RatesPage() {
@@ -12,11 +12,6 @@ export default async function RatesPage() {
 
   return (
     <div className="space-y-10">
-      <PageHeader
-        title="Rates"
-        description="Re-set each year, not hardcoded — these drive the compliance checks elsewhere in the app."
-      />
-
       <div>
         <h2 className="mb-3 text-sm font-semibold text-neutral-900">
           Statistics Canada CPI — caps affordable-unit rent escalation

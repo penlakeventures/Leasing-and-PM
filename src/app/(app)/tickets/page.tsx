@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
+import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
 import Link from "next/link";
 
 const statusTone: Record<string, "neutral" | "green" | "amber" | "red" | "blue"> = {
@@ -24,10 +24,9 @@ export default async function TicketsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Maintenance"
-        action={<LinkButton href="/tickets/new">+ New ticket</LinkButton>}
-      />
+      <div className="mb-6 flex justify-end">
+        <LinkButton href="/tickets/new">+ New ticket</LinkButton>
+      </div>
       <Table>
         <thead>
           <tr>

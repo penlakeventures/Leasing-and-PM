@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Card, Table, Th, Td, Badge, EmptyState } from "@/components/ui";
+import { Card, Table, Th, Td, Badge, EmptyState } from "@/components/ui";
 import { isDepositOverdue, depositReturnDeadline } from "@/lib/rules";
 import Link from "next/link";
 
@@ -50,11 +50,6 @@ export default async function TrustLedgerPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Trust ledger"
-        description="Security deposits held in trust, reconciled by account — Alberta RTA."
-      />
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
           <p className="text-2xl font-semibold text-neutral-900">

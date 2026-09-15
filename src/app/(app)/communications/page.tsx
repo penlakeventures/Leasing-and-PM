@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PageHeader, Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
+import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
 import { deleteCommunication } from "@/lib/actions/communications";
 
 export default async function CommunicationsPage() {
@@ -11,11 +11,9 @@ export default async function CommunicationsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Communications"
-        description="Every tenant and lead touchpoint in one place — no more relying on personal texts."
-        action={<LinkButton href="/communications/new">+ Log communication</LinkButton>}
-      />
+      <div className="mb-6 flex justify-end">
+        <LinkButton href="/communications/new">+ Log communication</LinkButton>
+      </div>
       <Table>
         <thead>
           <tr>

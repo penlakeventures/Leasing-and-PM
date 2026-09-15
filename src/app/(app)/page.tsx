@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Card, PageHeader, Badge } from "@/components/ui";
+import { Card, Badge } from "@/components/ui";
 import { isDepositOverdue } from "@/lib/rules";
 import Link from "next/link";
 
@@ -55,11 +55,6 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Dashboard"
-        description="Portfolio snapshot across all 7 projects."
-      />
-
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((stat) => (
           <Link key={stat.label} href={stat.href}>

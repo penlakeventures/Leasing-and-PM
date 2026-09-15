@@ -1,12 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import {
-  PageHeader,
-  Table,
-  Th,
-  Td,
-  LinkButton,
-  EmptyState,
-} from "@/components/ui";
+import { Table, Th, Td, LinkButton, EmptyState } from "@/components/ui";
 import Link from "next/link";
 
 export default async function ProjectsPage() {
@@ -17,11 +10,9 @@ export default async function ProjectsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Projects"
-        description="The 7 single-purpose corporations, each the legal owner of one property."
-        action={<LinkButton href="/projects/new">+ New project</LinkButton>}
-      />
+      <div className="mb-6 flex justify-end">
+        <LinkButton href="/projects/new">+ New project</LinkButton>
+      </div>
 
       <Table>
         <thead>
