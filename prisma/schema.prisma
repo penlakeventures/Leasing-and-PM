@@ -229,6 +229,24 @@ model CalendarConnection {
   @@map("calendar_connections")
 }
 
+// One connected Dropbox account used for automatic lease-document filing —
+// same one-active-connection-at-a-time shape as CalendarConnection.
+// basePath is the root folder everything else is built under (e.g.
+// "/Pen Lake Ventures/Leases"), set once from Settings; project folders
+// underneath it are expected to be named to match ProjectEntity.internalName
+// exactly (e.g. "Killarney23"). DROPBOX_APP_KEY/SECRET (the app's own OAuth
+// credentials, not this token) live in the environment, not here.
+model DropboxConnection {
+  id           String   @id @default(cuid())
+  accountEmail String   @unique
+  refreshToken String
+  basePath     String   @default("")
+  connectedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("dropbox_connections")
+}
+
 // ---------------------------------------------------------------------------
 // 6. Lead
 // ---------------------------------------------------------------------------

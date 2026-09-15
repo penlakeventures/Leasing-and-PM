@@ -17,6 +17,7 @@ const links = [
   { href: "/compliance", label: "Compliance" },
   { href: "/settings/rates", label: "Rates" },
   { href: "/settings/calendar", label: "Calendar" },
+  { href: "/settings/dropbox", label: "Documents" },
 ];
 
 export function Nav() {

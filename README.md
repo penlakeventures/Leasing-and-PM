@@ -211,6 +211,42 @@ URI — `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` from that go in the
 environment (see `.env.example`), then connect an account from
 Settings → Calendar.
 
+## Dropbox lease-document filing
+
+New leases automatically get a Dropbox folder instead of someone
+creating one by hand and pasting a link in — Settings → Documents →
+Connect Dropbox (same one-time OAuth pattern as Google Calendar; the
+refresh token is stored in the database, not an environment variable).
+Settings → Documents also holds the base folder path — the Dropbox
+folder containing the per-project folders (e.g.
+`/Pen Lake Ventures/Leases`), each of which must be named to exactly
+match that project's `internalName` in this app (e.g. `Killarney23`),
+with one subfolder per unit inside.
+
+On `createLease`, `prepareLeaseFolder()` in `src/lib/dropbox.ts`: if the
+unit's folder already has something in it (the previous tenant's
+documents, since a new `Lease` row only gets created on real turnover —
+renewals of an existing tenant reuse the same lease and just get a
+subfolder added by hand), it's moved into that project's `PAST TENANTS`
+folder first (auto-renamed if that unit's already been archived there
+before), then a fresh empty folder is created for the new tenancy and a
+shared link to it is saved as the lease's Document link. This mirrors
+how the owner already organized Dropbox by hand — a project folder's
+top level stays a clean list of currently-active units, with departed
+tenants' full folders parked under `PAST TENANTS`.
+
+Never blocks lease creation: if Dropbox isn't connected, the base path
+isn't set, or the API call fails for any reason, the lease still saves
+(the error is logged) and staff can fill in Document link by hand, same
+as before this existed.
+
+**Setup required**: a Dropbox App Console app (dropbox.com/developers/apps)
+with "Scoped access" and "Full Dropbox" access, and a redirect URI of
+`https://<your-app>/api/dropbox/callback` — `DROPBOX_APP_KEY`/
+`DROPBOX_APP_SECRET` from that go in the environment (see
+`.env.example`), then connect an account and set the base folder path
+from Settings → Documents.
+
 ## Tenant screening
 
 `TenantScreening` (one per `Lead`) records the outcome of a SingleKey (or
