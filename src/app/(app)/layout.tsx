@@ -18,7 +18,6 @@ export default async function AppLayout({
           <Link href="/" aria-label="Pen Lake Ventures — home">
             <Logo />
           </Link>
-          <p className="mt-0.5 text-xs text-neutral-500">Leasing &amp; Property Management</p>
         </div>
         <div className="flex items-center gap-3">
           <Link
