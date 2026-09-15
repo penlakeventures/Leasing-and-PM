@@ -14,14 +14,14 @@ export function Logo({ className = "" }: { className?: string }) {
         className="h-7 w-7 shrink-0"
       >
         <path
-          d="M14 30 V16 L30 8 L40 30 V40"
+          d="M8 24 V11 L27 4 L41 31 V44"
           stroke="currentColor"
           strokeWidth="3.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
-          d="M30 8 V34"
+          d="M27 4 V35"
           stroke="currentColor"
           strokeWidth="3.5"
           strokeLinecap="round"
