@@ -63,7 +63,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((stat) => (
           <Link key={stat.label} href={stat.href}>
-            <Card>
+            <Card className="border-t-4 border-t-brand">
               <p className="text-2xl font-semibold text-neutral-900">
                 {stat.value}
               </p>

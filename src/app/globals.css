@@ -3,13 +3,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Pen Lake Ventures brand amber, from the logo mark's dot. */
+  --brand: #f0a93d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-logo: var(--font-poppins);
 }
 
 @media (prefers-color-scheme: dark) {
