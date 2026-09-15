@@ -25,7 +25,6 @@ export default async function UnitsPage() {
             <Th>Bedrooms</Th>
             <Th>Designation</Th>
             <Th>Current rent</Th>
-            <Th>Tenancy</Th>
             <Th>Current tenant</Th>
             <Th>Phone</Th>
           </tr>
@@ -49,7 +48,6 @@ export default async function UnitsPage() {
                   </Badge>
                 </Td>
                 <Td>${u.currentRent.toString()}</Td>
-                <Td>{u.tenancyType}</Td>
                 <Td>
                   {tenants.length > 0 ? (
                     tenants.map((t) => t.name).join(", ")
