@@ -222,19 +222,26 @@ folder containing the numbered per-project folders (e.g.
 `/1. Pen Ventures Inc./0.0 LEASING OPERATIONS`), each of which must be
 named `"{displayOrder}. {internalName}"` (e.g. `1. Killarney23`,
 `2. Glenbrook30`) to match how the owner's Dropbox is actually
-organized, with one subfolder per unit inside.
+organized. Unit folders inside a project folder are named by hand as
+`"{unit number}"`, optionally followed by a space or hyphen and the
+tenant's name(s) — e.g. `3220B Taylor`, `3218B - Kelsey Williamson` —
+so a unit's current folder is found by matching that prefix, not an
+exact path.
 
-On `createLease`, `prepareLeaseFolder()` in `src/lib/dropbox.ts`: if the
-unit's folder already has something in it (the previous tenant's
-documents, since a new `Lease` row only gets created on real turnover —
-renewals of an existing tenant reuse the same lease and just get a
-subfolder added by hand), it's moved into that project's `PAST TENANTS`
-folder first (auto-renamed if that unit's already been archived there
-before), then a fresh empty folder is created for the new tenancy and a
+On `createLease`, `prepareLeaseFolder()` in `src/lib/dropbox.ts`: lists
+the project folder and looks for a folder matching the unit number (a
+new `Lease` row only gets created on real turnover — renewals of an
+existing tenant reuse the same lease and just get a subfolder added by
+hand). Exactly one match gets moved into that project's `Past tenants`
+folder (auto-renamed if that unit's already been archived there
+before); zero matches means nothing to archive; more than one match is
+treated as ambiguous and skipped rather than guessing, logged for a
+human to sort out. Either way, a fresh folder named
+`"{unit number} {tenant name(s)}"` is created for the new tenancy and a
 shared link to it is saved as the lease's Document link. This mirrors
 how the owner already organized Dropbox by hand — a project folder's
 top level stays a clean list of currently-active units, with departed
-tenants' full folders parked under `PAST TENANTS`.
+tenants' full folders parked under `Past tenants`.
 
 Never blocks lease creation: if Dropbox isn't connected, the base path
 isn't set, or the API call fails for any reason, the lease still saves

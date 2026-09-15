@@ -127,9 +127,37 @@ async function ensureFolderExists(accessToken: string, path: string): Promise<vo
   }
 }
 
-async function pathExists(accessToken: string, path: string): Promise<boolean> {
-  const result = await dropboxApiCall("files/get_metadata", accessToken, { path });
-  return result.ok;
+// Lists the immediate subfolders of path. Staff name unit folders as
+// "{unit number}{separator}{tenant name(s)}" by hand (e.g. "3220B Taylor",
+// "3218B - Kelsey Williamson") — not just the bare unit number — so
+// finding a unit's current folder means listing and prefix-matching rather
+// than checking one exact path.
+async function listSubfolders(
+  accessToken: string,
+  path: string,
+): Promise<{ name: string }[]> {
+  const result = await dropboxApiCall<{
+    entries: { ".tag": string; name: string }[];
+  }>("files/list_folder", accessToken, { path });
+  if (!result.ok) {
+    // The project folder not existing yet is fine — treat as empty so the
+    // caller just creates it fresh; anything else is a real failure.
+    if (result.error.includes("path/not_found")) return [];
+    throw new Error(`Failed to list Dropbox folder ${path}: ${result.status} ${result.error}`);
+  }
+  return result.data.entries.filter((e) => e[".tag"] === "folder");
+}
+
+// True if folderName is this unit's folder — the unit number on its own,
+// or followed immediately by a space or hyphen before the tenant name(s).
+// Deliberately strict about what follows the unit number: unit "2640"
+// must not match "2640B - Cassidy", a different unit entirely.
+export function matchesUnitFolder(folderName: string, unitNumber: string): boolean {
+  const name = folderName.toLowerCase();
+  const prefix = unitNumber.toLowerCase();
+  if (name === prefix) return true;
+  const rest = name.slice(prefix.length);
+  return name.startsWith(prefix) && (rest.startsWith(" ") || rest.startsWith("-"));
 }
 
 // Moves fromPath to toPath, auto-renaming (Dropbox appends " (1)", " (2)",
@@ -173,22 +201,26 @@ async function getOrCreateSharedLink(accessToken: string, path: string): Promise
 }
 
 // The one entry point the rest of the app calls, on new-lease creation:
-// archives whatever's currently in the unit's live folder (a previous
-// tenancy's documents, if any) into that project's "PAST TENANTS" folder,
-// creates a fresh empty folder for the new tenancy, and returns a shared
-// link to it. Assumes each project's Dropbox folder is named
-// "{displayOrder}. {internalName}" (e.g. "1. Killarney23") under the
-// connection's configured basePath — confirmed against the owner's actual
-// Dropbox structure, which numbers project folders in the same order this
-// app already sorts them by.
+// archives the previous tenant's folder for this unit (if any) into that
+// project's "Past tenants" folder, creates a fresh folder for the new
+// tenancy, and returns a shared link to it.
+//
+// Assumes each project's Dropbox folder is named "{displayOrder}.
+// {internalName}" (e.g. "1. Killarney23") under the connection's
+// configured basePath, and that unit folders inside it are named
+// "{unit number}" optionally followed by a space/hyphen and the tenant's
+// name(s) (e.g. "3220B Taylor", "3218B - Kelsey Williamson") — all
+// confirmed against the owner's actual Dropbox structure.
 export async function prepareLeaseFolder({
   projectDisplayOrder,
   projectName,
   unitNumber,
+  tenantNames,
 }: {
   projectDisplayOrder: number;
   projectName: string;
   unitNumber: string;
+  tenantNames: string[];
 }): Promise<string> {
   const connection = await getActiveConnection();
   if (!connection) throw new Error("No Dropbox account is connected yet.");
@@ -196,15 +228,35 @@ export async function prepareLeaseFolder({
 
   const accessToken = await getFreshAccessToken();
   const base = connection.basePath.replace(/\/$/, "");
-  const projectFolder = `${projectDisplayOrder}. ${projectName}`;
-  const unitPath = `${base}/${projectFolder}/${unitNumber}`;
-  const pastTenantsPath = `${base}/${projectFolder}/PAST TENANTS/${unitNumber}`;
+  const projectPath = `${base}/${projectDisplayOrder}. ${projectName}`;
+  const pastTenantsPath = `${projectPath}/Past tenants`;
 
-  if (await pathExists(accessToken, unitPath)) {
-    await ensureFolderExists(accessToken, `${base}/${projectFolder}/PAST TENANTS`);
-    await moveWithAutorename(accessToken, unitPath, pastTenantsPath);
+  const existingFolders = (await listSubfolders(accessToken, projectPath)).filter(
+    (f) => f.name.toLowerCase() !== "past tenants",
+  );
+  const priorTenancyFolders = existingFolders.filter((f) =>
+    matchesUnitFolder(f.name, unitNumber),
+  );
+
+  if (priorTenancyFolders.length === 1) {
+    await ensureFolderExists(accessToken, pastTenantsPath);
+    const folderName = priorTenancyFolders[0].name;
+    await moveWithAutorename(
+      accessToken,
+      `${projectPath}/${folderName}`,
+      `${pastTenantsPath}/${folderName}`,
+    );
+  } else if (priorTenancyFolders.length > 1) {
+    // More than one folder matches this unit number — don't guess which
+    // one is the outgoing tenant's; leave archiving to a human and just
+    // create the new tenancy's folder alongside them.
+    console.warn(
+      `[prepareLeaseFolder] ${priorTenancyFolders.length} folders matched unit "${unitNumber}" in ${projectPath} — skipped auto-archive.`,
+    );
   }
 
-  await ensureFolderExists(accessToken, unitPath);
-  return getOrCreateSharedLink(accessToken, unitPath);
+  const newFolderName = `${unitNumber} ${tenantNames.join(" and ") || "New tenant"}`;
+  const newFolderPath = `${projectPath}/${newFolderName}`;
+  await ensureFolderExists(accessToken, newFolderPath);
+  return getOrCreateSharedLink(accessToken, newFolderPath);
 }

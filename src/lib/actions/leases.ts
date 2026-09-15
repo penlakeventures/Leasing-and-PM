@@ -96,22 +96,26 @@ export async function createLease(formData: FormData) {
 
   await syncUnitCurrentRent(data.unitId);
 
-  // Auto-file: create (or reuse) this unit's Dropbox folder for the new
-  // tenancy — archiving the previous tenant's folder into that project's
-  // PAST TENANTS folder first, if one's still there — and store the
-  // resulting shared link as the lease's document link. Never blocks lease
-  // creation: if Dropbox isn't connected yet or the call fails, the lease
-  // is still saved and staff can paste a link in by hand as before.
+  // Auto-file: create this unit's Dropbox folder for the new tenancy —
+  // archiving the previous tenant's folder into that project's Past
+  // tenants folder first, if one's still there — and store the resulting
+  // shared link as the lease's document link. Never blocks lease creation:
+  // if Dropbox isn't connected yet or the call fails, the lease is still
+  // saved and staff can paste a link in by hand as before.
   try {
-    const unit = await prisma.unit.findUnique({
-      where: { id: data.unitId },
-      include: { projectEntity: true },
-    });
+    const [unit, tenants] = await Promise.all([
+      prisma.unit.findUnique({
+        where: { id: data.unitId },
+        include: { projectEntity: true },
+      }),
+      prisma.tenant.findMany({ where: { id: { in: data.tenantIds } } }),
+    ]);
     if (unit) {
       const documentLink = await prepareLeaseFolder({
         projectDisplayOrder: unit.projectEntity.displayOrder,
         projectName: unit.projectEntity.internalName,
         unitNumber: unit.unitNumber,
+        tenantNames: tenants.map((t) => t.name),
       });
       await prisma.lease.update({ where: { id: lease.id }, data: { documentLink } });
     }

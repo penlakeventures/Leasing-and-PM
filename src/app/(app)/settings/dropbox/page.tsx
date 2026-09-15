@@ -24,11 +24,11 @@ export default async function DropboxSettingsPage({
               <p className="text-sm text-neutral-700">
                 Connected as{" "}
                 <span className="font-medium">{connection.accountEmail}</span>.
-                When a new lease is created, the app creates that unit&apos;s
-                Dropbox folder (archiving the previous tenant&apos;s folder
-                into that project&apos;s PAST TENANTS folder first, if one
-                exists) and fills in the lease&apos;s Document link
-                automatically.
+                When a new lease is created, the app creates a
+                &quot;unit # + tenant name&quot; Dropbox folder for it
+                (archiving the previous tenant&apos;s folder into that
+                project&apos;s Past tenants folder first, if one exists) and
+                fills in the lease&apos;s Document link automatically.
               </p>
               <div className="flex gap-2">
                 <LinkButton href="/api/dropbox/connect" variant="secondary">
@@ -47,7 +47,7 @@ export default async function DropboxSettingsPage({
                 label="Base folder path"
                 htmlFor="basePath"
                 hint={
-                  'The Dropbox folder that contains your numbered per-project folders (e.g. "/1. Pen Ventures Inc./0.0 LEASING OPERATIONS"). Project folders underneath it must be named "{order}. {project}" — e.g. "1. Killarney23", "2. Glenbrook30" — matching the order this app already lists them in, with a unit-numbered subfolder inside for each unit.'
+                  'The Dropbox folder that contains your numbered per-project folders (e.g. "/1. Pen Ventures Inc./0.0 LEASING OPERATIONS"). Project folders underneath it must be named "{order}. {project}" — e.g. "1. Killarney23", "2. Glenbrook30" — matching the order this app already lists them in.'
                 }
               >
                 <Input
