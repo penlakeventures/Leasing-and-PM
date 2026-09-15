@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 
-const SCOPE = "https://www.googleapis.com/auth/calendar.events";
+// calendar.events alone lets the app create/cancel tour events, but the
+// userinfo lookup below (used to label which Google account is connected)
+// needs its own explicit grant — without it Google's userinfo endpoint has
+// nothing to return, and getConnectedAccountEmail() comes back empty.
+const SCOPE =
+  "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email";
 export const TOUR_TIMEZONE = "America/Edmonton"; // Calgary — the only timezone this business operates in.
 const TOUR_DURATION_MINUTES = 30;
 
