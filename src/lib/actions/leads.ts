@@ -6,12 +6,15 @@ import { revalidatePath } from "next/cache";
 
 function parseLeadForm(formData: FormData) {
   const unitId = (formData.get("unitId") as string) || null;
+  const moveInRaw = formData.get("requestedMoveInDate") as string;
   return {
     source: formData.get("source") as "RENTFASTER" | "FACEBOOK_MARKETPLACE" | "OTHER",
     unitId,
     contactName: (formData.get("contactName") as string)?.trim() || null,
     contactPhone: (formData.get("contactPhone") as string)?.trim() || null,
     contactEmail: (formData.get("contactEmail") as string)?.trim() || null,
+    requestedMoveInDate: moveInRaw ? new Date(moveInRaw) : null,
+    message: (formData.get("message") as string)?.trim() || null,
     status: formData.get("status") as
       | "NEW"
       | "CONTACTED"

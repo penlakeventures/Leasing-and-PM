@@ -121,16 +121,42 @@ market rate too — all 75 units now have a confirmed designation. Pure
 metadata update (doesn't touch tenants/leases/rent), so always safe to
 re-run.
 
+## RentFaster lead capture (webhook built, email pipeline not wired up yet)
+
+`POST /api/leads/rentfaster-inbound?token=<RENTFASTER_INBOUND_TOKEN>` turns
+a RentFaster lead-inquiry email into a `Lead` record — contact info,
+requested move-in date, and the listing details/comments kept on
+`Lead.message` (only auto-links to a specific `Unit` when bedroom count +
+neighbourhood narrow it to exactly one candidate; otherwise left for staff
+to link by hand). Also logs an inbound `CommunicationLog` entry. Accepts
+either a JSON or form-encoded body (`subject`, `text`, `replyTo`/`Reply-To`
+— not tied to a specific email-forwarding provider's exact field names).
+Idempotent, keyed on RentFaster's own per-lead reply-to token — safe to
+receive the same email more than once.
+
+Parsing lives in `src/lib/rentfaster-lead-parse.ts`, built and tested
+against a real sample email — but that was the HTML rendering, not the
+actual plain-text body RentFaster sends, so it's worth re-checking against
+a real delivered email once the pipeline below is live, in case the exact
+layout differs.
+
+**Still needed** to actually receive these: an inbound-email-parsing
+service (e.g. Postmark, Mailgun) pointed at the URL above, plus an email
+forwarding rule so RentFaster's notifications (currently landing at
+`leasing@penventures.ca`) reach it. Not set up yet.
+
 ## What's *not* in Phase 1
 
 Carried forward from the open items in `docs/phase0_data_model.md`:
 
 - **Gmail API integration** for lead intake — not wired up yet. Communication
-  logs are entered manually for now.
+  logs are entered manually for now, except RentFaster leads once the
+  pipeline above is connected.
 - **SingleKey** tenant screening — deferred to Phase 2 per the source docs.
-- **RentFaster / Facebook Marketplace** intake automation — leads are
-  entered manually; the doc flags that Facebook Marketplace has no reliable
-  message API, so this needs scoping before automating.
+- **Facebook Marketplace** intake automation — leads are entered manually;
+  the legitimate path is Meta's Messenger Platform API on the business's own
+  Page, which needs a Meta Developer/Business account and app review, not
+  just code.
 - Trust sub-account setup for deposits is a banking/accounting task, not a
   code task — the `trustAccountRef` field is ready to hold that reference
   once it exists.

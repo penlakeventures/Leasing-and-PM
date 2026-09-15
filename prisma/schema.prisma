@@ -240,6 +240,12 @@ model Lead {
   contactPhone String?
   contactEmail String?
   status       LeadStatus @default(NEW)
+  requestedMoveInDate DateTime?
+  message      String? // free-text inquiry from the lead, plus listing details for auto-captured leads that couldn't be matched to a specific unit
+  // Dedupe key for auto-captured leads (e.g. RentFaster's per-lead reply
+  // token) so the same inbound email can't create the lead twice if it's
+  // ever delivered/retried more than once. Null for manually-entered leads.
+  externalRef  String?    @unique
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

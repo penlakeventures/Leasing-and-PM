@@ -8,8 +8,13 @@ export default auth((req) => {
   // /api/seed is deliberately public — it's the bootstrap step run before
   // any users exist, guarded by its own SEED_TOKEN check instead of login.
   const isSeedApi = req.nextUrl.pathname === "/api/seed";
+  // Likewise for the RentFaster inbound-email webhook: it's called by a
+  // third-party email service, not a signed-in person, and is guarded by
+  // its own RENTFASTER_INBOUND_TOKEN check instead.
+  const isRentFasterInboundApi =
+    req.nextUrl.pathname === "/api/leads/rentfaster-inbound";
 
-  if (isAuthApi || isSeedApi) return NextResponse.next();
+  if (isAuthApi || isSeedApi || isRentFasterInboundApi) return NextResponse.next();
 
   if (!isLoggedIn && !isLoginPage) {
     const loginUrl = new URL("/login", req.nextUrl.origin);

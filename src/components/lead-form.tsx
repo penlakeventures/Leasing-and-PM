@@ -1,4 +1,4 @@
-import { Card, Field, Input, Select, Button, LinkButton } from "@/components/ui";
+import { Card, Field, Input, Select, Textarea, Button, LinkButton } from "@/components/ui";
 
 export function LeadForm({
   action,
@@ -14,6 +14,8 @@ export function LeadForm({
     contactName: string | null;
     contactPhone: string | null;
     contactEmail: string | null;
+    requestedMoveInDate: Date | null;
+    message: string | null;
     status: string;
   };
   error?: string;
@@ -64,7 +66,22 @@ export function LeadForm({
           <Field label="Contact email" htmlFor="contactEmail">
             <Input id="contactEmail" name="contactEmail" type="email" defaultValue={defaultValues?.contactEmail ?? ""} />
           </Field>
+          <Field label="Requested move-in date" htmlFor="requestedMoveInDate" hint="Optional">
+            <Input
+              id="requestedMoveInDate"
+              name="requestedMoveInDate"
+              type="date"
+              defaultValue={
+                defaultValues?.requestedMoveInDate
+                  ? defaultValues.requestedMoveInDate.toISOString().slice(0, 10)
+                  : ""
+              }
+            />
+          </Field>
         </div>
+        <Field label="Notes" htmlFor="message" hint="Their inquiry, listing details, anything worth keeping on file">
+          <Textarea id="message" name="message" defaultValue={defaultValues?.message ?? ""} />
+        </Field>
         <div className="flex gap-2 pt-2">
           <Button type="submit">Save</Button>
           <LinkButton href="/leads" variant="secondary">
