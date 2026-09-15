@@ -110,19 +110,30 @@ export async function runSeed(prisma: PrismaClient): Promise<string[]> {
   const say = (line: string) => log.push(line);
 
   say("Seeding users…");
-  const passwordHash = await bcrypt.hash("ChangeMe123!", 12);
+  const defaultPassword = "ChangeMe123!"; // documented in README — not echoed here
+  const passwordHash = await bcrypt.hash(defaultPassword, 12);
   for (const [name, email] of [
     ["Ryan Doherty", "ryan@penventures.ca"],
     ["Alina Sezanaeva", "alina@penventures.ca"],
   ]) {
-    await prisma.user.upsert({
+    const user = await prisma.user.upsert({
       where: { email },
-      create: { name, email, passwordHash, role: "admin" },
+      create: { name, email, passwordHash, role: "admin", mustChangePassword: true },
       update: {},
     });
+    // Self-healing: if this account still has the known default password
+    // — whether it's brand new, or an older account from before
+    // mustChangePassword existed — make sure the forced-change flag is
+    // set. Never touches an account that's already been rotated.
+    if (await bcrypt.compare(defaultPassword, user.passwordHash)) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { mustChangePassword: true },
+      });
+    }
   }
   say(
-    '  → seeded with temporary password "ChangeMe123!" — change it after first login via the link with your name, top right (/account/password).',
+    "  → seeded with a temporary password — see README for the value. You'll be required to set a real one on first login.",
   );
 
   say("Seeding projects & units…");

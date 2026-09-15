@@ -39,6 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
+          mustChangePassword: user.mustChangePassword,
         };
       },
     }),
@@ -48,14 +49,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = (user as { role?: string }).role ?? "admin";
         token.id = user.id;
+        // Baked into the JWT at login — a password change forces a fresh
+        // sign-in (see changePassword in lib/actions/account.ts) rather
+        // than trying to mutate an already-issued token in place.
+        token.mustChangePassword = (
+          user as { mustChangePassword?: boolean }
+        ).mustChangePassword ?? false;
       }
       return token;
     },
     session: async ({ session, token }) => {
       if (session.user) {
         session.user.id = token.id as string;
-        (session.user as typeof session.user & { role: string }).role =
-          (token.role as string) ?? "admin";
+        const sessionUser = session.user as typeof session.user & {
+          role: string;
+          mustChangePassword: boolean;
+        };
+        sessionUser.role = (token.role as string) ?? "admin";
+        sessionUser.mustChangePassword = Boolean(token.mustChangePassword);
       }
       return session;
     },

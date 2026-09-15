@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -51,8 +52,26 @@ export async function changePassword(formData: FormData) {
   const passwordHash = await bcrypt.hash(newPassword, 12);
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash },
+    data: { passwordHash, mustChangePassword: false },
   });
 
-  redirect("/account/password?success=1");
+  // The session's JWT already has the old mustChangePassword (and, in
+  // principle, could outlive a rotated password) baked in — clear it and
+  // require a fresh login rather than trying to mutate an already-issued
+  // token in place. Deleting cookie name variants that aren't actually
+  // set on this environment (e.g. the `__Secure-` names outside
+  // production) is a harmless no-op, so all variants are cleared
+  // unconditionally rather than trying to detect which ones apply.
+  const cookieStore = await cookies();
+  for (const name of [
+    "authjs.session-token",
+    "__Secure-authjs.session-token",
+    "authjs.csrf-token",
+    "__Host-authjs.csrf-token",
+    "authjs.callback-url",
+    "__Secure-authjs.callback-url",
+  ]) {
+    cookieStore.delete(name);
+  }
+  redirect("/login?passwordChanged=1");
 }

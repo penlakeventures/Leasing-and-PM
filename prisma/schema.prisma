@@ -19,13 +19,18 @@ datasource db {
 // (not an enum) so new roles — e.g. an outsourced PM company with scoped
 // access — can be introduced later without a schema migration.
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         String   @default("admin")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  role               String   @default("admin")
+  // Defaults to true (not false) so that adding this column to an
+  // already-populated users table is the conservative choice: any
+  // existing account is treated as "not confirmed to have rotated its
+  // password" until proven otherwise, rather than silently trusting it.
+  mustChangePassword Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   handledCommunications CommunicationLog[]
 

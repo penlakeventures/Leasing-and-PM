@@ -1,11 +1,15 @@
-import { signIn } from "@/lib/auth";
+import { signIn, auth } from "@/lib/auth";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string; error?: string }>;
+  searchParams: Promise<{
+    callbackUrl?: string;
+    error?: string;
+    passwordChanged?: string;
+  }>;
 }) {
   const params = await searchParams;
   const callbackUrl = params.callbackUrl || "/";
@@ -13,10 +17,16 @@ export default async function LoginPage({
   async function login(formData: FormData) {
     "use server";
     try {
+      // redirect: false — decide the destination ourselves below, rather
+      // than letting signIn redirect to callbackUrl and then having
+      // middleware redirect a *second* time if the account still needs a
+      // password change. Chaining two redirects through the Server
+      // Action boundary left the browser's address bar out of sync with
+      // what was actually rendered (still-correct content, wrong URL).
       await signIn("credentials", {
         email: formData.get("email"),
         password: formData.get("password"),
-        redirectTo: callbackUrl,
+        redirect: false,
       });
     } catch (error) {
       if (error instanceof AuthError) {
@@ -26,6 +36,12 @@ export default async function LoginPage({
       }
       throw error;
     }
+
+    const session = await auth();
+    const mustChangePassword = (
+      session?.user as { mustChangePassword?: boolean } | undefined
+    )?.mustChangePassword;
+    redirect(mustChangePassword ? "/account/password" : callbackUrl);
   }
 
   return (
@@ -41,6 +57,11 @@ export default async function LoginPage({
         {params.error && (
           <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             Invalid email or password.
+          </p>
+        )}
+        {params.passwordChanged && !params.error && (
+          <p className="mt-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+            Password updated — sign in with your new one.
           </p>
         )}
 

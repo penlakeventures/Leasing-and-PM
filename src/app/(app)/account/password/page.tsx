@@ -5,10 +5,13 @@ import { PageHeader, Card, Field, Input, Button } from "@/components/ui";
 export default async function ChangePasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const session = await auth();
-  const { error, success } = await searchParams;
+  const { error } = await searchParams;
+  const mustChangePassword = (
+    session?.user as { mustChangePassword?: boolean } | undefined
+  )?.mustChangePassword;
 
   return (
     <div>
@@ -17,14 +20,15 @@ export default async function ChangePasswordPage({
         description={`Signed in as ${session?.user?.name} (${session?.user?.email})`}
       />
       <Card>
+        {mustChangePassword && !error && (
+          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            You&apos;re on a temporary password — set a real one to continue
+            using the app.
+          </p>
+        )}
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
-          </p>
-        )}
-        {success && (
-          <p className="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-            Password updated.
           </p>
         )}
         <form action={changePassword} className="max-w-sm space-y-4">

@@ -21,6 +21,26 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }
 
+  // Force a still-default (or otherwise flagged) password to be changed
+  // before anything else — but only for page navigation (GET). Server
+  // Action POSTs aren't blocked here: they can only target a page the
+  // user already loaded, and the only ones reachable from the
+  // account/password page are the password-change form itself and
+  // sign-out, both of which need to keep working from here.
+  const isPasswordPage = req.nextUrl.pathname === "/account/password";
+  const mustChangePassword = Boolean(
+    (req.auth?.user as { mustChangePassword?: boolean } | undefined)
+      ?.mustChangePassword,
+  );
+  if (
+    isLoggedIn &&
+    mustChangePassword &&
+    !isPasswordPage &&
+    req.method === "GET"
+  ) {
+    return NextResponse.redirect(new URL("/account/password", req.nextUrl.origin));
+  }
+
   return NextResponse.next();
 });
 
