@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Table, Th, Td, LinkButton, EmptyState } from "@/components/ui";
+import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
 import { pickActiveLease } from "@/lib/rules";
 import Link from "next/link";
 
@@ -26,6 +26,7 @@ export default async function TenantsPage() {
             <Th>Unit #</Th>
             <Th>Phone</Th>
             <Th>Email</Th>
+            <Th>Status</Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
@@ -42,6 +43,13 @@ export default async function TenantsPage() {
                 <Td>{activeLease?.unit.unitNumber ?? "—"}</Td>
                 <Td>{t.phone ?? "—"}</Td>
                 <Td>{t.email ?? "—"}</Td>
+                <Td>
+                  {activeLease ? (
+                    <Badge tone="green">Active</Badge>
+                  ) : (
+                    <Badge tone="red">Past tenant</Badge>
+                  )}
+                </Td>
               </tr>
             );
           })}
