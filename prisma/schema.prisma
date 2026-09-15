@@ -119,6 +119,8 @@ model Lease {
   endDate             DateTime?
   periodic            Boolean   @default(false) // month-to-month / periodic tenancy with no fixed end date
   rentAmount           Decimal   @db.Decimal(10, 2)
+  lastRentIncreaseDate DateTime? // anchor for the 365-day-between-increases rule; null = never increased since this app tracked it
+  rentIncreaseNoticeGivenDate DateTime? // when written notice was given for the current rentAmount, if it was an increase
   lastMonthRentPrepaid Decimal?  @db.Decimal(10, 2)
   pets                 String? // free text, e.g. "dog, cat"
   signedDate           DateTime?

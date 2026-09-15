@@ -3,12 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { checkRentEscalation } from "@/lib/rules";
+import { checkRentEscalation, checkRentIncreaseNotice } from "@/lib/rules";
 
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
   const signedDateRaw = formData.get("signedDate") as string;
   const prepaidRaw = formData.get("lastMonthRentPrepaid") as string;
+  const noticeGivenRaw = formData.get("rentIncreaseNoticeGivenDate") as string;
   return {
     unitId: formData.get("unitId") as string,
     tenantIds: formData.getAll("tenantIds") as string[],
@@ -16,6 +17,7 @@ function parseLeaseForm(formData: FormData) {
     endDate: endDateRaw ? new Date(endDateRaw) : null,
     periodic: formData.get("periodic") === "on",
     rentAmount: Number(formData.get("rentAmount")),
+    noticeGivenDate: noticeGivenRaw ? new Date(noticeGivenRaw) : null,
     lastMonthRentPrepaid: prepaidRaw ? Number(prepaidRaw) : null,
     pets: (formData.get("pets") as string)?.trim() || null,
     signedDate: signedDateRaw ? new Date(signedDateRaw) : null,
@@ -84,10 +86,25 @@ export async function createLease(formData: FormData) {
 
 export async function updateLease(id: string, formData: FormData) {
   const data = parseLeaseForm(formData);
+  const existing = await prisma.lease.findUnique({ where: { id } });
+  if (!existing) redirect("/leases");
 
   const rentError = await checkAffordableRent(data.unitId, data.rentAmount);
   if (rentError) {
     redirect(`/leases/${id}?error=${encodeURIComponent(rentError)}`);
+  }
+
+  const isIncrease = data.rentAmount > Number(existing.rentAmount);
+  const noticeCheck = checkRentIncreaseNotice({
+    periodic: data.periodic,
+    leaseStartDate: existing.startDate,
+    lastRentIncreaseDate: existing.lastRentIncreaseDate,
+    currentRent: Number(existing.rentAmount),
+    proposedRent: data.rentAmount,
+    noticeGivenDate: data.noticeGivenDate,
+  });
+  if (!noticeCheck.allowed) {
+    redirect(`/leases/${id}?error=${encodeURIComponent(noticeCheck.reason!)}`);
   }
 
   await prisma.$transaction([
@@ -100,6 +117,14 @@ export async function updateLease(id: string, formData: FormData) {
         endDate: data.endDate,
         periodic: data.periodic,
         rentAmount: data.rentAmount,
+        // Only touch these when this save is actually a rent increase on a
+        // periodic lease — otherwise leave whatever's on file untouched.
+        ...(isIncrease && data.periodic
+          ? {
+              lastRentIncreaseDate: new Date(),
+              rentIncreaseNoticeGivenDate: data.noticeGivenDate,
+            }
+          : {}),
         lastMonthRentPrepaid: data.lastMonthRentPrepaid,
         pets: data.pets,
         signedDate: data.signedDate,

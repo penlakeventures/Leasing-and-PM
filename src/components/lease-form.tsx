@@ -18,6 +18,8 @@ export function LeaseForm({
     endDate: Date | null;
     periodic: boolean;
     rentAmount: unknown;
+    lastRentIncreaseDate: Date | null;
+    rentIncreaseNoticeGivenDate: Date | null;
     lastMonthRentPrepaid: unknown;
     pets: string | null;
     signedDate: Date | null;
@@ -27,6 +29,12 @@ export function LeaseForm({
   error?: string;
 }) {
   const fmt = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
+
+  const increaseAnchor =
+    defaultValues?.lastRentIncreaseDate ?? defaultValues?.startDate ?? null;
+  const nextEligibleDate = increaseAnchor
+    ? new Date(increaseAnchor.getTime() + 365 * 24 * 60 * 60 * 1000)
+    : null;
 
   return (
     <Card>
@@ -52,7 +60,15 @@ export function LeaseForm({
               ))}
             </Select>
           </Field>
-          <Field label="Rent amount" htmlFor="rentAmount">
+          <Field
+            label="Rent amount"
+            htmlFor="rentAmount"
+            hint={
+              defaultValues && nextEligibleDate
+                ? `Periodic-lease increases: next eligible ${nextEligibleDate.toLocaleDateString()} (Alberta RTA, once per 365 days)`
+                : undefined
+            }
+          >
             <Input
               id="rentAmount"
               name="rentAmount"
@@ -63,6 +79,18 @@ export function LeaseForm({
               defaultValue={
                 defaultValues?.rentAmount ? String(defaultValues.rentAmount) : ""
               }
+            />
+          </Field>
+          <Field
+            label="Rent increase notice given"
+            htmlFor="rentIncreaseNoticeGivenDate"
+            hint="Only needed when raising rent on a periodic lease — must be ≥3 months before today"
+          >
+            <Input
+              id="rentIncreaseNoticeGivenDate"
+              name="rentIncreaseNoticeGivenDate"
+              type="date"
+              defaultValue={fmt(defaultValues?.rentIncreaseNoticeGivenDate ?? null)}
             />
           </Field>
           <Field label="Start date" htmlFor="startDate">

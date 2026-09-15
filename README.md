@@ -25,6 +25,12 @@ data model, authentication, and CRUD for every entity — not just a schema.
   - A security deposit can't exceed one month's rent, and can't be
     increased once set (Alberta RTA).
   - The dashboard flags any deposit past its 10-day return deadline.
+  - A periodic lease's rent can be raised at most once every 365 days,
+    and only with ≥3 months' written notice recorded before the increase
+    takes effect (Alberta RTA). Doesn't apply to fixed-term leases, and
+    doesn't model a "pending" future rent — see the comment on
+    `checkRentIncreaseNotice` for the exact assumptions and a caveat
+    about leases imported without prior rent-increase history.
 - **Seed data** — the real 7-project, 75-unit portfolio from the company
   context doc (see `prisma/seed.ts` for exactly what's derived vs. sourced
   directly).
