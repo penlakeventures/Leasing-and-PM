@@ -148,16 +148,21 @@ async function listSubfolders(
   return result.data.entries.filter((e) => e[".tag"] === "folder");
 }
 
-// True if folderName is this unit's folder — the unit number on its own,
-// or followed immediately by a space or hyphen before the tenant name(s).
-// Deliberately strict about what follows the unit number: unit "2640"
-// must not match "2640B - Cassidy", a different unit entirely.
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// True if folderName is this unit's folder. Staff-named folders don't
+// follow one consistent pattern across projects — some put the unit
+// number right at the start ("3220B Taylor"), others lead with a list
+// number and the street name instead ("1. 810 14 ST SE - Pen Lake
+// Ventures Inc") — so this looks for the unit number as its own
+// self-contained token anywhere in the name, using word boundaries so
+// e.g. unit "802" can't match inside "802R 14 ST SE - ..." (a different,
+// separate unit) and vice versa.
 export function matchesUnitFolder(folderName: string, unitNumber: string): boolean {
-  const name = folderName.toLowerCase();
-  const prefix = unitNumber.toLowerCase();
-  if (name === prefix) return true;
-  const rest = name.slice(prefix.length);
-  return name.startsWith(prefix) && (rest.startsWith(" ") || rest.startsWith("-"));
+  const pattern = new RegExp(`\\b${escapeRegExp(unitNumber)}\\b`, "i");
+  return pattern.test(folderName);
 }
 
 // Moves fromPath to toPath, auto-renaming (Dropbox appends " (1)", " (2)",
