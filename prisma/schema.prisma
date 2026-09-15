@@ -33,6 +33,7 @@ model User {
   updatedAt          DateTime @updatedAt
 
   handledCommunications CommunicationLog[]
+  decidedScreenings     TenantScreening[]
 
   @@map("users")
 }
@@ -250,9 +251,41 @@ model Lead {
   updatedAt    DateTime   @updatedAt
 
   communications CommunicationLog[]
+  screening      TenantScreening?
 
   @@index([unitId])
   @@map("leads")
+}
+
+// SingleKey (or similar) is a web portal, not something this app has API
+// access to — staff request the report on SingleKey's own site, then
+// record the outcome here. This is deliberately a *record*, not a
+// decision-maker: the actual accept/decline call is always a person's,
+// tracked in decidedBy/decidedAt, never derived automatically from the
+// report itself.
+enum ScreeningDecision {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+model TenantScreening {
+  id            String            @id @default(cuid())
+  leadId        String            @unique
+  lead          Lead              @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  requestedDate DateTime?
+  completedDate DateTime?
+  reportUrl     String? // link to the report on SingleKey's site, or wherever it's filed
+  summary       String? // free text — SingleKey's own score/recommendation, copied over by staff rather than a rigid field set this app can't verify matches their report format
+  decision      ScreeningDecision @default(PENDING)
+  decisionNotes String?
+  decidedById   String?
+  decidedBy     User?             @relation(fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt     DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@map("tenant_screenings")
 }
 
 // ---------------------------------------------------------------------------

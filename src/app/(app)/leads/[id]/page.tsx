@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { PageHeader, Button } from "@/components/ui";
 import { LeadForm } from "@/components/lead-form";
+import { ScreeningPanel } from "@/components/screening-panel";
 import { updateLead, deleteLead } from "@/lib/actions/leads";
 
 export default async function LeadDetailPage({
@@ -14,7 +15,10 @@ export default async function LeadDetailPage({
   const { id } = await params;
   const { error } = await searchParams;
   const [lead, units] = await Promise.all([
-    prisma.lead.findUnique({ where: { id } }),
+    prisma.lead.findUnique({
+      where: { id },
+      include: { screening: { include: { decidedBy: true } } },
+    }),
     prisma.unit.findMany({
       orderBy: { projectEntity: { displayOrder: "asc" } },
       include: { projectEntity: true },
@@ -29,6 +33,7 @@ export default async function LeadDetailPage({
     <div className="space-y-8">
       <PageHeader title={lead.contactName ?? "Lead"} />
       <LeadForm action={updateWithId} units={units} defaultValues={lead} error={error} />
+      <ScreeningPanel leadId={id} screening={lead.screening} />
       <form action={deleteWithId}>
         <Button type="submit" variant="danger">
           Delete lead

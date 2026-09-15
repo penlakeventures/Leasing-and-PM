@@ -179,11 +179,33 @@ an official Marketplace distribution + its own lead-notification emails,
 which would need no Meta review at all; or a shift in Facebook's own
 rules).
 
+## Tenant screening
+
+`TenantScreening` (one per `Lead`) records the outcome of a SingleKey (or
+similar) report, not the report itself — SingleKey is a web portal with no
+API/webhook access on this account, confirmed directly, so there's nothing
+here to integrate against. Staff request the report on SingleKey's own
+site as before; this just keeps the report link, a copied-over
+summary/score, and — separately — the actual human decision (Pending/
+Approved/Declined, with notes) on file with the rest of that lead's
+record, shown on the Lead detail page and as a status badge on the Leads
+list.
+
+Deliberately never derives the decision from the report automatically:
+that call is always a person's, consistent with how every other
+compliance-adjacent piece of this app works (rent caps, deposit rules,
+the forced password change) — flag/organize, never auto-decide something
+that could deny someone housing. `decidedBy`/`decidedAt` are only stamped
+on an actual change of decision (re-saving the same one, e.g. to edit a
+note, doesn't re-stamp it), and clear automatically if the decision is
+ever reset back to Pending. A lead with a screening record on file can't
+be deleted until that's resolved first, same pattern as leases with a
+security deposit.
+
 ## What's *not* in Phase 1
 
 Carried forward from the open items in `docs/phase0_data_model.md`:
 
-- **SingleKey** tenant screening — deferred to Phase 2 per the source docs.
 - Trust sub-account setup for deposits is a banking/accounting task, not a
   code task — the `trustAccountRef` field is ready to hold that reference
   once it exists.

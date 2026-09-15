@@ -42,7 +42,13 @@ export async function updateLead(id: string, formData: FormData) {
 }
 
 export async function deleteLead(id: string) {
-  await prisma.lead.delete({ where: { id } });
+  try {
+    await prisma.lead.delete({ where: { id } });
+  } catch {
+    redirect(
+      `/leads/${id}?error=${encodeURIComponent("Can't delete a lead with a screening record on file — resolve that first.")}`,
+    );
+  }
   revalidatePath("/leads");
   redirect("/leads");
 }

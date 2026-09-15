@@ -12,10 +12,16 @@ const statusTone: Record<string, "neutral" | "green" | "amber" | "red" | "blue">
   LOST: "neutral",
 };
 
+const screeningTone: Record<string, "neutral" | "green" | "red"> = {
+  PENDING: "neutral",
+  APPROVED: "green",
+  DECLINED: "red",
+};
+
 export default async function LeadsPage() {
   const leads = await prisma.lead.findMany({
     orderBy: { createdAt: "desc" },
-    include: { unit: { include: { projectEntity: true } } },
+    include: { unit: { include: { projectEntity: true } }, screening: true },
   });
 
   return (
@@ -32,6 +38,7 @@ export default async function LeadsPage() {
             <Th>Source</Th>
             <Th>Unit / interest</Th>
             <Th>Status</Th>
+            <Th>Screening</Th>
             <Th>Created</Th>
           </tr>
         </thead>
@@ -51,6 +58,15 @@ export default async function LeadsPage() {
               </Td>
               <Td>
                 <Badge tone={statusTone[l.status]}>{l.status}</Badge>
+              </Td>
+              <Td>
+                {l.screening ? (
+                  <Badge tone={screeningTone[l.screening.decision]}>
+                    {l.screening.decision}
+                  </Badge>
+                ) : (
+                  "—"
+                )}
               </Td>
               <Td>{l.createdAt.toLocaleDateString()}</Td>
             </tr>
