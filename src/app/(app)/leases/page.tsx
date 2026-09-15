@@ -4,7 +4,14 @@ import Link from "next/link";
 
 export default async function LeasesPage() {
   const leases = await prisma.lease.findMany({
-    orderBy: { startDate: "desc" },
+    // Same project order as the Projects/Units pages, then unit number
+    // within a project, then most-recent-first for a unit's own lease
+    // history (multiple leases per unit over time).
+    orderBy: [
+      { unit: { projectEntity: { displayOrder: "asc" } } },
+      { unit: { unitNumber: "asc" } },
+      { startDate: "desc" },
+    ],
     include: {
       unit: { include: { projectEntity: true } },
       tenants: { include: { tenant: true } },
