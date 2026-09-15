@@ -16,7 +16,7 @@ export default async function LeadDetailPage({
   const [lead, units] = await Promise.all([
     prisma.lead.findUnique({ where: { id } }),
     prisma.unit.findMany({
-      orderBy: { projectEntity: { internalName: "asc" } },
+      orderBy: { projectEntity: { displayOrder: "asc" } },
       include: { projectEntity: true },
     }),
   ]);

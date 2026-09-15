@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default async function UnitsPage() {
   const units = await prisma.unit.findMany({
-    orderBy: [{ projectEntity: { internalName: "asc" } }, { unitNumber: "asc" }],
+    orderBy: [{ projectEntity: { displayOrder: "asc" } }, { unitNumber: "asc" }],
     include: { projectEntity: true },
   });
 

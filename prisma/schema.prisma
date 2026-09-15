@@ -49,6 +49,9 @@ model ProjectEntity {
   address      String
   occupancyDate DateTime
   cmhcLoanRef  String? // optional, for later linking to renewal-ladder tracking
+  // Owner-specified display order (not alphabetical) — every list of
+  // projects, and every unit list grouped by project, sorts by this.
+  displayOrder Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -23,7 +23,7 @@ export default async function UnitDetailPage({
       },
     }),
     prisma.projectEntity.findMany({
-      orderBy: { internalName: "asc" },
+      orderBy: { displayOrder: "asc" },
       select: { id: true, internalName: true },
     }),
   ]);

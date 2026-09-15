@@ -137,7 +137,9 @@ export async function runSeed(prisma: PrismaClient): Promise<string[]> {
   );
 
   say("Seeding projects & units…");
-  for (const p of projects) {
+  for (const [index, p] of projects.entries()) {
+    // The array above is already in the owner's specified display order —
+    // Killarney23 through Shaganappi31 — so position doubles as the order.
     const project = await prisma.projectEntity.upsert({
       where: { internalName: p.internalName },
       create: {
@@ -146,6 +148,7 @@ export async function runSeed(prisma: PrismaClient): Promise<string[]> {
         neighbourhood: p.neighbourhood,
         address: p.address,
         occupancyDate: new Date(p.occupancyDate),
+        displayOrder: index + 1,
       },
       update: {},
     });

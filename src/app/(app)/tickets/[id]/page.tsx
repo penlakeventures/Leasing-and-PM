@@ -16,7 +16,7 @@ export default async function TicketDetailPage({
   const [ticket, units, tenants, vendors] = await Promise.all([
     prisma.maintenanceTicket.findUnique({ where: { id } }),
     prisma.unit.findMany({
-      orderBy: { projectEntity: { internalName: "asc" } },
+      orderBy: { projectEntity: { displayOrder: "asc" } },
       include: { projectEntity: true },
     }),
     prisma.tenant.findMany({ orderBy: { name: "asc" } }),

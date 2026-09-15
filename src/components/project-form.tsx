@@ -13,6 +13,7 @@ export function ProjectForm({
     address: string;
     occupancyDate: Date;
     cmhcLoanRef: string | null;
+    displayOrder: number;
   };
   error?: string;
 }) {
@@ -79,6 +80,19 @@ export function ProjectForm({
               id="cmhcLoanRef"
               name="cmhcLoanRef"
               defaultValue={defaultValues?.cmhcLoanRef ?? ""}
+            />
+          </Field>
+          <Field
+            label="Display order"
+            htmlFor="displayOrder"
+            hint="Controls the order projects (and their units) appear in throughout the app — lower shows first"
+          >
+            <Input
+              id="displayOrder"
+              name="displayOrder"
+              type="number"
+              step="1"
+              defaultValue={defaultValues?.displayOrder ?? ""}
             />
           </Field>
         </div>

@@ -11,7 +11,7 @@ export default async function NewLeasePage({
   const { error, unitId } = await searchParams;
   const [units, tenants] = await Promise.all([
     prisma.unit.findMany({
-      orderBy: { projectEntity: { internalName: "asc" } },
+      orderBy: { projectEntity: { displayOrder: "asc" } },
       include: { projectEntity: true },
     }),
     prisma.tenant.findMany({ orderBy: { name: "asc" } }),

@@ -9,7 +9,7 @@ export default async function NewComplianceRecordPage({
 }) {
   const { error } = await searchParams;
   const projects = await prisma.projectEntity.findMany({
-    orderBy: { internalName: "asc" },
+    orderBy: { displayOrder: "asc" },
   });
 
   return (

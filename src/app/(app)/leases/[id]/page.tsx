@@ -24,7 +24,7 @@ export default async function LeaseDetailPage({
       },
     }),
     prisma.unit.findMany({
-      orderBy: { projectEntity: { internalName: "asc" } },
+      orderBy: { projectEntity: { displayOrder: "asc" } },
       include: { projectEntity: true },
     }),
     prisma.tenant.findMany({ orderBy: { name: "asc" } }),

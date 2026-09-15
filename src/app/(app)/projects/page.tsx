@@ -11,7 +11,7 @@ import Link from "next/link";
 
 export default async function ProjectsPage() {
   const projects = await prisma.projectEntity.findMany({
-    orderBy: { internalName: "asc" },
+    orderBy: { displayOrder: "asc" },
     include: { _count: { select: { units: true } } },
   });
 

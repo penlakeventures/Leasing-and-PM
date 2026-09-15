@@ -10,7 +10,7 @@ export default async function NewUnitPage({
 }) {
   const { error, projectEntityId } = await searchParams;
   const projects = await prisma.projectEntity.findMany({
-    orderBy: { internalName: "asc" },
+    orderBy: { displayOrder: "asc" },
     select: { id: true, internalName: true },
   });
 
