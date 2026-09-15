@@ -34,6 +34,7 @@ model User {
 
   handledCommunications CommunicationLog[]
   decidedScreenings     TenantScreening[]
+  assignedTours         Lead[]
 
   @@map("users")
 }
@@ -213,6 +214,21 @@ model CpiRate {
   @@map("cpi_rates")
 }
 
+// One connected Google account whose calendar tour events are created on
+// — reconnecting overwrites the stored refresh token rather than keeping
+// old ones around, since only one connection is ever active at a time.
+// GOOGLE_CLIENT_ID/SECRET (the app's own OAuth credentials, not this
+// token) live in the environment, not here.
+model CalendarConnection {
+  id           String   @id @default(cuid())
+  googleEmail  String   @unique
+  refreshToken String
+  connectedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("calendar_connections")
+}
+
 // ---------------------------------------------------------------------------
 // 6. Lead
 // ---------------------------------------------------------------------------
@@ -249,6 +265,16 @@ model Lead {
   externalRef  String?    @unique
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  // Tour scheduling. tourEventId is Google Calendar's own event ID for
+  // the booked tour — kept so a later cancel/reschedule can find and
+  // remove the exact event rather than guessing, and so re-rendering
+  // this lead doesn't need to re-derive whether a tour is booked from
+  // anything fuzzier than "does this still point at a real event".
+  tourAt        DateTime?
+  tourStaffId   String?
+  tourStaff     User?     @relation(fields: [tourStaffId], references: [id], onDelete: SetNull)
+  tourEventId   String?
 
   communications CommunicationLog[]
   screening      TenantScreening?

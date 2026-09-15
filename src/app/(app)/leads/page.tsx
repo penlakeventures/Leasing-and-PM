@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
+import { TOUR_TIMEZONE } from "@/lib/google-calendar";
 import Link from "next/link";
 
 const statusTone: Record<string, "neutral" | "green" | "amber" | "red" | "blue"> = {
@@ -21,7 +22,11 @@ const screeningTone: Record<string, "neutral" | "green" | "red"> = {
 export default async function LeadsPage() {
   const leads = await prisma.lead.findMany({
     orderBy: { createdAt: "desc" },
-    include: { unit: { include: { projectEntity: true } }, screening: true },
+    include: {
+      unit: { include: { projectEntity: true } },
+      screening: true,
+      tourStaff: true,
+    },
   });
 
   return (
@@ -39,6 +44,7 @@ export default async function LeadsPage() {
             <Th>Unit / interest</Th>
             <Th>Status</Th>
             <Th>Screening</Th>
+            <Th>Tour</Th>
             <Th>Created</Th>
           </tr>
         </thead>
@@ -67,6 +73,15 @@ export default async function LeadsPage() {
                 ) : (
                   "—"
                 )}
+              </Td>
+              <Td>
+                {l.tourAt
+                  ? l.tourAt.toLocaleString("en-CA", {
+                      timeZone: TOUR_TIMEZONE,
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })
+                  : "—"}
               </Td>
               <Td>{l.createdAt.toLocaleDateString()}</Td>
             </tr>

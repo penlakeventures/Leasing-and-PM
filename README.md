@@ -179,6 +179,38 @@ an official Marketplace distribution + its own lead-notification emails,
 which would need no Meta review at all; or a shift in Facebook's own
 rules).
 
+## Google Calendar tour scheduling
+
+Tour scheduling on a Lead's detail page creates a real event on a
+connected Google Calendar (Settings → Calendar → Connect Google
+Calendar — a one-time OAuth flow; the resulting refresh token is stored
+in the database, not an environment variable, so reconnecting from a
+different account or after a revoke never needs a redeploy). Only one
+connection is active at a time.
+
+Booking a tour invites the assigned staff member and the lead (if their
+email is on file) as attendees — this is how a specific staff member's
+own calendar shows the tour without the app needing a separate
+connection per person: Google Calendar does that automatically once
+they're an attendee. The event's summary/description/location are built
+from the lead's own info (unit, contact details, notes); duration is a
+fixed 30 minutes. `Lead.tourEventId` is Google's own event ID, kept so
+cancelling finds and removes the exact event rather than guessing.
+
+Timezone handling: this business operates in exactly one timezone
+(Mountain Time, `America/Edmonton`), so the tour form's plain
+date/time picker is always interpreted as Mountain local time —
+converted to a true UTC instant for storage using the built-in `Intl`
+API (handles the MST/MDT daylight-saving switch correctly without a
+timezone library), verified against both a summer and winter date.
+
+**Setup required**: a Google Cloud project with the Calendar API
+enabled, and an OAuth 2.0 Client ID (type "Web application") with
+`https://<your-app>/api/calendar/callback` as an authorized redirect
+URI — `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` from that go in the
+environment (see `.env.example`), then connect an account from
+Settings → Calendar.
+
 ## Tenant screening
 
 `TenantScreening` (one per `Lead`) records the outcome of a SingleKey (or
