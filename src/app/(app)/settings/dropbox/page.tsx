@@ -47,14 +47,14 @@ export default async function DropboxSettingsPage({
                 label="Base folder path"
                 htmlFor="basePath"
                 hint={
-                  'The Dropbox folder that contains your per-project folders (e.g. "/Pen Lake Ventures/Leases"). Each project folder underneath it must be named exactly like it appears in this app — e.g. "Killarney23" — with a unit-numbered subfolder inside for each unit.'
+                  'The Dropbox folder that contains your numbered per-project folders (e.g. "/1. Pen Ventures Inc./0.0 LEASING OPERATIONS"). Project folders underneath it must be named "{order}. {project}" — e.g. "1. Killarney23", "2. Glenbrook30" — matching the order this app already lists them in, with a unit-numbered subfolder inside for each unit.'
                 }
               >
                 <Input
                   id="basePath"
                   name="basePath"
                   defaultValue={connection.basePath}
-                  placeholder="/Pen Lake Ventures/Leases"
+                  placeholder="/1. Pen Ventures Inc./0.0 LEASING OPERATIONS"
                 />
               </Field>
               <Button type="submit">Save</Button>

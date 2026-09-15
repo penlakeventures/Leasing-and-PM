@@ -218,10 +218,11 @@ creating one by hand and pasting a link in — Settings → Documents →
 Connect Dropbox (same one-time OAuth pattern as Google Calendar; the
 refresh token is stored in the database, not an environment variable).
 Settings → Documents also holds the base folder path — the Dropbox
-folder containing the per-project folders (e.g.
-`/Pen Lake Ventures/Leases`), each of which must be named to exactly
-match that project's `internalName` in this app (e.g. `Killarney23`),
-with one subfolder per unit inside.
+folder containing the numbered per-project folders (e.g.
+`/1. Pen Ventures Inc./0.0 LEASING OPERATIONS`), each of which must be
+named `"{displayOrder}. {internalName}"` (e.g. `1. Killarney23`,
+`2. Glenbrook30`) to match how the owner's Dropbox is actually
+organized, with one subfolder per unit inside.
 
 On `createLease`, `prepareLeaseFolder()` in `src/lib/dropbox.ts`: if the
 unit's folder already has something in it (the previous tenant's

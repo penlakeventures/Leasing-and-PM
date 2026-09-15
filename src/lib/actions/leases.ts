@@ -109,6 +109,7 @@ export async function createLease(formData: FormData) {
     });
     if (unit) {
       const documentLink = await prepareLeaseFolder({
+        projectDisplayOrder: unit.projectEntity.displayOrder,
         projectName: unit.projectEntity.internalName,
         unitNumber: unit.unitNumber,
       });

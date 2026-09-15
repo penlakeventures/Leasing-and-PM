@@ -176,13 +176,17 @@ async function getOrCreateSharedLink(accessToken: string, path: string): Promise
 // archives whatever's currently in the unit's live folder (a previous
 // tenancy's documents, if any) into that project's "PAST TENANTS" folder,
 // creates a fresh empty folder for the new tenancy, and returns a shared
-// link to it. Assumes each project's Dropbox folder is named to exactly
-// match its internalName (e.g. "Killarney23") under the connection's
-// configured basePath.
+// link to it. Assumes each project's Dropbox folder is named
+// "{displayOrder}. {internalName}" (e.g. "1. Killarney23") under the
+// connection's configured basePath — confirmed against the owner's actual
+// Dropbox structure, which numbers project folders in the same order this
+// app already sorts them by.
 export async function prepareLeaseFolder({
+  projectDisplayOrder,
   projectName,
   unitNumber,
 }: {
+  projectDisplayOrder: number;
   projectName: string;
   unitNumber: string;
 }): Promise<string> {
@@ -192,11 +196,12 @@ export async function prepareLeaseFolder({
 
   const accessToken = await getFreshAccessToken();
   const base = connection.basePath.replace(/\/$/, "");
-  const unitPath = `${base}/${projectName}/${unitNumber}`;
-  const pastTenantsPath = `${base}/${projectName}/PAST TENANTS/${unitNumber}`;
+  const projectFolder = `${projectDisplayOrder}. ${projectName}`;
+  const unitPath = `${base}/${projectFolder}/${unitNumber}`;
+  const pastTenantsPath = `${base}/${projectFolder}/PAST TENANTS/${unitNumber}`;
 
   if (await pathExists(accessToken, unitPath)) {
-    await ensureFolderExists(accessToken, `${base}/${projectName}/PAST TENANTS`);
+    await ensureFolderExists(accessToken, `${base}/${projectFolder}/PAST TENANTS`);
     await moveWithAutorename(accessToken, unitPath, pastTenantsPath);
   }
 
