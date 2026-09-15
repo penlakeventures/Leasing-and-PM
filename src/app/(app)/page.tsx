@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Card, PageHeader, Badge } from "@/components/ui";
+import { isDepositOverdue } from "@/lib/rules";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -24,16 +25,25 @@ export default async function DashboardPage() {
     prisma.lead.count({
       where: { status: { notIn: ["LEASED", "LOST"] } },
     }),
-    // Deposits on leases that have ended but haven't been returned within
-    // 10 days — the Alberta RTA deadline the data model flags.
+    // Candidates: any ended lease with an unreturned deposit. The actual
+    // 10-day-grace-period filtering happens below via isDepositOverdue() —
+    // don't duplicate that math here, a lease that ended yesterday isn't
+    // overdue yet even though it matches this broader query.
     prisma.securityDeposit.findMany({
       where: {
         dateReturned: null,
-        lease: { endDate: { not: null, lt: new Date() } },
+        lease: { endDate: { not: null } },
       },
       include: { lease: { include: { unit: { include: { projectEntity: true } } } } },
     }),
   ]);
+
+  const overdueDeposits = depositsPastDue.filter((d) =>
+    isDepositOverdue({
+      tenancyEndDate: d.lease.endDate,
+      dateReturned: d.dateReturned,
+    }),
+  );
 
   const stats = [
     { label: "Projects", value: projectCount, href: "/projects" },
@@ -63,7 +73,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {depositsPastDue.length > 0 && (
+      {overdueDeposits.length > 0 && (
         <div className="mt-8">
           <h2 className="mb-3 text-sm font-semibold text-neutral-900">
             Security deposits overdue for return{" "}
@@ -71,7 +81,7 @@ export default async function DashboardPage() {
           </h2>
           <Card>
             <ul className="space-y-2 text-sm">
-              {depositsPastDue.map((d) => (
+              {overdueDeposits.map((d) => (
                 <li key={d.id} className="flex justify-between">
                   <span>
                     {d.lease.unit.projectEntity.internalName} — Unit{" "}

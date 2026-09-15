@@ -32,6 +32,33 @@ async function currentCpiRate(): Promise<number | null> {
   return rate ? Number(rate.ratePercent) : null;
 }
 
+// The unit detail page keeps a full lease history, not just the current
+// tenancy — so saving *any* lease (e.g. correcting a typo on a tenant who
+// moved out years ago) must not blindly overwrite the unit's advertised
+// currentRent with whatever's on the lease being edited. Instead, after
+// any create/update/delete, recompute currentRent from whichever lease is
+// actually in effect today (started, and either periodic or not yet
+// ended). If no lease is currently active for the unit (vacant, or only
+// future-dated leases on file), leave the last-known rent as-is rather
+// than clearing it.
+async function syncUnitCurrentRent(unitId: string) {
+  const leases = await prisma.lease.findMany({
+    where: { unitId },
+    orderBy: { startDate: "desc" },
+  });
+  const today = new Date();
+  const active = leases.find(
+    (l) =>
+      l.startDate <= today && (l.periodic || !l.endDate || l.endDate >= today),
+  );
+  if (active) {
+    await prisma.unit.update({
+      where: { id: unitId },
+      data: { currentRent: active.rentAmount },
+    });
+  }
+}
+
 async function checkAffordableRent(unitId: string, rentAmount: number) {
   const unit = await prisma.unit.findUnique({ where: { id: unitId } });
   if (!unit || unit.cmhcDesignation !== "AFFORDABLE") return null;
@@ -73,11 +100,7 @@ export async function createLease(formData: FormData) {
     },
   });
 
-  // Keep the unit's currentRent in sync with the latest signed lease.
-  await prisma.unit.update({
-    where: { id: data.unitId },
-    data: { currentRent: data.rentAmount },
-  });
+  await syncUnitCurrentRent(data.unitId);
 
   revalidatePath("/leases");
   revalidatePath(`/units/${data.unitId}`);
@@ -134,11 +157,15 @@ export async function updateLease(id: string, formData: FormData) {
         },
       },
     }),
-    prisma.unit.update({
-      where: { id: data.unitId },
-      data: { currentRent: data.rentAmount },
-    }),
   ]);
+
+  // If this save moved the lease to a different unit, the unit it left
+  // behind may no longer have this as its active lease either — resync
+  // both, not just the destination.
+  await syncUnitCurrentRent(data.unitId);
+  if (existing.unitId !== data.unitId) {
+    await syncUnitCurrentRent(existing.unitId);
+  }
 
   revalidatePath("/leases");
   revalidatePath(`/leases/${id}`);
@@ -147,6 +174,9 @@ export async function updateLease(id: string, formData: FormData) {
 }
 
 export async function deleteLease(id: string) {
+  const existing = await prisma.lease.findUnique({ where: { id } });
+  if (!existing) redirect("/leases");
+
   try {
     await prisma.lease.delete({ where: { id } });
   } catch {
@@ -154,6 +184,7 @@ export async function deleteLease(id: string) {
       `/leases/${id}?error=${encodeURIComponent("Can't delete a lease with a security deposit on file — resolve that first.")}`,
     );
   }
+  await syncUnitCurrentRent(existing.unitId);
   revalidatePath("/leases");
   redirect("/leases");
 }

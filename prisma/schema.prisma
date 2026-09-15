@@ -144,7 +144,10 @@ model LeaseTenant {
   leaseId  String
   lease    Lease  @relation(fields: [leaseId], references: [id], onDelete: Cascade)
   tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleteTenant() assumes (and tells staff) that a
+  // tenant with lease history can't be deleted — this makes that true
+  // instead of silently dropping them off every past lease they were on.
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@id([leaseId, tenantId])
   @@map("lease_tenants")
@@ -156,7 +159,11 @@ model LeaseTenant {
 model SecurityDeposit {
   id                String    @id @default(cuid())
   leaseId           String    @unique
-  lease             Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleteLease() assumes (and tells staff) that a
+  // lease with a deposit on file can't be deleted — this makes that true
+  // instead of silently wiping the trust-accounting record for real money
+  // still held for a tenant.
+  lease             Lease     @relation(fields: [leaseId], references: [id], onDelete: Restrict)
   amount            Decimal   @db.Decimal(10, 2) // capped at one month's rent per Alberta RTA; cannot increase later
   dateReceived      DateTime
   trustAccountRef   String? // points at the dedicated trust sub-account
@@ -266,7 +273,10 @@ model MaintenanceTicket {
   priority    TicketPriority @default(MEDIUM)
   status      TicketStatus   @default(NEW)
   vendorId    String?
-  vendor      Vendor?        @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  // Restrict, not SetNull: deleteVendor() assumes (and tells staff) that a
+  // vendor with ticket history can't be deleted — this makes that true
+  // instead of silently erasing which vendor did the work on old tickets.
+  vendor      Vendor?        @relation(fields: [vendorId], references: [id], onDelete: Restrict)
   cost        Decimal?       @db.Decimal(10, 2)
   createdAt   DateTime       @default(now())
   resolvedAt  DateTime?

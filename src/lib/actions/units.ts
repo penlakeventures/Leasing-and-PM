@@ -72,7 +72,10 @@ export async function deleteUnit(id: string) {
     await prisma.unit.delete({ where: { id } });
   } catch {
     redirect(
-      `/units/${id}?error=${encodeURIComponent("Can't delete a unit that still has leases, leads, or tickets attached.")}`,
+      // Leases and tickets block deletion (Restrict); leads pointing at
+      // this unit are simply unlinked, not deleted, so they don't belong
+      // in this message.
+      `/units/${id}?error=${encodeURIComponent("Can't delete a unit that still has leases or tickets attached.")}`,
     );
   }
   revalidatePath("/units");
