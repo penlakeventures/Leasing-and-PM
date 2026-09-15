@@ -10,6 +10,22 @@ function requireEnv(name: string): string {
   return value;
 }
 
+// Deriving the app's own public URL from the incoming request
+// (req.nextUrl.origin) isn't reliable behind Railway's proxy layer — it
+// can resolve to an internal address like https://localhost:8080 rather
+// than the real public domain, which Google's OAuth redirect_uri check
+// then rejects. NEXTAUTH_URL is already required, already set correctly
+// in production (Auth.js depends on it for the same reason), and is the
+// one place this app's real public URL is recorded — reuse it instead of
+// re-deriving something that's already solved.
+export function getCalendarCallbackUrl(): string {
+  const base = process.env.NEXTAUTH_URL;
+  if (!base) {
+    throw new Error("NEXTAUTH_URL isn't set — needed to build the Google OAuth redirect URI.");
+  }
+  return `${base.replace(/\/$/, "")}/api/calendar/callback`;
+}
+
 export function getAuthUrl(redirectUri: string): string {
   const params = new URLSearchParams({
     client_id: requireEnv("GOOGLE_CLIENT_ID"),

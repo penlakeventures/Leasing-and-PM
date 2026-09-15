@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { exchangeCodeForTokens, getConnectedAccountEmail } from "@/lib/google-calendar";
+import {
+  exchangeCodeForTokens,
+  getConnectedAccountEmail,
+  getCalendarCallbackUrl,
+} from "@/lib/google-calendar";
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
   const error = req.nextUrl.searchParams.get("error");
-  const settingsUrl = new URL("/settings/calendar", req.nextUrl.origin);
+  // Derived from the same NEXTAUTH_URL-based helper as the redirect_uri
+  // itself, not req.nextUrl.origin — Railway's proxy layer can make that
+  // resolve to an internal address rather than the real public domain.
+  const settingsUrl = new URL(
+    "/settings/calendar",
+    new URL(getCalendarCallbackUrl()).origin,
+  );
 
   if (error) {
     settingsUrl.searchParams.set("error", `Google said: ${error}`);
@@ -17,8 +27,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const redirectUri = `${req.nextUrl.origin}/api/calendar/callback`;
-    const tokens = await exchangeCodeForTokens(code, redirectUri);
+    // Must be byte-for-byte the same redirect_uri sent to Google in the
+    // initial /api/calendar/connect redirect, or the token exchange is
+    // rejected the same way the consent screen was.
+    const tokens = await exchangeCodeForTokens(code, getCalendarCallbackUrl());
     if (!tokens.refresh_token) {
       // Happens if this Google account already granted consent before and
       // Google didn't re-issue a refresh token — shouldn't occur given
