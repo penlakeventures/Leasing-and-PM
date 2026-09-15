@@ -5,6 +5,26 @@
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
+ * A unit can have many leases on file (its full history), but at most one
+ * is actually in effect on a given day: started, and either periodic or
+ * not yet ended. Shared definition of "active" so it stays consistent
+ * everywhere it's used (unit.currentRent sync, "current tenant" display,
+ * etc.) rather than being re-derived slightly differently in each place.
+ */
+export function pickActiveLease<
+  T extends { startDate: Date; endDate: Date | null; periodic: boolean },
+>(leases: T[], asOf: Date = new Date()): T | null {
+  const sorted = [...leases].sort(
+    (a, b) => b.startDate.getTime() - a.startDate.getTime(),
+  );
+  return (
+    sorted.find(
+      (l) => l.startDate <= asOf && (l.periodic || !l.endDate || l.endDate >= asOf),
+    ) ?? null
+  );
+}
+
+/**
  * CMHC MLI Select / Alberta rule: rent on an AFFORDABLE unit may rise only
  * by the annual CPI published by Statistics Canada. The system should
  * refuse (or at least flag) any change that exceeds it. Market units are

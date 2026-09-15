@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { checkRentEscalation, checkRentIncreaseNotice } from "@/lib/rules";
+import { checkRentEscalation, checkRentIncreaseNotice, pickActiveLease } from "@/lib/rules";
 
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
@@ -42,15 +42,8 @@ async function currentCpiRate(): Promise<number | null> {
 // future-dated leases on file), leave the last-known rent as-is rather
 // than clearing it.
 async function syncUnitCurrentRent(unitId: string) {
-  const leases = await prisma.lease.findMany({
-    where: { unitId },
-    orderBy: { startDate: "desc" },
-  });
-  const today = new Date();
-  const active = leases.find(
-    (l) =>
-      l.startDate <= today && (l.periodic || !l.endDate || l.endDate >= today),
-  );
+  const leases = await prisma.lease.findMany({ where: { unitId } });
+  const active = pickActiveLease(leases);
   if (active) {
     await prisma.unit.update({
       where: { id: unitId },

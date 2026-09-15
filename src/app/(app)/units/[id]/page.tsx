@@ -18,7 +18,10 @@ export default async function UnitDetailPage({
     prisma.unit.findUnique({
       where: { id },
       include: {
-        leases: { orderBy: { startDate: "desc" } },
+        leases: {
+          orderBy: { startDate: "desc" },
+          include: { tenants: { include: { tenant: true } } },
+        },
         projectEntity: true,
       },
     }),
@@ -63,6 +66,7 @@ export default async function UnitDetailPage({
               <Th>Start</Th>
               <Th>End</Th>
               <Th>Rent</Th>
+              <Th>Tenant(s)</Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
@@ -75,6 +79,9 @@ export default async function UnitDetailPage({
                 </Td>
                 <Td>{l.periodic ? "Periodic" : l.endDate?.toLocaleDateString() ?? "—"}</Td>
                 <Td>${l.rentAmount.toString()}</Td>
+                <Td>
+                  {l.tenants.map((t) => t.tenant.name).join(", ") || "—"}
+                </Td>
               </tr>
             ))}
           </tbody>
