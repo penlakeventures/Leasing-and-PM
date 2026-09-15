@@ -1,5 +1,7 @@
 // One-time update: sets each unit's real CMHC Market/Affordable
-// designation from the user's compliance-tracking spreadsheet, replacing
+// designation (see cmhc-designations.ts for where each row came from —
+// the user's compliance-tracking spreadsheet, plus two projects the user
+// confirmed directly since the spreadsheet didn't cover them), replacing
 // the MARKET-for-everyone default the rent-roll import had to use since
 // that file didn't carry this information.
 //
@@ -59,9 +61,13 @@ export async function runCmhcDesignationImport(prisma: PrismaClient): Promise<st
     say(`⚠ ${notFound.length} row(s) couldn't be matched to a unit:`);
     for (const n of notFound) say(`   - ${n}`);
   }
-  say(
-    "⚠ Killarney23 and Glenbrook30 (16 units) aren't in this file at all — they're still set to MARKET (the default), not confirmed. Provide their real designations when available.",
-  );
+
+  const totalUnits = await prisma.unit.count();
+  if (cmhcDesignations.length < totalUnits) {
+    say(
+      `⚠ Only ${cmhcDesignations.length} of ${totalUnits} units have a confirmed designation here — the rest are still at whatever they were before (MARKET, by default).`,
+    );
+  }
 
   return log;
 }

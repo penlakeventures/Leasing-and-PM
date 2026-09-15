@@ -1,10 +1,9 @@
 // Generated from the CMHC compliance tracking spreadsheet the user
-// provided. Do not hand-edit; regenerate from source if it changes.
-//
-// Killarney23 and Glenbrook30 aren't here — that sheet has no
-// Market/Affordable column filled in for either project's 16 units.
-// Those units keep whatever designation they already had (MARKET,
-// the import default) until that data is available.
+// provided, plus Killarney23 and Glenbrook30 (confirmed by the user
+// directly — those two projects were never subject to CMHC affordability
+// requirements, so all 16 of their units are market rate in perpetuity;
+// the spreadsheet itself has no Market/Affordable column filled in for
+// either). Do not hand-edit; regenerate from source if it changes.
 
 export type CmhcDesignationRow = {
   project: string;
@@ -13,6 +12,24 @@ export type CmhcDesignationRow = {
 };
 
 export const cmhcDesignations: CmhcDesignationRow[] = [
+  // Killarney23 — no CMHC affordability requirement (user-confirmed)
+  { project: "Killarney23", unitNumber: "3760 23 AVE SW", designation: "MARKET" },
+  { project: "Killarney23", unitNumber: "3760B 23 AVE SW", designation: "MARKET" },
+  { project: "Killarney23", unitNumber: "3764 23 AVE SW", designation: "MARKET" },
+  { project: "Killarney23", unitNumber: "3764B 23 AVE SW", designation: "MARKET" },
+  { project: "Killarney23", unitNumber: "3768 23 AVE SW", designation: "MARKET" },
+  { project: "Killarney23", unitNumber: "3768B 23 AVE SW", designation: "MARKET" },
+  { project: "Killarney23", unitNumber: "2240 37th ST SW", designation: "MARKET" },
+  { project: "Killarney23", unitNumber: "2240B 37th ST SW", designation: "MARKET" },
+  // Glenbrook30 — no CMHC affordability requirement (user-confirmed)
+  { project: "Glenbrook30", unitNumber: "3904 30 AVE SW", designation: "MARKET" },
+  { project: "Glenbrook30", unitNumber: "3904B 30 AVE SW", designation: "MARKET" },
+  { project: "Glenbrook30", unitNumber: "3906 30 AVE SW", designation: "MARKET" },
+  { project: "Glenbrook30", unitNumber: "3906B 30 AVE SW", designation: "MARKET" },
+  { project: "Glenbrook30", unitNumber: "3908 30 AVE SW", designation: "MARKET" },
+  { project: "Glenbrook30", unitNumber: "3908B 30 AVE SW", designation: "MARKET" },
+  { project: "Glenbrook30", unitNumber: "3910 30 AVE SW", designation: "MARKET" },
+  { project: "Glenbrook30", unitNumber: "3910B 30 AVE SW", designation: "MARKET" },
   { project: "Killarney26", unitNumber: "2640 32 ST SW", designation: "MARKET" },
   { project: "Killarney26", unitNumber: "2640B 32 ST SW", designation: "MARKET" },
   { project: "Killarney26", unitNumber: "3222 26 AVE SW", designation: "MARKET" },

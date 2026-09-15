@@ -102,17 +102,18 @@ run the import before those fields existed).
 Known gaps from that import, worth fixing when the info is available:
 - Only the first tenant listed on each lease got a phone number — the
   contact PDF has one number per unit, not per person.
-
-`src/lib/cmhc-designations.ts` + `GET /api/import-cmhc-designations` set
-each unit's real CMHC Market/Affordable designation, from the user's
-compliance-tracking spreadsheet — replacing the MARKET-for-everyone
-default the rent-roll import had to use since that file didn't carry
-this. Pure metadata update (doesn't touch tenants/leases/rent), so
-always safe to re-run. **Killarney23 and Glenbrook30 (16 units) aren't
-in that spreadsheet at all** — they're still defaulted to MARKET, not
-confirmed; re-run this once their real designations are available.
 - 4 security deposits had no date on file in the source and fell back to
   the lease start date instead.
+
+`src/lib/cmhc-designations.ts` + `GET /api/import-cmhc-designations` set
+each unit's real CMHC Market/Affordable designation — the user's
+compliance-tracking spreadsheet covered 59 of the 75 units; the other
+16 (Killarney23 and Glenbrook30, both entire projects) aren't in that
+spreadsheet, but the user separately confirmed neither project ever
+carried a CMHC affordability requirement, so all their units are
+market rate too — all 75 units now have a confirmed designation. Pure
+metadata update (doesn't touch tenants/leases/rent), so always safe to
+re-run.
 
 ## What's *not* in Phase 1
 
