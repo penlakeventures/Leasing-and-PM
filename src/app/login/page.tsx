@@ -49,9 +49,6 @@ export default async function LoginPage({
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
       <div className="w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
         <Logo />
-        <p className="mt-1 text-sm text-neutral-500">
-          Leasing &amp; Property Management
-        </p>
 
         {params.error && (
           <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
