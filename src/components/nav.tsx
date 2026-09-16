@@ -29,6 +29,7 @@ const groups: { label: string | null; links: { href: string; label: string }[] }
       { href: "/tenants", label: "Tenants" },
       { href: "/tickets", label: "Maintenance" },
       { href: "/vendors", label: "Vendors" },
+      { href: "/rent", label: "Rent" },
       { href: "/communications", label: "Communications" },
     ],
   },

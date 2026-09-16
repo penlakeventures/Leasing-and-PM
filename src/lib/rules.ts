@@ -194,3 +194,42 @@ export function isDepositOverdue({
   if (!tenancyEndDate || dateReturned) return false;
   return asOf > depositReturnDeadline(tenancyEndDate);
 }
+
+/**
+ * Rent is assumed due on the 1st of each month (this app has no per-lease
+ * due-day field, so `period` itself — always the 1st — doubles as the due
+ * date). A reminder is due once inside a window starting `daysBefore` the
+ * due date, and never again once one's actually been sent for that period
+ * — checked separately from "already paid" so a same-day payment and a
+ * same-day reminder can't race each other into double-texting.
+ */
+export function isRentReminderDue({
+  period,
+  paidDate,
+  reminderSentAt,
+  daysBefore = 3,
+  asOf = new Date(),
+}: {
+  period: Date;
+  paidDate: Date | null;
+  reminderSentAt: Date | null;
+  daysBefore?: number;
+  asOf?: Date;
+}): boolean {
+  if (paidDate || reminderSentAt) return false;
+  const windowStart = new Date(period.getTime() - daysBefore * MS_PER_DAY);
+  return asOf >= windowStart;
+}
+
+export function isRentOverdue({
+  period,
+  paidDate,
+  asOf = new Date(),
+}: {
+  period: Date;
+  paidDate: Date | null;
+  asOf?: Date;
+}): boolean {
+  if (paidDate) return false;
+  return asOf > period;
+}

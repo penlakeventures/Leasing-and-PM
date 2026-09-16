@@ -147,6 +147,7 @@ model Lease {
 
   tenants         LeaseTenant[]
   securityDeposit SecurityDeposit?
+  rentPayments    RentPayment[]
 
   @@index([unitId])
   @@map("leases")
@@ -200,6 +201,32 @@ model SecurityDepositDeduction {
   createdAt         DateTime        @default(now())
 
   @@map("security_deposit_deductions")
+}
+
+// One row per lease per calendar month — the rent "charge" for that
+// period. Created automatically (see ensureCurrentPeriodPayments() in
+// src/lib/rent-reminders.ts) for every currently-active lease; staff mark
+// it paid. Rent is assumed due on the 1st of each month — this app has no
+// per-lease due-day field today, so every lease is treated the same way.
+model RentPayment {
+  id       String    @id @default(cuid())
+  leaseId  String
+  // Restrict, not Cascade: this is a real payment record, same reasoning
+  // as SecurityDeposit — a lease with payment history on file shouldn't
+  // be deletable out from under it.
+  lease    Lease     @relation(fields: [leaseId], references: [id], onDelete: Restrict)
+  period   DateTime // first of the month this charge is for, e.g. 2026-10-01
+  amountDue Decimal  @db.Decimal(10, 2) // snapshot of the lease's rent at the time this period was created — a later rent change doesn't rewrite past periods
+  paidDate DateTime? // null = unpaid
+  // Set once a reminder text has actually gone out for this period, so
+  // the daily check never double-texts the same unpaid month.
+  reminderSentAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([leaseId, period])
+  @@index([leaseId])
+  @@map("rent_payments")
 }
 
 // Alberta-regulation deposit interest rate by year. A lookup table (not a

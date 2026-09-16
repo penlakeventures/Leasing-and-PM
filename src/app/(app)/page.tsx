@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Card, Badge } from "@/components/ui";
-import { isDepositOverdue } from "@/lib/rules";
+import { isDepositOverdue, isRentOverdue } from "@/lib/rules";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -11,6 +11,7 @@ export default async function DashboardPage() {
     openTickets,
     activeLeads,
     depositsPastDue,
+    rentUnpaid,
   ] = await Promise.all([
     prisma.projectEntity.count(),
     prisma.unit.count(),
@@ -36,6 +37,10 @@ export default async function DashboardPage() {
       },
       include: { lease: { include: { unit: { include: { projectEntity: true } } } } },
     }),
+    prisma.rentPayment.findMany({
+      where: { paidDate: null },
+      include: { lease: { include: { unit: { include: { projectEntity: true } } } } },
+    }),
   ]);
 
   const overdueDeposits = depositsPastDue.filter((d) =>
@@ -43,6 +48,9 @@ export default async function DashboardPage() {
       tenancyEndDate: d.lease.endDate,
       dateReturned: d.dateReturned,
     }),
+  );
+  const overdueRent = rentUnpaid.filter((p) =>
+    isRentOverdue({ period: p.period, paidDate: p.paidDate }),
   );
 
   const stats = [
@@ -87,6 +95,29 @@ export default async function DashboardPage() {
                     className="text-neutral-900 underline"
                   >
                     Review lease
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+      )}
+
+      {overdueRent.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold text-neutral-900">
+            Rent overdue <Badge tone="red">past due date</Badge>
+          </h2>
+          <Card>
+            <ul className="space-y-2 text-sm">
+              {overdueRent.map((p) => (
+                <li key={p.id} className="flex justify-between">
+                  <span>
+                    {p.lease.unit.projectEntity.internalName} — Unit{" "}
+                    {p.lease.unit.unitNumber}
+                  </span>
+                  <Link href="/rent" className="text-neutral-900 underline">
+                    Review rent
                   </Link>
                 </li>
               ))}

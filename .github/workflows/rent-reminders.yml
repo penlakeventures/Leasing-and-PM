@@ -1,0 +1,27 @@
+name: Rent reminders
+
+# The app itself has no built-in scheduler (it's a Next.js server, not a
+# cron daemon) — this workflow is what actually triggers the daily rent
+# check, by calling the token-guarded /api/cron/rent-reminders endpoint.
+#
+# Runs at 15:00 UTC daily — 9:00am Mountain during MDT (summer) or 8:00am
+# during MST (winter). GitHub Actions cron doesn't shift for daylight
+# saving, so this drifts by an hour twice a year; not worth the added
+# complexity of a DST-aware schedule for a once-a-day reminder job.
+#
+# Requires two repository secrets (Settings → Secrets and variables →
+# Actions): APP_BASE_URL (the deployed app's URL, no trailing slash) and
+# CRON_TOKEN (must match the CRON_TOKEN environment variable set in
+# Railway).
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab, for testing
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call rent-reminders endpoint
+        run: |
+          curl -sS -f "${{ secrets.APP_BASE_URL }}/api/cron/rent-reminders?token=${{ secrets.CRON_TOKEN }}"

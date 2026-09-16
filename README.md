@@ -348,6 +348,46 @@ texted the details directly.
 No new setup required — reuses the Twilio and Anthropic credentials
 already configured above.
 
+## Rent tracking & reminders
+
+`/rent` — a monthly rent ledger, one row per lease per calendar month
+(`RentPayment`), with a running unpaid/overdue count on the page and on
+the Dashboard, and a one-click Mark paid / Undo per row.
+
+Unlike the AI-drafted features above, a rent reminder is a fixed,
+factual statement ("rent of $X is due on the 1st") rather than an
+open-ended judgment call, so it sends itself — no draft-and-approve
+step. Two pieces, both in `src/lib/rent-reminders.ts`:
+
+- `ensureCurrentPeriodPayments()` creates this month's charge
+  (`amountDue` snapshotted from the lease's current rent) for every
+  currently-active lease that doesn't already have one for this period
+  — idempotent, called both by the daily cron below and by the `/rent`
+  page itself on every load, so the ledger is never empty waiting on
+  the cron to run.
+- `sendRentReminders()` texts every tenant with a phone on file, once,
+  starting 3 days before the due date (`isRentReminderDue()` in
+  `src/lib/rules.ts`) — logged to `CommunicationLog` like any other
+  text. `RentPayment.reminderSentAt` guarantees exactly one reminder
+  per period, even if the cron runs more than once in a day; a lease
+  with no tenant phone on file is skipped (not marked reminded), so
+  it's picked up automatically once a phone is added rather than
+  silently given up on.
+
+**Rent is assumed due on the 1st of every month** — there's no
+per-lease due-day field today, so every lease is treated the same way;
+worth knowing if any of your leases actually have a different due date
+on paper.
+
+**Setup required**: this app has no built-in scheduler, so a GitHub
+Actions workflow (`.github/workflows/rent-reminders.yml`) calls the
+token-guarded `/api/cron/rent-reminders` endpoint once a day. Needs
+`CRON_TOKEN` set in the environment (see `.env.example`) and, as GitHub
+repo secrets (Settings → Secrets and variables → Actions),
+`APP_BASE_URL` (your deployed app's URL) and `CRON_TOKEN` (the same
+value). The workflow can also be triggered manually from the Actions
+tab for testing.
+
 ## Tenant screening
 
 `TenantScreening` (one per `Lead`) records the outcome of a SingleKey (or

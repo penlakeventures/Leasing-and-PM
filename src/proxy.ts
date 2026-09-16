@@ -21,13 +21,18 @@ export default auth((req) => {
   // Same idea for the Twilio SMS webhook: called by Twilio, not a signed-in
   // person, guarded by its own request-signature verification instead.
   const isTwilioWebhook = req.nextUrl.pathname === "/api/sms/twilio-webhook";
+  // Same idea for the rent-reminders cron endpoint: called by a scheduled
+  // GitHub Actions workflow, not a signed-in person, guarded by its own
+  // CRON_TOKEN check instead.
+  const isCronApi = req.nextUrl.pathname === "/api/cron/rent-reminders";
 
   if (
     isAuthApi ||
     isSeedApi ||
     isRentFasterInboundApi ||
     isMessengerWebhook ||
-    isTwilioWebhook
+    isTwilioWebhook ||
+    isCronApi
   )
     return NextResponse.next();
 
