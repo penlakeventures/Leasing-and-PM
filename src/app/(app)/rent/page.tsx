@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Card, Table, Th, Td, Badge, EmptyState } from "@/components/ui";
-import { markRentPaid, markRentUnpaid } from "@/lib/actions/rent-payments";
+import { markRentPaid, markRentUnpaid, markAllRentPaidForPeriod } from "@/lib/actions/rent-payments";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { ensureCurrentPeriodPayments } from "@/lib/rent-reminders";
 import { isRentOverdue } from "@/lib/rules";
 import Link from "next/link";
@@ -29,6 +30,18 @@ export default async function RentPage() {
   const unpaid = payments.filter((p) => !p.paidDate);
   const overdue = payments.filter((p) => isRentOverdue({ period: p.period, paidDate: p.paidDate }));
 
+  // Grouped so a whole period already collected outside the app (e.g. this
+  // feature going live mid-month) can be cleared in one confirmed action,
+  // instead of clicking "Mark paid" once per lease.
+  const unpaidByPeriod = new Map<string, { label: string; count: number }>();
+  for (const p of unpaid) {
+    const key = p.period.toISOString();
+    const label = p.period.toLocaleDateString("en-CA", { timeZone: "UTC", month: "long", year: "numeric" });
+    const existing = unpaidByPeriod.get(key);
+    if (existing) existing.count++;
+    else unpaidByPeriod.set(key, { label, count: 1 });
+  }
+
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -41,6 +54,28 @@ export default async function RentPage() {
           <p className="mt-1 text-sm text-neutral-500">Overdue (past the due date)</p>
         </Card>
       </div>
+
+      {unpaidByPeriod.size > 0 && (
+        <Card>
+          <p className="mb-3 text-sm font-medium text-neutral-700">Catch up a whole period at once</p>
+          <div className="space-y-2">
+            {[...unpaidByPeriod.entries()].map(([periodIso, group]) => (
+              <div key={periodIso} className="flex items-center justify-between gap-4">
+                <p className="text-sm text-neutral-600">
+                  {group.count} unpaid for {group.label}
+                </p>
+                <form action={markAllRentPaidForPeriod.bind(null, periodIso)}>
+                  <ConfirmSubmitButton
+                    confirmMessage={`Mark all ${group.count} unpaid charges for ${group.label} as paid? Only confirm if every one of them was actually collected — this can't tell real payments from unrecorded ones.`}
+                  >
+                    Mark all {group.count} as paid
+                  </ConfirmSubmitButton>
+                </form>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <Table>
         <thead>
