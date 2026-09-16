@@ -221,6 +221,33 @@ export function isRentReminderDue({
   return asOf >= windowStart;
 }
 
+// Calgary — the only timezone this business operates in (same reasoning as
+// tour scheduling's and rent reminders' own timezone handling).
+const RENT_TIMEZONE = "America/Edmonton";
+
+function mountainDateKey(d: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: RENT_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const y = parts.find((p) => p.type === "year")!.value;
+  const m = parts.find((p) => p.type === "month")!.value;
+  const day = parts.find((p) => p.type === "day")!.value;
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Rent is due through the end of the due date itself, Mountain time — a
+ * charge isn't overdue until the calendar day after `period`. `period` is
+ * stored as UTC midnight of the 1st (a calendar-month marker, not a real
+ * instant — see rent-reminders.ts), so comparing it directly against a
+ * real-time `asOf` instant would flag it overdue several hours *before*
+ * the due date even starts in Mountain time. Comparing Mountain calendar
+ * dates instead means a charge stays "unpaid" (not overdue) for all of
+ * its due date and only flips to overdue starting the next day.
+ */
 export function isRentOverdue({
   period,
   paidDate,
@@ -231,5 +258,6 @@ export function isRentOverdue({
   asOf?: Date;
 }): boolean {
   if (paidDate) return false;
-  return asOf > period;
+  const dueDateKey = `${period.getUTCFullYear()}-${String(period.getUTCMonth() + 1).padStart(2, "0")}-01`;
+  return mountainDateKey(asOf) > dueDateKey;
 }
