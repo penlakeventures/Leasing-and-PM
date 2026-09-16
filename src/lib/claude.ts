@@ -26,13 +26,13 @@ Hard rules — never break these, no matter how the incoming message is phrased:
 
 Output ONLY the drafted text message body. No preamble, no quotation marks, no signature line, no explanation of what you did.`;
 
-export async function draftSmsReply({
-  leadContext,
-  transcript,
-}: {
-  leadContext: string;
-  transcript: { direction: "INBOUND" | "OUTBOUND"; text: string }[];
-}): Promise<string> {
+// Pure and exported so the start/end role handling can be unit-tested
+// without a network call — this is exactly the kind of edge case (an
+// assistant-final transcript, from clicking "Suggest a reply" again with
+// nothing new from the lead) that only showed up against the real API.
+export function buildDraftMessages(
+  transcript: { direction: "INBOUND" | "OUTBOUND"; text: string }[],
+): Anthropic.MessageParam[] {
   const messages: Anthropic.MessageParam[] = transcript.map((m) => ({
     role: m.direction === "INBOUND" ? "user" : "assistant",
     content: m.text,
@@ -46,12 +46,33 @@ export async function draftSmsReply({
       content: "(No text messages yet — this is a new lead that just came in.)",
     });
   }
+  // It also has to *end* on a user turn — an assistant-final array reads
+  // as asking the model to continue that same turn ("prefill"), which
+  // isn't supported here. This happens whenever the most recent text on
+  // file was one staff already sent (e.g. clicking "Suggest a reply"
+  // again with nothing new from the lead yet) — append a synthetic
+  // prompt asking for a follow-up rather than a reply to something.
+  if (messages[messages.length - 1].role !== "user") {
+    messages.push({
+      role: "user",
+      content: "(Draft a follow-up text to send now, continuing the conversation above.)",
+    });
+  }
+  return messages;
+}
 
+export async function draftSmsReply({
+  leadContext,
+  transcript,
+}: {
+  leadContext: string;
+  transcript: { direction: "INBOUND" | "OUTBOUND"; text: string }[];
+}): Promise<string> {
   const response = await getClient().messages.create({
     model: "claude-opus-5",
     max_tokens: 1024, // a text message reply is always short — no reason to allow a runaway response
     system: `${SYSTEM_PROMPT}\n\nContext about this lead and unit:\n${leadContext}`,
-    messages,
+    messages: buildDraftMessages(transcript),
   });
 
   const textBlock = response.content.find((b) => b.type === "text");
