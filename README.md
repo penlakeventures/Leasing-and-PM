@@ -287,6 +287,35 @@ Unlike Calendar/Dropbox there's no in-app "connect" step: instead, set
 that phone number's "A message comes in" webhook, in the Twilio
 Console, to the URL shown on Settings → Texting once deployed.
 
+## AI-drafted lead replies
+
+The first piece of the project's original "orchestrator agent" concept:
+a "✨ Suggest a reply" button on a Lead's Texts panel (`MessagePanel`,
+only wired up on the Lead page — not Tenant) that calls Claude
+(`draftSmsReply()` in `src/lib/claude.ts`, via the official
+`@anthropic-ai/sdk` — the one exception to this project's usual
+raw-`fetch` pattern for third-party APIs, since an official SDK exists
+here) to draft a short SMS reply from the lead's info (unit interest,
+notes, status) and its text conversation so far, and saves it to
+`Lead.draftReply`.
+
+**Deliberately never sends anything itself.** The draft just pre-fills
+the reply box for a staff member to review, edit, or discard before
+clicking Send (the existing `sendLeadText` action) — matching the
+project's own stated design that anything touching a prospective
+tenant, and certainly anything that could deny or condition someone's
+housing, goes through a person first. It also only ever runs when a
+staff member clicks the button — nothing triggers it automatically on
+an inbound lead or text. The system prompt hard-codes Alberta Human
+Rights Act guardrails (never ask about protected characteristics,
+never imply an approval/rejection outcome, never invent unit details).
+The draft is cleared automatically once a real reply goes out for that
+lead, so a stale suggestion can't linger.
+
+**Setup required**: an Anthropic API key (console.anthropic.com) —
+`ANTHROPIC_API_KEY` goes in the environment (see `.env.example`).
+No separate in-app connection step.
+
 ## Tenant screening
 
 `TenantScreening` (one per `Lead`) records the outcome of a SingleKey (or

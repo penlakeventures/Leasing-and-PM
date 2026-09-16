@@ -294,6 +294,12 @@ model Lead {
   tourStaff     User?     @relation(fields: [tourStaffId], references: [id], onDelete: SetNull)
   tourEventId   String?
 
+  // AI-drafted reply text, generated on demand (never automatically) from
+  // this lead's info and text conversation so far — always sits here for a
+  // human to review/edit before sending, never sent on its own. Cleared
+  // once an actual reply goes out, successful or not tied to this draft.
+  draftReply String?
+
   communications CommunicationLog[]
   screening      TenantScreening?
 

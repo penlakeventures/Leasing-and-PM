@@ -5,7 +5,7 @@ import { LeadForm } from "@/components/lead-form";
 import { ScreeningPanel } from "@/components/screening-panel";
 import { TourPanel } from "@/components/tour-panel";
 import { MessagePanel } from "@/components/message-panel";
-import { updateLead, deleteLead } from "@/lib/actions/leads";
+import { updateLead, deleteLead, generateLeadReplyDraft } from "@/lib/actions/leads";
 import { sendLeadText } from "@/lib/actions/sms";
 import { getActiveConnection } from "@/lib/google-calendar";
 
@@ -42,6 +42,7 @@ export default async function LeadDetailPage({
   const updateWithId = updateLead.bind(null, id);
   const deleteWithId = deleteLead.bind(null, id);
   const sendTextWithId = sendLeadText.bind(null, id);
+  const draftReplyWithId = generateLeadReplyDraft.bind(null, id);
 
   return (
     <div className="space-y-8">
@@ -58,6 +59,8 @@ export default async function LeadDetailPage({
         messages={lead.communications}
         phone={lead.contactPhone}
         sendAction={sendTextWithId}
+        draftReply={lead.draftReply}
+        draftAction={draftReplyWithId}
       />
       <form action={deleteWithId}>
         <Button type="submit" variant="danger">

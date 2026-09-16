@@ -11,10 +11,16 @@ export function MessagePanel({
   messages,
   phone,
   sendAction,
+  draftReply,
+  draftAction,
 }: {
   messages: Message[];
   phone: string | null;
   sendAction: (formData: FormData) => Promise<void>;
+  // Only leads get AI-drafted suggestions today (Phase 2 lead response) —
+  // omit both on the Tenant page.
+  draftReply?: string | null;
+  draftAction?: (formData: FormData) => Promise<void>;
 }) {
   return (
     <Card>
@@ -54,9 +60,28 @@ export function MessagePanel({
             </div>
           )}
 
+          {draftAction && (
+            <form action={draftAction} className="mb-3">
+              <Button type="submit" variant="secondary">
+                ✨ Suggest a reply
+              </Button>
+            </form>
+          )}
+
           <form action={sendAction} className="flex gap-2">
             <div className="flex-1">
-              <Textarea name="body" rows={2} placeholder={`Text ${phone}…`} required />
+              {draftReply && (
+                <p className="mb-1 text-xs text-neutral-500">
+                  AI-drafted — review before sending
+                </p>
+              )}
+              <Textarea
+                name="body"
+                rows={2}
+                placeholder={`Text ${phone}…`}
+                defaultValue={draftReply ?? undefined}
+                required
+              />
             </div>
             <Button type="submit">Send</Button>
           </form>
