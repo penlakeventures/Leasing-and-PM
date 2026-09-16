@@ -366,9 +366,10 @@ step. Two pieces, both in `src/lib/rent-reminders.ts`:
   page itself on every load, so the ledger is never empty waiting on
   the cron to run.
 - `sendRentReminders()` texts every tenant with a phone on file, once,
-  starting 3 days before the due date (`isRentReminderDue()` in
-  `src/lib/rules.ts`) — logged to `CommunicationLog` like any other
-  text. `RentPayment.reminderSentAt` guarantees exactly one reminder
+  on the due date itself (`isRentReminderDue()` in `src/lib/rules.ts`,
+  called with `daysBefore: 0` — most tenants pay on time, so the owner
+  chose to skip an early heads-up) — logged to `CommunicationLog` like
+  any other text. `RentPayment.reminderSentAt` guarantees exactly one reminder
   per period, even if the cron runs more than once in a day; a lease
   with no tenant phone on file is skipped (not marked reminded), so
   it's picked up automatically once a phone is added rather than

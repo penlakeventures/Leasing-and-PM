@@ -83,6 +83,9 @@ export async function sendRentReminders(
         period: payment.period,
         paidDate: payment.paidDate,
         reminderSentAt: payment.reminderSentAt,
+        // Most tenants pay on time, so the owner asked to drop the 3-day
+        // early heads-up and only text on the due date itself.
+        daysBefore: 0,
         asOf,
       })
     ) {
