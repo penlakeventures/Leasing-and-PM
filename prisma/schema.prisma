@@ -111,6 +111,13 @@ model Tenant {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  // AI-drafted maintenance ticket, generated on demand from this tenant's
+  // recent texts (never automatically) — sits here for a human to review
+  // and turn into a real MaintenanceTicket, or discard, same pattern as
+  // Lead.draftReply. Cleared once a ticket is actually created from it.
+  draftTicketDescription String?
+  draftTicketPriority    TicketPriority?
+
   leases          LeaseTenant[]
   tickets         MaintenanceTicket[]
   communications  CommunicationLog[]
@@ -372,6 +379,10 @@ model MaintenanceTicket {
   cost        Decimal?       @db.Decimal(10, 2)
   createdAt   DateTime       @default(now())
   resolvedAt  DateTime?
+  // Set when the "Notify vendor" text actually goes out — lets the ticket
+  // show whether/when the vendor was told, distinct from just having one
+  // assigned (assigning and notifying are two separate, deliberate steps).
+  vendorNotifiedAt DateTime?
 
   @@index([unitId])
   @@index([status])
@@ -390,7 +401,8 @@ model Vendor {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tickets MaintenanceTicket[]
+  tickets        MaintenanceTicket[]
+  communications CommunicationLog[]
 
   @@map("vendors")
 }
@@ -416,6 +428,8 @@ model CommunicationLog {
   tenant      Tenant?       @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   leadId      String?
   lead        Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  vendorId    String?
+  vendor      Vendor?       @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   channel     CommChannel
   direction   CommDirection
   timestamp   DateTime      @default(now())
@@ -429,6 +443,7 @@ model CommunicationLog {
 
   @@index([tenantId])
   @@index([leadId])
+  @@index([vendorId])
   @@map("communication_logs")
 }
 

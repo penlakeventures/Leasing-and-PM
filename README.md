@@ -316,6 +316,38 @@ lead, so a stale suggestion can't linger.
 `ANTHROPIC_API_KEY` goes in the environment (see `.env.example`).
 No separate in-app connection step.
 
+## Maintenance ticket → vendor dispatch
+
+Extends the texting/AI-drafting pattern above to Phase 3 (management
+agents): tenant maintenance requests become tickets, and vendors get
+texted the details directly.
+
+- **Vendors now text two-way, same as tenants and leads.** `Vendor` got
+  its own `CommunicationLog` relation and its own `MessagePanel` on the
+  vendor detail page; `findContactByPhone()` in `src/lib/sms-inbound.ts`
+  checks Tenant, then Lead, then Vendor before falling back to
+  creating a new lead for a genuinely unrecognized number.
+- **AI-drafted tickets from a tenant's texts.** A "✨ Draft a ticket from
+  recent texts" button on the Tenant page (`TicketDraftPanel`) calls
+  `draftMaintenanceTicket()` in `src/lib/claude.ts`, which reads the
+  tenant's recent texts and drafts a description plus a suggested
+  priority (LOW/MEDIUM/HIGH/URGENT, per a stated severity guide) — saved
+  to `Tenant.draftTicketDescription`/`draftTicketPriority` for a human
+  to review, edit, and turn into a real `MaintenanceTicket` (unit comes
+  from the tenant's own active lease, via `pickActiveLease()`, not from
+  the draft — it can't drift from who the ticket is actually for).
+  Never creates a ticket itself.
+- **"Notify vendor" on a ticket** (`notifyVendor()` in
+  `src/lib/actions/tickets.ts`) texts the assigned vendor the unit
+  address, priority, description, and tenant contact info so they can
+  arrange access directly — the same information a dispatcher would
+  give over the phone. A deliberate, staff-triggered action (not
+  automatic on assignment or on every edit), and `vendorNotifiedAt` on
+  the ticket shows whether/when it actually went out.
+
+No new setup required — reuses the Twilio and Anthropic credentials
+already configured above.
+
 ## Tenant screening
 
 `TenantScreening` (one per `Lead`) records the outcome of a SingleKey (or

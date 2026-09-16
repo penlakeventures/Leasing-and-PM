@@ -10,10 +10,10 @@ const EMPTY_TWIML = new NextResponse("<Response></Response>", {
 });
 
 // Twilio calls this for every inbound text to the connected number. Every
-// message lands on whichever tenant or lead owns that phone number (an
-// unrecognized number becomes a new lead, source OTHER) as an ongoing
-// conversation, not a one-off note — mirrors the Facebook Messenger
-// webhook's own append-to-existing-thread behaviour.
+// message lands on whichever tenant, lead, or vendor owns that phone
+// number (an unrecognized number becomes a new lead, source OTHER) as an
+// ongoing conversation, not a one-off note — mirrors the Facebook
+// Messenger webhook's own append-to-existing-thread behaviour.
 export async function POST(req: NextRequest) {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   if (!authToken) {
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
   revalidatePath("/communications");
   if ("tenantId" in logData) revalidatePath(`/tenants/${logData.tenantId}`);
   if ("leadId" in logData) revalidatePath(`/leads/${logData.leadId}`);
+  if ("vendorId" in logData) revalidatePath(`/vendors/${logData.vendorId}`);
 
   return EMPTY_TWIML;
 }

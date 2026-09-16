@@ -9,11 +9,13 @@ import { sendSms } from "@/lib/twilio";
 async function sendText({
   tenantId,
   leadId,
+  vendorId,
   phone,
   redirectTo,
 }: {
   tenantId?: string;
   leadId?: string;
+  vendorId?: string;
   phone: string | null;
   redirectTo: string;
 }, formData: FormData) {
@@ -31,6 +33,7 @@ async function sendText({
       data: {
         tenantId,
         leadId,
+        vendorId,
         channel: "TEXT",
         direction: "OUTBOUND",
         summary: body,
@@ -69,6 +72,15 @@ export async function sendLeadText(leadId: string, formData: FormData) {
   if (!lead) redirect("/leads");
   await sendText(
     { leadId, phone: lead.contactPhone, redirectTo: `/leads/${leadId}` },
+    formData,
+  );
+}
+
+export async function sendVendorText(vendorId: string, formData: FormData) {
+  const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+  if (!vendor) redirect("/vendors");
+  await sendText(
+    { vendorId, phone: vendor.contactPhone, redirectTo: `/vendors/${vendorId}` },
     formData,
   );
 }

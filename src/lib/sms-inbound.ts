@@ -10,7 +10,7 @@ import { normalizePhone } from "@/lib/phone";
 // stored phone format into one comparable column first.
 export async function findContactByPhone(
   from: string,
-): Promise<{ tenantId: string } | { leadId: string } | null> {
+): Promise<{ tenantId: string } | { leadId: string } | { vendorId: string } | null> {
   const target = normalizePhone(from);
 
   const tenants = await prisma.tenant.findMany({
@@ -27,6 +27,13 @@ export async function findContactByPhone(
   });
   const lead = leads.find((l) => l.contactPhone && normalizePhone(l.contactPhone) === target);
   if (lead) return { leadId: lead.id };
+
+  const vendors = await prisma.vendor.findMany({
+    where: { contactPhone: { not: null } },
+    select: { id: true, contactPhone: true },
+  });
+  const vendor = vendors.find((v) => v.contactPhone && normalizePhone(v.contactPhone) === target);
+  if (vendor) return { vendorId: vendor.id };
 
   return null;
 }

@@ -78,3 +78,50 @@ export async function draftSmsReply({
   const textBlock = response.content.find((b) => b.type === "text");
   return textBlock?.text.trim() ?? "";
 }
+
+// This drafts a maintenance ticket for a HUMAN to review and create — it
+// never creates the ticket itself. Same reasoning as draftSmsReply: a
+// person decides what actually goes on the record, this just saves the
+// re-typing.
+const TICKET_SYSTEM_PROMPT = `You are drafting a maintenance ticket for Pen Lake Ventures, a residential landlord in Calgary, Alberta, Canada, from a tenant's recent text messages. You are drafting for a HUMAN staff member to review and edit before it becomes a real ticket — you are not creating anything yourself.
+
+Read the tenant's texts below and produce exactly two lines, in this exact format, nothing else:
+PRIORITY: <LOW, MEDIUM, HIGH, or URGENT>
+DESCRIPTION: <a clear one-to-two sentence description of the maintenance issue, written the way a staff member would log it>
+
+Priority guide: URGENT = safety risk or actively causing damage (no heat in winter, active leak/flooding, no working smoke detector, break-in/security). HIGH = a core system not working (no hot water, fridge/stove broken, no working toilet). MEDIUM = inconvenient but livable (a dripping faucet, a broken light fixture, a squeaky door). LOW = cosmetic or non-urgent (a scuff on a wall, a loose cabinet handle).
+
+If the texts don't actually describe a maintenance issue, still output the two lines: PRIORITY: LOW and a DESCRIPTION noting what was actually said, so a human reviewing it can tell it wasn't a real maintenance request rather than getting an empty response.
+
+Never invent details not present in the texts below. Output nothing besides the two lines.`;
+
+export type TicketDraft = { priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; description: string };
+
+// Exported so the parsing (the model's plain-text two-line format, not a
+// JSON tool call — kept simple and reviewable in the system prompt above)
+// can be unit-tested without a network call.
+export function parseTicketDraft(raw: string): TicketDraft {
+  const priorityMatch = raw.match(/PRIORITY:\s*(LOW|MEDIUM|HIGH|URGENT)/i);
+  const descriptionMatch = raw.match(/DESCRIPTION:\s*([\s\S]*)/i);
+  const priority = (priorityMatch?.[1]?.toUpperCase() ?? "MEDIUM") as TicketDraft["priority"];
+  const description = descriptionMatch?.[1]?.trim() || raw.trim();
+  return { priority, description };
+}
+
+export async function draftMaintenanceTicket({
+  tenantContext,
+  transcript,
+}: {
+  tenantContext: string;
+  transcript: { direction: "INBOUND" | "OUTBOUND"; text: string }[];
+}): Promise<TicketDraft> {
+  const response = await getClient().messages.create({
+    model: "claude-opus-5",
+    max_tokens: 512, // two short lines — no reason to allow more
+    system: `${TICKET_SYSTEM_PROMPT}\n\nContext about this tenant:\n${tenantContext}`,
+    messages: buildDraftMessages(transcript),
+  });
+
+  const textBlock = response.content.find((b) => b.type === "text");
+  return parseTicketDraft(textBlock?.text ?? "");
+}

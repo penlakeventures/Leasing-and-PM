@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { PageHeader, Button, Table, Th, Td } from "@/components/ui";
 import { TenantForm } from "@/components/tenant-form";
 import { MessagePanel } from "@/components/message-panel";
-import { updateTenant, deleteTenant } from "@/lib/actions/tenants";
+import { TicketDraftPanel } from "@/components/ticket-draft-panel";
+import { updateTenant, deleteTenant, generateTicketDraft, createTicketFromDraft } from "@/lib/actions/tenants";
 import { sendTenantText } from "@/lib/actions/sms";
 import Link from "next/link";
 
@@ -31,6 +32,8 @@ export default async function TenantDetailPage({
   const updateWithId = updateTenant.bind(null, id);
   const deleteWithId = deleteTenant.bind(null, id);
   const sendTextWithId = sendTenantText.bind(null, id);
+  const draftTicketWithId = generateTicketDraft.bind(null, id);
+  const createTicketWithId = createTicketFromDraft.bind(null, id);
 
   return (
     <div className="space-y-8">
@@ -41,6 +44,15 @@ export default async function TenantDetailPage({
         messages={tenant.communications}
         phone={tenant.phone}
         sendAction={sendTextWithId}
+      />
+
+      <TicketDraftPanel
+        draft={{
+          description: tenant.draftTicketDescription,
+          priority: tenant.draftTicketPriority,
+        }}
+        draftAction={draftTicketWithId}
+        createAction={createTicketWithId}
       />
 
       <div>
