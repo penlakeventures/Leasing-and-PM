@@ -57,11 +57,17 @@ export function Nav() {
     <nav className="flex flex-wrap items-start gap-x-5 gap-y-2 border-b border-neutral-200 bg-white px-4 py-2">
       {groups.map((group, i) => (
         <div key={i} className="flex flex-col gap-1">
-          {group.label && (
-            <span className="px-3 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
-              {group.label}
-            </span>
-          )}
+          {/* Always reserve the label row's height, even for the unlabeled
+              Dashboard group — otherwise its tab sits a full line higher
+              than every other group's tabs instead of lining up with them. */}
+          <span
+            aria-hidden={!group.label}
+            className={`px-3 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 ${
+              group.label ? "" : "invisible"
+            }`}
+          >
+            {group.label ?? " "}
+          </span>
           <div className="flex flex-wrap gap-1">
             {group.links.map((link) => {
               const active =
