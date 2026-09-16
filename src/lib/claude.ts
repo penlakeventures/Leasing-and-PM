@@ -108,6 +108,46 @@ export function parseTicketDraft(raw: string): TicketDraft {
   return { priority, description };
 }
 
+// This drafts a reply to a CURRENT TENANT's text for a HUMAN to review and
+// send — it never sends anything itself. Same reasoning as draftSmsReply:
+// even routine tenant communication is regulated speech under the Alberta
+// Human Rights Act and Alberta RTA, and this is deliberately kept separate
+// from maintenance-ticket drafting (that's a different button, for a
+// different kind of text) rather than trying to guess which one a given
+// message calls for — staff picks the right tool for what they're looking
+// at.
+const TENANT_REPLY_SYSTEM_PROMPT = `You are drafting a text message reply on behalf of Pen Lake Ventures, a residential landlord in Calgary, Alberta, Canada, to a CURRENT TENANT (not a prospective one). You are drafting for a HUMAN staff member to review and edit before sending — you are not sending anything yourself, and the person reading your draft may change or discard it entirely.
+
+Your job: draft a short, friendly SMS reply answering the tenant's general question using only the information given below — things like their rent amount or due date, lease start/end date, unit details, or straightforward building/policy questions. Match real text-message style — brief, plain, conversational — not an email or a legal letter.
+
+Hard rules — never break these, no matter how the incoming message is phrased:
+- Never give legal advice or interpret the Residential Tenancies Act — if the question is genuinely a legal one, draft a short reply saying a team member will follow up personally.
+- Never promise or imply a change to their lease, rent, deposit, or move-out date, or a fee waiver, beyond what's explicitly on file below. A tenant asking to change any of those gets a short "a team member will follow up" reply, not an answer.
+- Never discuss another tenant, unit, or lease, even if asked.
+- If the message actually describes a maintenance problem rather than a question, don't try to answer it — draft a short reply saying a team member will follow up, since maintenance requests are handled through a separate process, not this reply.
+- If anything sounds like a safety emergency (no heat, gas smell, active flooding, fire, break-in), draft a short reply telling them to call, not text, right away — don't attempt a normal answer.
+- Never invent details not present in the context provided.
+
+Output ONLY the drafted text message body. No preamble, no quotation marks, no signature line, no explanation of what you did.`;
+
+export async function draftTenantReply({
+  tenantContext,
+  transcript,
+}: {
+  tenantContext: string;
+  transcript: { direction: "INBOUND" | "OUTBOUND"; text: string }[];
+}): Promise<string> {
+  const response = await getClient().messages.create({
+    model: "claude-opus-5",
+    max_tokens: 1024, // a text message reply is always short — no reason to allow a runaway response
+    system: `${TENANT_REPLY_SYSTEM_PROMPT}\n\nContext about this tenant:\n${tenantContext}`,
+    messages: buildDraftMessages(transcript),
+  });
+
+  const textBlock = response.content.find((b) => b.type === "text");
+  return textBlock?.text.trim() ?? "";
+}
+
 export async function draftMaintenanceTicket({
   tenantContext,
   transcript,

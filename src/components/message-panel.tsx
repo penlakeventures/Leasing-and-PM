@@ -17,8 +17,8 @@ export function MessagePanel({
   messages: Message[];
   phone: string | null;
   sendAction: (formData: FormData) => Promise<void>;
-  // Only leads get AI-drafted suggestions today (Phase 2 lead response) —
-  // omit both on the Tenant page.
+  // Leads and tenants get AI-drafted suggestions; omit both props on a
+  // page (e.g. Vendor) that doesn't draft replies.
   draftReply?: string | null;
   draftAction?: (formData: FormData) => Promise<void>;
 }) {

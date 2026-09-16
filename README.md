@@ -290,8 +290,8 @@ Console, to the URL shown on Settings → Texting once deployed.
 ## AI-drafted lead replies
 
 The first piece of the project's original "orchestrator agent" concept:
-a "✨ Suggest a reply" button on a Lead's Texts panel (`MessagePanel`,
-only wired up on the Lead page — not Tenant) that calls Claude
+a "✨ Suggest a reply" button on a Lead's Texts panel (`MessagePanel` —
+also wired up on the Tenant page, see "Tenant Q&A" below) that calls Claude
 (`draftSmsReply()` in `src/lib/claude.ts`, via the official
 `@anthropic-ai/sdk` — the one exception to this project's usual
 raw-`fetch` pattern for third-party APIs, since an official SDK exists
@@ -347,6 +347,26 @@ texted the details directly.
 
 No new setup required — reuses the Twilio and Anthropic credentials
 already configured above.
+
+## Tenant Q&A
+
+The same "✨ Suggest a reply" AI-drafting pattern as Lead replies above,
+now also on the Tenant page's Texts panel (`MessagePanel`), for a
+tenant's general questions — rent amount/due date, lease dates, unit
+details, straightforward policy questions — as opposed to a maintenance
+issue, which uses the separate "Draft a ticket" button instead.
+`draftTenantReply()` in `src/lib/claude.ts` reads the tenant's active
+lease (via `pickActiveLease()`) and recent texts, and saves its draft to
+`Tenant.draftReply` — same review-before-send discipline as everything
+else here: never sends anything itself, only ever runs when a staff
+member clicks the button, and the system prompt hard-codes it to punt to
+a human for anything legal, anything that would change the lease/rent/
+deposit, anything about another tenant, or anything that reads like a
+safety emergency (told to call, not text). Cleared automatically once a
+real reply goes out, same as a lead's draft.
+
+No new setup required — reuses the Anthropic credentials already
+configured above.
 
 ## Rent tracking & reminders
 

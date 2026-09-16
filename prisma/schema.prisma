@@ -118,6 +118,12 @@ model Tenant {
   draftTicketDescription String?
   draftTicketPriority    TicketPriority?
 
+  // AI-drafted reply to this tenant's most recent text, generated on demand
+  // (Phase 3 tenant Q&A) — same pattern as Lead.draftReply and the ticket
+  // draft above: a human reviews/edits it in the Texts panel and only an
+  // explicit Send commits it. Cleared once sent.
+  draftReply String?
+
   leases          LeaseTenant[]
   tickets         MaintenanceTicket[]
   communications  CommunicationLog[]

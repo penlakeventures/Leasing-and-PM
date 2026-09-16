@@ -41,10 +41,13 @@ async function sendText({
         externalRef: `twilio:${sid}`,
       },
     });
-    // Whatever AI-drafted suggestion was sitting on this lead is now
+    // Whatever AI-drafted suggestion was sitting on this lead/tenant is now
     // stale — a real reply just went out, used or not.
     if (leadId) {
       await prisma.lead.update({ where: { id: leadId }, data: { draftReply: null } });
+    }
+    if (tenantId) {
+      await prisma.tenant.update({ where: { id: tenantId }, data: { draftReply: null } });
     }
   } catch (e) {
     console.error("[sendText] sendSms failed:", e);

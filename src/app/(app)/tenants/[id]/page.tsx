@@ -4,7 +4,13 @@ import { PageHeader, Button, Table, Th, Td } from "@/components/ui";
 import { TenantForm } from "@/components/tenant-form";
 import { MessagePanel } from "@/components/message-panel";
 import { TicketDraftPanel } from "@/components/ticket-draft-panel";
-import { updateTenant, deleteTenant, generateTicketDraft, createTicketFromDraft } from "@/lib/actions/tenants";
+import {
+  updateTenant,
+  deleteTenant,
+  generateTicketDraft,
+  createTicketFromDraft,
+  generateTenantReplyDraft,
+} from "@/lib/actions/tenants";
 import { sendTenantText } from "@/lib/actions/sms";
 import Link from "next/link";
 
@@ -34,6 +40,7 @@ export default async function TenantDetailPage({
   const sendTextWithId = sendTenantText.bind(null, id);
   const draftTicketWithId = generateTicketDraft.bind(null, id);
   const createTicketWithId = createTicketFromDraft.bind(null, id);
+  const draftReplyWithId = generateTenantReplyDraft.bind(null, id);
 
   return (
     <div className="space-y-8">
@@ -44,6 +51,8 @@ export default async function TenantDetailPage({
         messages={tenant.communications}
         phone={tenant.phone}
         sendAction={sendTextWithId}
+        draftReply={tenant.draftReply}
+        draftAction={draftReplyWithId}
       />
 
       <TicketDraftPanel
