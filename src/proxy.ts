@@ -18,12 +18,16 @@ export default auth((req) => {
   // signature verification (POST) instead.
   const isMessengerWebhook =
     req.nextUrl.pathname === "/api/leads/facebook-messenger-webhook";
+  // Same idea for the Twilio SMS webhook: called by Twilio, not a signed-in
+  // person, guarded by its own request-signature verification instead.
+  const isTwilioWebhook = req.nextUrl.pathname === "/api/sms/twilio-webhook";
 
   if (
     isAuthApi ||
     isSeedApi ||
     isRentFasterInboundApi ||
-    isMessengerWebhook
+    isMessengerWebhook ||
+    isTwilioWebhook
   )
     return NextResponse.next();
 

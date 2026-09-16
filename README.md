@@ -255,6 +255,38 @@ with "Scoped access" and "Full Dropbox" access, and a redirect URI of
 `.env.example`), then connect an account and set the base folder path
 from Settings → Documents.
 
+## SMS (Twilio)
+
+A dedicated phone number for texting with leads and tenants — kept
+deliberately separate from any personal phone. Inbound texts land on
+`/api/sms/twilio-webhook` (public, guarded by Twilio's own
+request-signature check per `verifyTwilioSignature()` in
+`src/lib/twilio.ts`, same shape as the Facebook Messenger webhook's
+signature check) and are matched to whoever owns that phone number: a
+`Tenant` match takes priority over a `Lead` match (an existing tenant
+texting in is the common case), and an unrecognized number becomes a
+new `Lead` (source `OTHER`) the same append-to-existing-thread way the
+Messenger webhook handles an unknown sender — a second text from a
+still-unmatched number appends to that lead rather than creating a
+new one. Phone numbers are stored as whatever free text staff typed in,
+so matching compares the last 10 digits (`normalizePhone()` in
+`src/lib/phone.ts`) rather than requiring one canonical format.
+
+Every text — inbound or outbound — is a `CommunicationLog` row
+(`channel: TEXT`), shown as a conversation thread (`MessagePanel`) on
+the matching tenant's or lead's own page, with a reply box right there;
+sending goes through `sendTenantText`/`sendLeadText` in
+`src/lib/actions/sms.ts`, which call Twilio's REST API directly (no
+SDK, matching the Google Calendar/Dropbox pattern) and log the
+outbound message the same way.
+
+**Setup required**: a Twilio account and a purchased phone number
+(console.twilio.com) — `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/
+`TWILIO_PHONE_NUMBER` go in the environment (see `.env.example`).
+Unlike Calendar/Dropbox there's no in-app "connect" step: instead, set
+that phone number's "A message comes in" webhook, in the Twilio
+Console, to the URL shown on Settings → Texting once deployed.
+
 ## Tenant screening
 
 `TenantScreening` (one per `Lead`) records the outcome of a SingleKey (or

@@ -2,7 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { PageHeader, Button, Table, Th, Td } from "@/components/ui";
 import { TenantForm } from "@/components/tenant-form";
+import { MessagePanel } from "@/components/message-panel";
 import { updateTenant, deleteTenant } from "@/lib/actions/tenants";
+import { sendTenantText } from "@/lib/actions/sms";
 import Link from "next/link";
 
 export default async function TenantDetailPage({
@@ -18,17 +20,28 @@ export default async function TenantDetailPage({
     where: { id },
     include: {
       leases: { include: { lease: { include: { unit: { include: { projectEntity: true } } } } } },
+      communications: {
+        where: { channel: "TEXT" },
+        orderBy: { timestamp: "asc" },
+      },
     },
   });
   if (!tenant) notFound();
 
   const updateWithId = updateTenant.bind(null, id);
   const deleteWithId = deleteTenant.bind(null, id);
+  const sendTextWithId = sendTenantText.bind(null, id);
 
   return (
     <div className="space-y-8">
       <PageHeader title={tenant.name} />
       <TenantForm action={updateWithId} defaultValues={tenant} error={error} />
+
+      <MessagePanel
+        messages={tenant.communications}
+        phone={tenant.phone}
+        sendAction={sendTextWithId}
+      />
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-neutral-900">Leases</h2>

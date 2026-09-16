@@ -18,6 +18,7 @@ const links = [
   { href: "/settings/rates", label: "Rates" },
   { href: "/settings/calendar", label: "Calendar" },
   { href: "/settings/dropbox", label: "Documents" },
+  { href: "/settings/texting", label: "Texting" },
 ];
 
 export function Nav() {
