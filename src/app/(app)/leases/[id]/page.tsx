@@ -4,7 +4,9 @@ import { PageHeader, Button } from "@/components/ui";
 import { LeaseForm } from "@/components/lease-form";
 import { DepositPanel } from "@/components/deposit-panel";
 import { DocumentUploadPanel } from "@/components/document-upload-panel";
-import { updateLease, deleteLease, uploadLeaseDocument } from "@/lib/actions/leases";
+import { LeaseSigningPanel } from "@/components/lease-signing-panel";
+import { updateLease, deleteLease, uploadLeaseDocument, sendLeaseForSignature } from "@/lib/actions/leases";
+import { buildLeaseMergeFields, projectLegalEntityName } from "@/lib/lease-document";
 
 export default async function LeaseDetailPage({
   params,
@@ -20,8 +22,9 @@ export default async function LeaseDetailPage({
     prisma.lease.findUnique({
       where: { id },
       include: {
-        tenants: true,
+        tenants: { include: { tenant: true } },
         securityDeposit: { include: { deductions: true } },
+        unit: { include: { projectEntity: true } },
       },
     }),
     prisma.unit.findMany({
@@ -35,6 +38,19 @@ export default async function LeaseDetailPage({
   const updateWithId = updateLease.bind(null, id);
   const deleteWithId = deleteLease.bind(null, id);
   const uploadWithId = uploadLeaseDocument.bind(null, id);
+  const sendForSignatureWithId = sendLeaseForSignature.bind(null, id);
+
+  const leaseTenants = lease.tenants.map((lt) => lt.tenant);
+  const signingDefaults = buildLeaseMergeFields({
+    landlordName: projectLegalEntityName(lease.unit.projectEntity.internalName),
+    tenantNames: leaseTenants.map((t) => t.name),
+    premises: `Unit ${lease.unit.unitNumber}, ${lease.unit.projectEntity.address}`,
+    startDate: lease.startDate,
+    endDate: lease.endDate ?? lease.startDate,
+    rentAmount: Number(lease.rentAmount),
+    depositAmount: lease.securityDeposit ? Number(lease.securityDeposit.amount) : Number(lease.rentAmount),
+    depositDate: lease.securityDeposit?.dateReceived ?? new Date(),
+  });
 
   return (
     <div className="space-y-8">
@@ -56,6 +72,16 @@ export default async function LeaseDetailPage({
           ...lease,
           tenantIds: lease.tenants.map((t) => t.tenantId),
         }}
+      />
+
+      <LeaseSigningPanel
+        periodic={lease.periodic}
+        hasEndDate={Boolean(lease.endDate)}
+        signatureRequestId={lease.signatureRequestId}
+        signatureSentAt={lease.signatureSentAt}
+        signedDate={lease.signedDate}
+        defaults={signingDefaults}
+        sendAction={sendForSignatureWithId}
       />
 
       <DocumentUploadPanel

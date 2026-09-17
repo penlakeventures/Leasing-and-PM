@@ -54,6 +54,7 @@ const groups: { label: string | null; links: { href: string; label: string }[] }
       { href: "/settings/calendar", label: "Calendar" },
       { href: "/settings/dropbox", label: "Documents" },
       { href: "/settings/texting", label: "Texting" },
+      { href: "/settings/signing", label: "Signing" },
     ],
   },
 ];

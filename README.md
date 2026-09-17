@@ -502,6 +502,75 @@ has a signed lease, filing the SingleKey report itself into that lease's
 Dropbox folder — see "Uploading a document straight to that folder"
 under Dropbox lease-document filing above.
 
+## Lease generation & e-signature (Dropbox Sign)
+
+A "Send for signature" panel on a new fixed-term lease's page merges the
+lease's own data into pre-built Dropbox Sign templates and sends one
+combined signing request — the main lease (Townhome or Suite, chosen by
+`Unit.utilitiesIncludedInRent`) plus the Smoking/Cannabis Addendum, and
+the Additional Lease Terms addendum too if custom terms were entered.
+Once everyone's signed, the final PDF is fetched and filed automatically
+into that lease's own Dropbox folder (`documentsFolderPath` — see
+Dropbox lease-document filing above), and `Lease.signedDate` gets
+stamped. No PDF generation/merging code lives in this app at all — that's
+entirely Dropbox Sign's own Templates feature.
+
+- **Merge fields, computed in `src/lib/lease-document.ts`**
+  (`buildLeaseMergeFields()`, pure and unit-tested-by-hand for the ordinal
+  date formatting and partial-rent proration): `agreement_date`,
+  `landlord_name` (`{project}. Inc.` — a derived constant per
+  `projectLegalEntityName()`, not a stored field, since it's confirmed to
+  follow that pattern for all seven current projects), `tenant_name_1`/
+  `tenant_name_2`, `premises`, `term_start`/`term_end`, `rent_amount`,
+  `partial_rent_amount`/`partial_rent_period` (blank unless move-in isn't
+  the 1st), `deposit_amount`/`deposit_date` (defaults to the lease's
+  `SecurityDeposit` if one's on file, else the rent amount), and
+  `custom_terms_text` when custom terms are entered.
+- **Always a human review step before sending.** `LeaseSigningPanel`
+  shows every computed value in an editable field — never send-on-load —
+  since these are exactly the values that end up on a binding document;
+  `sendLeaseForSignature()` in `src/lib/actions/leases.ts` sends whatever
+  was actually submitted, not what was originally computed.
+- **`src/lib/dropbox-sign.ts`**: a thin raw-`fetch` client (API key auth,
+  `DROPBOX_SIGN_API_KEY` — one business-owned key, not a per-account OAuth
+  connection, since there's only ever one Dropbox Sign account this app
+  sends from) — `sendForSignature()` (calls
+  `signature_request/send_with_template`), `getSignedFile()`, and
+  `verifyDropboxSignWebhook()` (their own HMAC-SHA256-of-event_time+
+  event_type-keyed-by-the-API-key scheme).
+- **`src/app/api/signing/dropbox-sign-webhook/route.ts`**: verifies the
+  event, and on `signature_request_all_signed` or
+  `signature_request_downloadable` (whichever arrives — both are treated
+  as "go fetch and file it," guarded by `signedDate` already being set so
+  it only happens once) fetches the final PDF and uploads it via the
+  existing `uploadFile()` in `src/lib/dropbox.ts`. Every response —
+  including a signature-verification failure — still needs the literal
+  body `"Hello API Event Received"` with HTTP 200 for anything Dropbox
+  Sign considers a legitimate delivery, or their callback gets disabled
+  after repeated failures; only an actual bad signature gets a 403
+  instead.
+- **Settings → Signing**: the landlord signer's name/email (used on every
+  lease — a fixed identity, unlike the per-project landlord *name printed
+  on the document*, which is derived) and the four template IDs, all
+  editable without a redeploy — same reasoning as the Dropbox base folder
+  path setting.
+- Scoped to **new fixed-term leases only** (an existing `endDate`
+  required, `periodic: false`) — a periodic lease, and renewals generally,
+  are handled outside the app for now. At most 2 tenant signers (matching
+  the template); a lease with more needs to be sent manually. Every
+  tenant needs an email on file — the action blocks with a clear error
+  naming which tenant is missing one otherwise.
+
+**Setup required**: a Dropbox Sign account with API access, and — this is
+the part that can't be automated — four templates created once in the
+Dropbox Sign dashboard (Townhome lease, Suite lease, Smoking/Cannabis
+Addendum, Additional Lease Terms), each with the same three signer roles
+(`Landlord`, `Tenant 1`, `Tenant 2`) and the merge field names listed
+above placed on it. `DROPBOX_SIGN_API_KEY` goes in the environment (see
+`.env.example`); the landlord signer and the four template IDs go under
+Settings → Signing, which also shows the exact webhook URL to paste into
+the Dropbox Sign dashboard's callback settings.
+
 ## What's *not* in Phase 1
 
 Carried forward from the open items in `docs/phase0_data_model.md`:

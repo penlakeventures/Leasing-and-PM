@@ -17,6 +17,7 @@ function parseUnitForm(formData: FormData) {
     baseRent: Number(formData.get("baseRent")),
     currentRent: Number(formData.get("currentRent")),
     tenancyType: formData.get("tenancyType") as "EXTERNAL" | "INTERNAL",
+    utilitiesIncludedInRent: formData.get("utilitiesIncludedInRent") === "on",
   };
 }
 

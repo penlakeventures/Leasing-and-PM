@@ -25,6 +25,10 @@ export default auth((req) => {
   // GitHub Actions workflow, not a signed-in person, guarded by its own
   // CRON_TOKEN check instead.
   const isCronApi = req.nextUrl.pathname === "/api/cron/rent-reminders";
+  // Same idea for the Dropbox Sign webhook: called by Dropbox Sign, not a
+  // signed-in person, guarded by its own event-hash verification instead.
+  const isDropboxSignWebhook =
+    req.nextUrl.pathname === "/api/signing/dropbox-sign-webhook";
 
   if (
     isAuthApi ||
@@ -32,7 +36,8 @@ export default auth((req) => {
     isRentFasterInboundApi ||
     isMessengerWebhook ||
     isTwilioWebhook ||
-    isCronApi
+    isCronApi ||
+    isDropboxSignWebhook
   )
     return NextResponse.next();
 

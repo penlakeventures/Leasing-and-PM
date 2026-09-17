@@ -18,6 +18,7 @@ export function UnitForm({
     baseRent: unknown;
     currentRent: unknown;
     tenancyType: string;
+    utilitiesIncludedInRent: boolean;
   };
   defaultProjectId?: string;
   error?: string;
@@ -130,6 +131,15 @@ export function UnitForm({
             />
           </Field>
         </div>
+        <label className="flex items-center gap-2 text-sm text-neutral-700">
+          <input
+            type="checkbox"
+            name="utilitiesIncludedInRent"
+            defaultChecked={defaultValues?.utilitiesIncludedInRent}
+            className="rounded border-neutral-300"
+          />
+          Utilities included in rent (Suite lease template, not Townhome)
+        </label>
         <div className="flex gap-2 pt-2">
           <Button type="submit">Save</Button>
           <LinkButton href="/units" variant="secondary">

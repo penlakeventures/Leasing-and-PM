@@ -87,6 +87,12 @@ model Unit {
   baseRent        Decimal         @db.Decimal(10, 2)
   currentRent     Decimal         @db.Decimal(10, 2)
   tenancyType     TenancyType     @default(EXTERNAL)
+  // Which lease template a new lease for this unit uses (see "Send for
+  // signature" on the Lease page): true = utilities included in rent
+  // (the "Suite" template), false = tenant pays utilities directly (the
+  // "Townhome" template). Defaults off since that's the more common case
+  // portfolio-wide; set per unit, not inferred from anything else.
+  utilitiesIncludedInRent Boolean @default(false)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -161,6 +167,16 @@ model Lease {
   documentsFolderPath  String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+
+  // E-signature (Dropbox Sign) — set once "Send for signature" is used.
+  // signatureRequestId is null until sent; signedDate (above) gets
+  // stamped automatically once the webhook confirms everyone's signed,
+  // same field staff could already set by hand for an off-app signature.
+  signatureRequestId String?   @unique
+  signatureSentAt    DateTime?
+  // What was actually sent in the optional "Additional Lease Terms"
+  // addendum, if anything — kept for the record, not just the live draft.
+  additionalTermsText String?
 
   tenants         LeaseTenant[]
   securityDeposit SecurityDeposit?
@@ -296,6 +312,26 @@ model DropboxConnection {
   updatedAt    DateTime @updatedAt
 
   @@map("dropbox_connections")
+}
+
+// No OAuth "connect" step for Dropbox Sign — it's a single business-owned
+// API key (DROPBOX_SIGN_API_KEY, an environment variable, same pattern as
+// Twilio/Anthropic) plus these editable template IDs, which the owner
+// creates once in the Dropbox Sign dashboard and pastes in here. A
+// singleton row (id is always "singleton") rather than one row per
+// something, matching how there's exactly one set of these values for the
+// whole app.
+model SigningSettings {
+  id                       String   @id @default("singleton")
+  landlordSignerName       String?
+  landlordSignerEmail      String?
+  leaseTownhomeTemplateId  String?
+  leaseSuiteTemplateId     String?
+  smokingAddendumTemplateId String?
+  additionalTermsTemplateId String?
+  updatedAt                DateTime @updatedAt
+
+  @@map("signing_settings")
 }
 
 // ---------------------------------------------------------------------------

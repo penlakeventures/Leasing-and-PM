@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { checkRentEscalation, checkRentIncreaseNotice, pickActiveLease } from "@/lib/rules";
 import { prepareLeaseFolder, uploadFile } from "@/lib/dropbox";
+import { sendForSignature } from "@/lib/dropbox-sign";
 
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
@@ -224,6 +225,114 @@ export async function uploadLeaseDocument(leaseId: string, formData: FormData) {
     console.error("[uploadLeaseDocument] uploadFile failed:", e);
     redirect(
       `/leases/${leaseId}?error=${encodeURIComponent("Couldn't upload that file to Dropbox — check the connection under Settings and try again.")}`,
+    );
+  }
+
+  revalidatePath(`/leases/${leaseId}`);
+  redirect(`/leases/${leaseId}`);
+}
+
+// Sends this lease (plus the Smoking/Cannabis Addendum, and Additional
+// Lease Terms if custom_terms_text was filled in) as one combined
+// Dropbox Sign signature request. Every value here comes from the
+// submitted form, not recomputed — the LeaseSigningPanel pre-fills it
+// from buildLeaseMergeFields() but staff can edit anything before
+// sending, since this is what actually ends up on a binding document.
+// Never re-sends once a signatureRequestId is on file (no "send again"
+// from here — that'd risk two live signature requests for one lease).
+export async function sendLeaseForSignature(leaseId: string, formData: FormData) {
+  const lease = await prisma.lease.findUnique({
+    where: { id: leaseId },
+    include: {
+      unit: { include: { projectEntity: true } },
+      tenants: { include: { tenant: true } },
+    },
+  });
+  if (!lease) redirect("/leases");
+  if (lease.signatureRequestId) redirect(`/leases/${leaseId}`);
+  if (lease.periodic || !lease.endDate) {
+    redirect(
+      `/leases/${leaseId}?error=${encodeURIComponent("Only a fixed-term lease (with an end date) can be sent for signature from here.")}`,
+    );
+  }
+
+  const tenants = lease.tenants.map((lt) => lt.tenant);
+  if (tenants.length === 0) {
+    redirect(`/leases/${leaseId}?error=${encodeURIComponent("Add at least one tenant to this lease first.")}`);
+  }
+  if (tenants.length > 2) {
+    redirect(
+      `/leases/${leaseId}?error=${encodeURIComponent("This lease has more than 2 tenants — the signing template only supports 2. Send this one manually instead.")}`,
+    );
+  }
+  const missingEmail = tenants.find((t) => !t.email);
+  if (missingEmail) {
+    redirect(
+      `/leases/${leaseId}?error=${encodeURIComponent(`${missingEmail.name} has no email on file — add one on their tenant page before sending for signature.`)}`,
+    );
+  }
+
+  const settings = await prisma.signingSettings.findUnique({ where: { id: "singleton" } });
+  const leaseTemplateId = lease.unit.utilitiesIncludedInRent
+    ? settings?.leaseSuiteTemplateId
+    : settings?.leaseTownhomeTemplateId;
+  if (!settings?.landlordSignerName || !settings.landlordSignerEmail || !leaseTemplateId || !settings.smokingAddendumTemplateId) {
+    redirect(
+      `/leases/${leaseId}?error=${encodeURIComponent("Signing isn't fully set up yet — fill in the landlord signer and template IDs under Settings → Signing.")}`,
+    );
+  }
+
+  const customTermsText = (formData.get("custom_terms_text") as string)?.trim() || null;
+  const templateIds = [leaseTemplateId, settings.smokingAddendumTemplateId];
+  if (customTermsText) {
+    if (!settings.additionalTermsTemplateId) {
+      redirect(
+        `/leases/${leaseId}?error=${encodeURIComponent("Custom terms were entered, but the Additional Lease Terms template ID isn't set under Settings → Signing.")}`,
+      );
+    }
+    templateIds.push(settings.additionalTermsTemplateId);
+  }
+
+  const customFields: Record<string, string> = {
+    agreement_date: (formData.get("agreement_date") as string) ?? "",
+    landlord_name: (formData.get("landlord_name") as string) ?? "",
+    tenant_name_1: (formData.get("tenant_name_1") as string) ?? "",
+    tenant_name_2: (formData.get("tenant_name_2") as string) ?? "",
+    premises: (formData.get("premises") as string) ?? "",
+    term_start: (formData.get("term_start") as string) ?? "",
+    term_end: (formData.get("term_end") as string) ?? "",
+    rent_amount: (formData.get("rent_amount") as string) ?? "",
+    partial_rent_amount: (formData.get("partial_rent_amount") as string) ?? "",
+    partial_rent_period: (formData.get("partial_rent_period") as string) ?? "",
+    deposit_amount: (formData.get("deposit_amount") as string) ?? "",
+    deposit_date: (formData.get("deposit_date") as string) ?? "",
+  };
+  if (customTermsText) customFields.custom_terms_text = customTermsText;
+
+  const signers: { role: "Landlord" | "Tenant 1" | "Tenant 2"; name: string; email: string }[] = [
+    { role: "Landlord", name: settings.landlordSignerName, email: settings.landlordSignerEmail },
+    { role: "Tenant 1", name: tenants[0].name, email: tenants[0].email! },
+  ];
+  if (tenants[1]) {
+    signers.push({ role: "Tenant 2", name: tenants[1].name, email: tenants[1].email! });
+  }
+
+  try {
+    const { signatureRequestId } = await sendForSignature({
+      templateIds,
+      subject: `Lease for ${lease.unit.projectEntity.internalName} — Unit ${lease.unit.unitNumber}`,
+      message: "Please review and sign your lease. Reach out if you have any questions.",
+      signers,
+      customFields,
+    });
+    await prisma.lease.update({
+      where: { id: leaseId },
+      data: { signatureRequestId, signatureSentAt: new Date(), additionalTermsText: customTermsText },
+    });
+  } catch (e) {
+    console.error("[sendLeaseForSignature] sendForSignature failed:", e);
+    redirect(
+      `/leases/${leaseId}?error=${encodeURIComponent("Couldn't send for signature — check the Dropbox Sign connection under Settings and try again.")}`,
     );
   }
 
