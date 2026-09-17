@@ -57,8 +57,12 @@ async function fileSignedLease(signatureRequestId: string): Promise<void> {
   const lease = await prisma.lease.findUnique({ where: { signatureRequestId } });
   // Already processed (the other of the two events above already handled
   // it), the request doesn't belong to a lease, or there's nowhere to
-  // file it — none of these are errors worth retrying over.
-  if (!lease || lease.signedDate || !lease.documentsFolderPath) return;
+  // file it — none of these are errors worth retrying over. Guarded on
+  // signatureCompletedAt specifically, not the older signedDate field —
+  // signedDate is an ordinary staff-editable field on the lease form that
+  // can carry a date for reasons that have nothing to do with e-signature,
+  // so it can't safely double as "the webhook already filed this."
+  if (!lease || lease.signatureCompletedAt || !lease.documentsFolderPath) return;
 
   try {
     const content = await getSignedFile(signatureRequestId);
@@ -68,7 +72,11 @@ async function fileSignedLease(signatureRequestId: string): Promise<void> {
       filename: `${testPrefix}Signed lease — ${signatureRequestId}.pdf`,
       content,
     });
-    await prisma.lease.update({ where: { id: lease.id }, data: { signedDate: new Date() } });
+    const now = new Date();
+    await prisma.lease.update({
+      where: { id: lease.id },
+      data: { signatureCompletedAt: now, signedDate: now },
+    });
     revalidatePath(`/leases/${lease.id}`);
   } catch (e) {
     // Left un-stamped on purpose — the next completion-flavored event for

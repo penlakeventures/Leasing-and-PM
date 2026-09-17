@@ -169,11 +169,19 @@ model Lease {
   updatedAt            DateTime  @updatedAt
 
   // E-signature (Dropbox Sign) — set once "Send for signature" is used.
-  // signatureRequestId is null until sent; signedDate (above) gets
-  // stamped automatically once the webhook confirms everyone's signed,
-  // same field staff could already set by hand for an off-app signature.
-  signatureRequestId String?   @unique
-  signatureSentAt    DateTime?
+  // signatureRequestId is null until sent. signatureCompletedAt is a
+  // dedicated field, deliberately separate from signedDate (above) even
+  // though they'll usually hold the same real-world date — signedDate is
+  // an ordinary staff-editable field that's existed since before this
+  // feature and can be set by hand at any time, so it can't safely double
+  // as "the webhook actually confirmed and filed this" without a false
+  // positive: a lease with a hand-entered Signed date would otherwise
+  // look complete before anyone ever signed anything through Dropbox
+  // Sign. The webhook still sets signedDate too, once it completes, so
+  // manual record-keeping stays consistent either way.
+  signatureRequestId  String?   @unique
+  signatureSentAt     DateTime?
+  signatureCompletedAt DateTime?
   // Dropbox Sign's test_mode — a test send exercises the whole pipeline
   // (templates, webhook, auto-filing) but isn't legally binding and
   // doesn't count against the paid plan. Tracked so the status shown on

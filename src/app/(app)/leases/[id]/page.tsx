@@ -80,7 +80,7 @@ export default async function LeaseDetailPage({
         signatureRequestId={lease.signatureRequestId}
         signatureSentAt={lease.signatureSentAt}
         signatureTestMode={lease.signatureTestMode}
-        signedDate={lease.signedDate}
+        signatureCompletedAt={lease.signatureCompletedAt}
         defaults={signingDefaults}
         sendAction={sendForSignatureWithId}
       />

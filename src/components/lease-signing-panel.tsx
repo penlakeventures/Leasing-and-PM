@@ -7,7 +7,7 @@ export function LeaseSigningPanel({
   signatureRequestId,
   signatureSentAt,
   signatureTestMode,
-  signedDate,
+  signatureCompletedAt,
   defaults,
   sendAction,
 }: {
@@ -16,7 +16,7 @@ export function LeaseSigningPanel({
   signatureRequestId: string | null;
   signatureSentAt: Date | null;
   signatureTestMode: boolean;
-  signedDate: Date | null;
+  signatureCompletedAt: Date | null;
   defaults: LeaseMergeFields;
   sendAction: (formData: FormData) => Promise<void>;
 }) {
@@ -41,11 +41,11 @@ export function LeaseSigningPanel({
             <Badge tone="neutral">Test send — not legally binding</Badge>
           </p>
         )}
-        {signedDate ? (
+        {signatureCompletedAt ? (
           <p className="text-sm">
             <Badge tone="green">Fully signed</Badge>{" "}
-            {signedDate.toLocaleDateString()} — the signed document was filed to this lease&apos;s
-            Dropbox folder automatically.
+            {signatureCompletedAt.toLocaleDateString()} — the signed document was filed to this
+            lease&apos;s Dropbox folder automatically.
           </p>
         ) : (
           <p className="text-sm">
