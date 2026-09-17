@@ -6,6 +6,7 @@ export function LeaseSigningPanel({
   hasEndDate,
   signatureRequestId,
   signatureSentAt,
+  signatureTestMode,
   signedDate,
   defaults,
   sendAction,
@@ -14,6 +15,7 @@ export function LeaseSigningPanel({
   hasEndDate: boolean;
   signatureRequestId: string | null;
   signatureSentAt: Date | null;
+  signatureTestMode: boolean;
   signedDate: Date | null;
   defaults: LeaseMergeFields;
   sendAction: (formData: FormData) => Promise<void>;
@@ -34,6 +36,11 @@ export function LeaseSigningPanel({
     return (
       <Card>
         <h2 className="mb-2 text-sm font-semibold text-neutral-900">Signature request</h2>
+        {signatureTestMode && (
+          <p className="mb-2 text-sm">
+            <Badge tone="neutral">Test send — not legally binding</Badge>
+          </p>
+        )}
         {signedDate ? (
           <p className="text-sm">
             <Badge tone="green">Fully signed</Badge>{" "}
@@ -114,6 +121,13 @@ export function LeaseSigningPanel({
           >
             <Textarea id="custom_terms_text" name="custom_terms_text" defaultValue={defaults.custom_terms_text ?? ""} />
           </Field>
+        </div>
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-2 text-sm text-neutral-700">
+            <input type="checkbox" name="test_mode" className="rounded border-neutral-300" />
+            Send as a test — doesn&apos;t count against your Dropbox Sign plan and isn&apos;t
+            legally binding. Use this to confirm everything works before upgrading.
+          </label>
         </div>
         <div className="sm:col-span-2">
           <Button type="submit">Send for signature</Button>

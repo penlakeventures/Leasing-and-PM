@@ -317,6 +317,8 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
     signers.push({ role: "Tenant 2", name: tenants[1].name, email: tenants[1].email! });
   }
 
+  const testMode = formData.get("test_mode") === "on";
+
   try {
     const { signatureRequestId } = await sendForSignature({
       templateIds,
@@ -324,10 +326,16 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
       message: "Please review and sign your lease. Reach out if you have any questions.",
       signers,
       customFields,
+      testMode,
     });
     await prisma.lease.update({
       where: { id: leaseId },
-      data: { signatureRequestId, signatureSentAt: new Date(), additionalTermsText: customTermsText },
+      data: {
+        signatureRequestId,
+        signatureSentAt: new Date(),
+        signatureTestMode: testMode,
+        additionalTermsText: customTermsText,
+      },
     });
   } catch (e) {
     console.error("[sendLeaseForSignature] sendForSignature failed:", e);

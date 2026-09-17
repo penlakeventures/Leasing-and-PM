@@ -62,9 +62,10 @@ async function fileSignedLease(signatureRequestId: string): Promise<void> {
 
   try {
     const content = await getSignedFile(signatureRequestId);
+    const testPrefix = lease.signatureTestMode ? "(TEST — not binding) " : "";
     await uploadFile({
       path: lease.documentsFolderPath,
-      filename: `Signed lease — ${signatureRequestId}.pdf`,
+      filename: `${testPrefix}Signed lease — ${signatureRequestId}.pdf`,
       content,
     });
     await prisma.lease.update({ where: { id: lease.id }, data: { signedDate: new Date() } });
