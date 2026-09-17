@@ -11,6 +11,15 @@ function requireApiKey(): string {
   return key;
 }
 
+// A plain account API key (the kind shown under Settings → API keys, as
+// opposed to an OAuth app's access token) authenticates as HTTP Basic —
+// the key as the username, no password — not Bearer. Confirmed against a
+// real "invalid_grant" rejection: Bearer is for an OAuth-issued token,
+// which this key structurally isn't.
+function authHeader(): string {
+  return `Basic ${Buffer.from(`${requireApiKey()}:`).toString("base64")}`;
+}
+
 const API_BASE = "https://api.hellosign.com/v3";
 
 // Same reasoning as getSmsWebhookUrl()/getDropboxCallbackUrl(): built from
@@ -28,7 +37,7 @@ async function apiCall<T>(path: string, body: Record<string, unknown>): Promise<
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${requireApiKey()}`,
+      Authorization: authHeader(),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
@@ -86,7 +95,7 @@ export async function sendForSignature({
 export async function getSignedFile(signatureRequestId: string): Promise<ArrayBuffer> {
   const res = await fetch(
     `${API_BASE}/signature_request/files/${signatureRequestId}?file_type=pdf`,
-    { headers: { Authorization: `Bearer ${requireApiKey()}` } },
+    { headers: { Authorization: authHeader() } },
   );
   if (!res.ok) {
     const text = await res.text();
