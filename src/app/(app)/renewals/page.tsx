@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Card, Table, Th, Td, Badge, EmptyState } from "@/components/ui";
+import { Card, Table, Th, Td, Badge, EmptyState, LinkButton } from "@/components/ui";
 import {
   pickActiveLease,
   needsRenewalDecision,
@@ -55,7 +55,7 @@ export default async function RenewalsPage() {
 
     if (!active.periodic && active.endDate) {
       const hasSuccessorLease = unit.leases.some(
-        (l) => l.id !== active.id && l.startDate > active.endDate!,
+        (l) => l.renewedFromLeaseId === active.id,
       );
       if (
         needsRenewalDecision({
@@ -117,6 +117,7 @@ export default async function RenewalsPage() {
               <Th>Tenant(s)</Th>
               <Th>End date</Th>
               <Th>Status</Th>
+              <Th></Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
@@ -135,6 +136,11 @@ export default async function RenewalsPage() {
                   ) : (
                     <Badge tone="amber">Decision needed</Badge>
                   )}
+                </Td>
+                <Td>
+                  <LinkButton href={`/leases/new?renewFromLeaseId=${d.leaseId}`} variant="secondary">
+                    Create renewal
+                  </LinkButton>
                 </Td>
               </tr>
             ))}

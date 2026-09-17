@@ -6,6 +6,7 @@ export function LeaseForm({
   tenants,
   defaultValues,
   defaultUnitId,
+  renewalOf,
   error,
 }: {
   action: (formData: FormData) => void;
@@ -26,6 +27,11 @@ export function LeaseForm({
     documentLink: string | null;
   };
   defaultUnitId?: string;
+  // Present only when this form was opened via the Renewals page's
+  // "Create renewal" shortcut — carried through as a hidden field so
+  // createLease() can tell this is the same tenant continuing, not a new
+  // one, and reuse their existing Dropbox folder instead of archiving it.
+  renewalOf?: { leaseId: string; unitLabel: string };
   error?: string;
 }) {
   const fmt = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
@@ -43,7 +49,16 @@ export function LeaseForm({
           {error}
         </p>
       )}
+      {renewalOf && (
+        <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">
+          Renewing the current lease for {renewalOf.unitLabel} — the existing
+          Dropbox folder carries over automatically; nothing new is archived.
+        </p>
+      )}
       <form action={action} className="space-y-4">
+        {renewalOf && (
+          <input type="hidden" name="renewedFromLeaseId" value={renewalOf.leaseId} />
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Unit" htmlFor="unitId">
             <Select

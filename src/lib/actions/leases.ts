@@ -24,6 +24,7 @@ function parseLeaseForm(formData: FormData) {
     pets: (formData.get("pets") as string)?.trim() || null,
     signedDate: signedDateRaw ? new Date(signedDateRaw) : null,
     documentLink: (formData.get("documentLink") as string)?.trim() || null,
+    renewedFromLeaseId: (formData.get("renewedFromLeaseId") as string)?.trim() || null,
   };
 }
 
@@ -78,6 +79,32 @@ export async function createLease(formData: FormData) {
     );
   }
 
+  // A renewal for the same tenant(s) carries the predecessor lease's own
+  // Dropbox folder straight across instead of the normal new-tenancy
+  // auto-filing below — that logic assumes a new lease means a new
+  // tenant and archives whatever's currently there, which would be wrong
+  // for the same tenant continuing in the unit. If the tenant set doesn't
+  // actually match (renewedFromLeaseId was carried through but the form
+  // was edited to a different tenant), fall through to the normal path
+  // instead of trusting the button's original intent.
+  let carriedOverFolder: { documentLink: string | null; documentsFolderPath: string | null } | null = null;
+  if (data.renewedFromLeaseId) {
+    const predecessor = await prisma.lease.findUnique({
+      where: { id: data.renewedFromLeaseId },
+      include: { tenants: true },
+    });
+    const sameTenants =
+      predecessor &&
+      predecessor.tenants.length === data.tenantIds.length &&
+      predecessor.tenants.every((lt) => data.tenantIds.includes(lt.tenantId));
+    if (predecessor && sameTenants && predecessor.documentsFolderPath) {
+      carriedOverFolder = {
+        documentLink: predecessor.documentLink,
+        documentsFolderPath: predecessor.documentsFolderPath,
+      };
+    }
+  }
+
   const lease = await prisma.lease.create({
     data: {
       unitId: data.unitId,
@@ -88,7 +115,9 @@ export async function createLease(formData: FormData) {
       lastMonthRentPrepaid: data.lastMonthRentPrepaid,
       pets: data.pets,
       signedDate: data.signedDate,
-      documentLink: data.documentLink,
+      documentLink: carriedOverFolder?.documentLink ?? data.documentLink,
+      documentsFolderPath: carriedOverFolder?.documentsFolderPath ?? null,
+      renewedFromLeaseId: data.renewedFromLeaseId,
       tenants: {
         create: data.tenantIds.map((tenantId) => ({ tenantId })),
       },
@@ -100,34 +129,39 @@ export async function createLease(formData: FormData) {
   // Auto-file: create this unit's Dropbox folder for the new tenancy —
   // archiving the previous tenant's folder into that project's Past
   // tenants folder first, if one's still there — and store the resulting
-  // shared link as the lease's document link. Never blocks lease creation:
-  // if Dropbox isn't connected yet or the call fails, the lease is still
-  // saved and staff can paste a link in by hand as before.
-  try {
-    const [unit, tenants] = await Promise.all([
-      prisma.unit.findUnique({
-        where: { id: data.unitId },
-        include: { projectEntity: true },
-      }),
-      prisma.tenant.findMany({ where: { id: { in: data.tenantIds } } }),
-    ]);
-    if (unit) {
-      const { path, link } = await prepareLeaseFolder({
-        projectDisplayOrder: unit.projectEntity.displayOrder,
-        projectName: unit.projectEntity.internalName,
-        unitNumber: unit.unitNumber,
-        tenantNames: tenants.map((t) => t.name),
-      });
-      await prisma.lease.update({
-        where: { id: lease.id },
-        data: { documentLink: link, documentsFolderPath: path },
-      });
+  // shared link as the lease's document link. Skipped entirely for a
+  // same-tenant renewal, which already got its folder carried over above.
+  // Never blocks lease creation: if Dropbox isn't connected yet or the
+  // call fails, the lease is still saved and staff can paste a link in by
+  // hand as before.
+  if (!carriedOverFolder) {
+    try {
+      const [unit, tenants] = await Promise.all([
+        prisma.unit.findUnique({
+          where: { id: data.unitId },
+          include: { projectEntity: true },
+        }),
+        prisma.tenant.findMany({ where: { id: { in: data.tenantIds } } }),
+      ]);
+      if (unit) {
+        const { path, link } = await prepareLeaseFolder({
+          projectDisplayOrder: unit.projectEntity.displayOrder,
+          projectName: unit.projectEntity.internalName,
+          unitNumber: unit.unitNumber,
+          tenantNames: tenants.map((t) => t.name),
+        });
+        await prisma.lease.update({
+          where: { id: lease.id },
+          data: { documentLink: link, documentsFolderPath: path },
+        });
+      }
+    } catch (e) {
+      console.error("[createLease] prepareLeaseFolder failed:", e);
     }
-  } catch (e) {
-    console.error("[createLease] prepareLeaseFolder failed:", e);
   }
 
   revalidatePath("/leases");
+  revalidatePath("/renewals");
   revalidatePath(`/units/${data.unitId}`);
   redirect(`/leases/${lease.id}`);
 }

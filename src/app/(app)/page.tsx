@@ -75,7 +75,7 @@ export default async function DashboardPage() {
     if (!active) continue;
     if (!active.periodic && active.endDate) {
       const hasSuccessorLease = unit.leases.some(
-        (l) => l.id !== active.id && l.startDate > active.endDate!,
+        (l) => l.renewedFromLeaseId === active.id,
       );
       if (
         needsRenewalDecision({

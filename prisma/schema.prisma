@@ -191,6 +191,20 @@ model Lease {
   // addendum, if anything — kept for the record, not just the live draft.
   additionalTermsText String?
 
+  // Set when this lease was created via the Renewals page's "Create
+  // renewal" shortcut for the same tenant(s) continuing in the same unit
+  // — as opposed to a genuinely new tenancy. Distinguishing the two
+  // matters because createLease()'s Dropbox auto-filing normally archives
+  // the unit's current folder into "Past tenants" and starts a fresh one,
+  // which is correct for a new tenant but wrong for the same tenant
+  // renewing (it'd archive their live folder mid-tenancy) — a renewal
+  // instead carries the predecessor's own folder/link straight across.
+  // Also used to tell whether an ending lease already has a renewal
+  // arranged, instead of guessing from start/end dates alone.
+  renewedFromLeaseId String? @unique
+  renewedFrom        Lease?  @relation("LeaseRenewal", fields: [renewedFromLeaseId], references: [id], onDelete: SetNull)
+  renewedInto        Lease?  @relation("LeaseRenewal")
+
   tenants         LeaseTenant[]
   securityDeposit SecurityDeposit?
   rentPayments    RentPayment[]
