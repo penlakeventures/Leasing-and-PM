@@ -151,6 +151,14 @@ model Lease {
   pets                 String? // free text, e.g. "dog, cat"
   signedDate           DateTime?
   documentLink         String?
+  // The actual Dropbox path behind documentLink (a shared link isn't
+  // something the Dropbox upload API can write to directly) — set
+  // alongside it when prepareLeaseFolder() creates the folder, so
+  // uploading a document later (e.g. a SingleKey report once someone's
+  // approved) has a stable target without re-deriving or re-creating
+  // anything. Null for a lease predating this, or one where staff pasted
+  // a link by hand instead — upload just isn't offered there.
+  documentsFolderPath  String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 

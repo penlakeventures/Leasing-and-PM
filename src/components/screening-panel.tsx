@@ -43,7 +43,9 @@ export function ScreeningPanel({
       <p className="mb-4 text-xs text-neutral-500">
         SingleKey (or similar) is requested on their site, not from here —
         this just keeps the outcome and the final call on file with
-        everything else for this lead.
+        everything else for this lead. Once they&apos;re approved and have a
+        signed lease, upload the SingleKey report itself into that
+        lease&apos;s Dropbox folder from the Lease page.
       </p>
 
       <form action={action} className="grid grid-cols-1 gap-4 sm:grid-cols-2">

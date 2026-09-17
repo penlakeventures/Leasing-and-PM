@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { PageHeader, Button } from "@/components/ui";
 import { LeaseForm } from "@/components/lease-form";
 import { DepositPanel } from "@/components/deposit-panel";
-import { updateLease, deleteLease } from "@/lib/actions/leases";
+import { DocumentUploadPanel } from "@/components/document-upload-panel";
+import { updateLease, deleteLease, uploadLeaseDocument } from "@/lib/actions/leases";
 
 export default async function LeaseDetailPage({
   params,
@@ -33,6 +34,7 @@ export default async function LeaseDetailPage({
 
   const updateWithId = updateLease.bind(null, id);
   const deleteWithId = deleteLease.bind(null, id);
+  const uploadWithId = uploadLeaseDocument.bind(null, id);
 
   return (
     <div className="space-y-8">
@@ -54,6 +56,12 @@ export default async function LeaseDetailPage({
           ...lease,
           tenantIds: lease.tenants.map((t) => t.tenantId),
         }}
+      />
+
+      <DocumentUploadPanel
+        documentLink={lease.documentLink}
+        canUpload={Boolean(lease.documentsFolderPath)}
+        uploadAction={uploadWithId}
       />
 
       <DepositPanel

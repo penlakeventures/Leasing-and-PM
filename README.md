@@ -248,6 +248,21 @@ isn't set, or the API call fails for any reason, the lease still saves
 (the error is logged) and staff can fill in Document link by hand, same
 as before this existed.
 
+**Uploading a document straight to that folder.** `prepareLeaseFolder()`
+now returns the actual Dropbox path behind the shared link, saved as
+`Lease.documentsFolderPath` — so the Lease page's Documents panel can
+offer a real upload button (`uploadLeaseDocument()` in
+`src/lib/actions/leases.ts`, using `uploadFile()` in `src/lib/dropbox.ts`
+— the one place this app writes file *content* to Dropbox rather than
+just managing folders/links) instead of staff always having to open
+Dropbox itself. Built for filing a SingleKey report once an applicant's
+approved and has a signed lease (see "Tenant screening" below), but
+works for any document. Only offered when `documentsFolderPath` is on
+file — a lease from before this existed, or one where staff pasted a
+link in by hand instead of it being auto-created, has no known upload
+target, so the panel just shows the folder link and staff drag files in
+via Dropbox directly, same as always.
+
 **Setup required**: a Dropbox App Console app (dropbox.com/developers/apps)
 with "Scoped access" and "Full Dropbox" access, and a redirect URI of
 `https://<your-app>/api/dropbox/callback` — `DROPBOX_APP_KEY`/
@@ -477,6 +492,15 @@ note, doesn't re-stamp it), and clear automatically if the decision is
 ever reset back to Pending. A lead with a screening record on file can't
 be deleted until that's resolved first, same pattern as leases with a
 security deposit.
+
+This is the entire "application" step for this business — SingleKey's
+report already covers the application, credit check, and background
+check together, so there's no separate intake form for this app to
+collect. What this app adds on top: the human review gate above (the
+decision, and only a person makes it), and once someone's approved and
+has a signed lease, filing the SingleKey report itself into that lease's
+Dropbox folder — see "Uploading a document straight to that folder"
+under Dropbox lease-document filing above.
 
 ## What's *not* in Phase 1
 

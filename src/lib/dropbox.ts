@@ -226,7 +226,7 @@ export async function prepareLeaseFolder({
   projectName: string;
   unitNumber: string;
   tenantNames: string[];
-}): Promise<string> {
+}): Promise<{ path: string; link: string }> {
   const connection = await getActiveConnection();
   if (!connection) throw new Error("No Dropbox account is connected yet.");
   if (!connection.basePath) throw new Error("Dropbox base folder path isn't set in Settings yet.");
@@ -263,5 +263,42 @@ export async function prepareLeaseFolder({
   const newFolderName = `${unitNumber} ${tenantNames.join(" and ") || "New tenant"}`;
   const newFolderPath = `${projectPath}/${newFolderName}`;
   await ensureFolderExists(accessToken, newFolderPath);
-  return getOrCreateSharedLink(accessToken, newFolderPath);
+  const link = await getOrCreateSharedLink(accessToken, newFolderPath);
+  return { path: newFolderPath, link };
+}
+
+// Uploads a file straight into an already-created lease folder (e.g. a
+// SingleKey report once an applicant's approved and has a tenant file) —
+// the one place this app writes file *content* to Dropbox rather than
+// just managing folders and links; everything else here is still staff
+// dragging the actual document in themselves. autorename avoids clobbering
+// something already sitting at that exact filename.
+export async function uploadFile({
+  path,
+  filename,
+  content,
+}: {
+  path: string;
+  filename: string;
+  content: ArrayBuffer;
+}): Promise<void> {
+  const accessToken = await getFreshAccessToken();
+  const res = await fetch("https://content.dropboxapi.com/2/files/upload", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/octet-stream",
+      "Dropbox-API-Arg": JSON.stringify({
+        path: `${path}/${filename}`,
+        mode: "add",
+        autorename: true,
+        mute: false,
+      }),
+    },
+    body: content,
+  });
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Failed to upload ${filename} to Dropbox: ${res.status} ${error}`);
+  }
 }

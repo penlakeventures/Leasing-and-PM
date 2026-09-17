@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { checkRentEscalation, checkRentIncreaseNotice, pickActiveLease } from "@/lib/rules";
-import { prepareLeaseFolder } from "@/lib/dropbox";
+import { prepareLeaseFolder, uploadFile } from "@/lib/dropbox";
 
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
@@ -111,13 +111,16 @@ export async function createLease(formData: FormData) {
       prisma.tenant.findMany({ where: { id: { in: data.tenantIds } } }),
     ]);
     if (unit) {
-      const documentLink = await prepareLeaseFolder({
+      const { path, link } = await prepareLeaseFolder({
         projectDisplayOrder: unit.projectEntity.displayOrder,
         projectName: unit.projectEntity.internalName,
         unitNumber: unit.unitNumber,
         tenantNames: tenants.map((t) => t.name),
       });
-      await prisma.lease.update({ where: { id: lease.id }, data: { documentLink } });
+      await prisma.lease.update({
+        where: { id: lease.id },
+        data: { documentLink: link, documentsFolderPath: path },
+      });
     }
   } catch (e) {
     console.error("[createLease] prepareLeaseFolder failed:", e);
@@ -192,6 +195,40 @@ export async function updateLease(id: string, formData: FormData) {
   revalidatePath(`/leases/${id}`);
   revalidatePath(`/units/${data.unitId}`);
   redirect(`/leases/${id}`);
+}
+
+// Uploads a document (a SingleKey report once an applicant's approved, or
+// anything else) straight into this lease's already-created Dropbox
+// folder. Only offered when documentsFolderPath is on file — a lease from
+// before this existed, or one where staff pasted a link in by hand, has
+// no known upload target, so staff drag the file in via Dropbox directly
+// instead, same as always.
+export async function uploadLeaseDocument(leaseId: string, formData: FormData) {
+  const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+  if (!lease) redirect("/leases");
+  if (!lease.documentsFolderPath) {
+    redirect(
+      `/leases/${leaseId}?error=${encodeURIComponent("This lease has no Dropbox folder on file to upload into.")}`,
+    );
+  }
+
+  const file = formData.get("file") as File | null;
+  if (!file || file.size === 0) {
+    redirect(`/leases/${leaseId}?error=${encodeURIComponent("Choose a file to upload first.")}`);
+  }
+
+  try {
+    const content = await file.arrayBuffer();
+    await uploadFile({ path: lease.documentsFolderPath, filename: file.name, content });
+  } catch (e) {
+    console.error("[uploadLeaseDocument] uploadFile failed:", e);
+    redirect(
+      `/leases/${leaseId}?error=${encodeURIComponent("Couldn't upload that file to Dropbox — check the connection under Settings and try again.")}`,
+    );
+  }
+
+  revalidatePath(`/leases/${leaseId}`);
+  redirect(`/leases/${leaseId}`);
 }
 
 export async function deleteLease(id: string) {
