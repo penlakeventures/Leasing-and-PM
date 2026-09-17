@@ -64,7 +64,7 @@ export function Nav() {
               than every other group's tabs instead of lining up with them. */}
           <span
             aria-hidden={!group.label}
-            className={`px-3 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 ${
+            className={`px-3 text-[11px] font-semibold uppercase tracking-wide text-brand ${
               group.label ? "" : "invisible"
             }`}
           >
