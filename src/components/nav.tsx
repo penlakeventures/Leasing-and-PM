@@ -5,10 +5,17 @@ import { usePathname } from "next/navigation";
 
 // Grouped for display only — every tab keeps its existing path and label,
 // just clustered under a header so 15 tabs read as a handful of related
-// groups instead of one long flat row. Dashboard stays outside any group
-// since it isn't leasing/PM/compliance-specific — it's the landing page.
+// groups instead of one long flat row. Dashboard and Inbox stay outside
+// any group since neither is leasing/PM/compliance-specific — they're
+// the two landing pages (overview, and what needs a reply right now).
 const groups: { label: string | null; links: { href: string; label: string }[] }[] = [
-  { label: null, links: [{ href: "/", label: "Dashboard" }] },
+  {
+    label: null,
+    links: [
+      { href: "/", label: "Dashboard" },
+      { href: "/inbox", label: "Inbox" },
+    ],
+  },
   {
     label: "Portfolio",
     links: [

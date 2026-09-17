@@ -108,6 +108,30 @@ export function parseTicketDraft(raw: string): TicketDraft {
   return { priority, description };
 }
 
+// The orchestrator's routing step: decides which specialist a tenant's
+// text belongs to (maintenance ticket vs. a general reply) before either
+// one drafts anything. Deliberately its own tiny, cheap call rather than
+// folded into the drafting prompts below — a single word out, so a human
+// glancing at the Inbox sees exactly one suggested action per text, not
+// both drafted at once for every message.
+const CLASSIFY_SYSTEM_PROMPT = `You are triaging an inbound text from a tenant of Pen Lake Ventures, a residential landlord in Calgary, Alberta. Read the tenant's most recent text and decide which of two categories it belongs to:
+
+MAINTENANCE — describes something broken, not working, damaged, unsafe, or otherwise needing a repair or service visit.
+QUESTION — anything else: a general question, a comment, a payment question, small talk, or anything unclear.
+
+Output ONLY one word, exactly: MAINTENANCE or QUESTION. Nothing else.`;
+
+export async function classifyTenantMessage(latestText: string): Promise<"MAINTENANCE" | "QUESTION"> {
+  const response = await getClient().messages.create({
+    model: "claude-opus-5",
+    max_tokens: 8, // one word out
+    system: CLASSIFY_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: latestText }],
+  });
+  const textBlock = response.content.find((b) => b.type === "text");
+  return textBlock?.text.toUpperCase().includes("MAINTENANCE") ? "MAINTENANCE" : "QUESTION";
+}
+
 // This drafts a reply to a CURRENT TENANT's text for a HUMAN to review and
 // send — it never sends anything itself. Same reasoning as draftSmsReply:
 // even routine tenant communication is regulated speech under the Alberta

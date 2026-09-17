@@ -248,6 +248,26 @@ function mountainDateKey(d: Date): string {
  * dates instead means a charge stays "unpaid" (not overdue) for all of
  * its due date and only flips to overdue starting the next day.
  */
+/**
+ * Orchestrator inbox: a contact (tenant/lead/vendor) needs attention when
+ * their most recent text is inbound and hasn't been handled yet — either a
+ * real reply went out (attentionClearedAt gets set whenever one does, see
+ * sendText() in actions/sms.ts) or staff dismissed it by hand. A contact
+ * whose last text was outbound (staff already had the last word) never
+ * needs attention, regardless of attentionClearedAt.
+ */
+export function threadNeedsAttention({
+  lastMessage,
+  attentionClearedAt,
+}: {
+  lastMessage: { direction: "INBOUND" | "OUTBOUND"; timestamp: Date } | null;
+  attentionClearedAt: Date | null;
+}): boolean {
+  if (!lastMessage || lastMessage.direction !== "INBOUND") return false;
+  if (attentionClearedAt && attentionClearedAt >= lastMessage.timestamp) return false;
+  return true;
+}
+
 export function isRentOverdue({
   period,
   paidDate,

@@ -41,13 +41,26 @@ async function sendText({
         externalRef: `twilio:${sid}`,
       },
     });
-    // Whatever AI-drafted suggestion was sitting on this lead/tenant is now
-    // stale — a real reply just went out, used or not.
+    // Whatever AI-drafted suggestion was sitting here is now stale — a
+    // real reply just went out, used or not. And a real reply is exactly
+    // what clears this contact off the Inbox.
     if (leadId) {
-      await prisma.lead.update({ where: { id: leadId }, data: { draftReply: null } });
+      await prisma.lead.update({
+        where: { id: leadId },
+        data: { draftReply: null, attentionClearedAt: new Date() },
+      });
     }
     if (tenantId) {
-      await prisma.tenant.update({ where: { id: tenantId }, data: { draftReply: null } });
+      await prisma.tenant.update({
+        where: { id: tenantId },
+        data: { draftReply: null, attentionClearedAt: new Date() },
+      });
+    }
+    if (vendorId) {
+      await prisma.vendor.update({
+        where: { id: vendorId },
+        data: { attentionClearedAt: new Date() },
+      });
     }
   } catch (e) {
     console.error("[sendText] sendSms failed:", e);
@@ -58,6 +71,7 @@ async function sendText({
 
   revalidatePath(redirectTo);
   revalidatePath("/communications");
+  revalidatePath("/inbox");
   redirect(redirectTo);
 }
 

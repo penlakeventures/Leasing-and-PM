@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Card, Badge } from "@/components/ui";
 import { isDepositOverdue, isRentOverdue } from "@/lib/rules";
+import { getInboxRows } from "@/lib/inbox";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -12,6 +13,7 @@ export default async function DashboardPage() {
     activeLeads,
     depositsPastDue,
     rentUnpaid,
+    inboxRows,
   ] = await Promise.all([
     prisma.projectEntity.count(),
     prisma.unit.count(),
@@ -41,6 +43,7 @@ export default async function DashboardPage() {
       where: { paidDate: null },
       include: { lease: { include: { unit: { include: { projectEntity: true } } } } },
     }),
+    getInboxRows(),
   ]);
 
   const overdueDeposits = depositsPastDue.filter((d) =>
@@ -54,6 +57,7 @@ export default async function DashboardPage() {
   );
 
   const stats = [
+    { label: "Needs a reply", value: inboxRows.length, href: "/inbox" },
     { label: "Projects", value: projectCount, href: "/projects" },
     { label: "Units", value: unitCount, href: "/units" },
     { label: "Active leases", value: activeLeaseCount, href: "/leases" },
@@ -63,7 +67,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((stat) => (
           <Link key={stat.label} href={stat.href}>
             <Card className="border-t-4 border-t-brand">

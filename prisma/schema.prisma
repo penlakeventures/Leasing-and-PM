@@ -124,6 +124,9 @@ model Tenant {
   // explicit Send commits it. Cleared once sent.
   draftReply String?
 
+  // Orchestrator inbox — same meaning as Lead.attentionClearedAt above.
+  attentionClearedAt DateTime?
+
   leases          LeaseTenant[]
   tickets         MaintenanceTicket[]
   communications  CommunicationLog[]
@@ -340,6 +343,13 @@ model Lead {
   // once an actual reply goes out, successful or not tied to this draft.
   draftReply String?
 
+  // Orchestrator inbox: set to "now" whenever this lead's latest inbound
+  // text has been handled (a real reply went out, or staff dismissed it
+  // manually) — a lead shows up in the Inbox whenever its most recent
+  // text is INBOUND and newer than this. Null means never cleared, so a
+  // lead with any inbound text and no reply yet always shows up.
+  attentionClearedAt DateTime?
+
   communications CommunicationLog[]
   screening      TenantScreening?
 
@@ -433,6 +443,11 @@ model Vendor {
   contactEmail String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Orchestrator inbox — same meaning as Lead.attentionClearedAt. Vendors
+  // never get an AI-drafted reply (see triageInboundMessage) — just
+  // flagged for a human to read and dismiss or reply to by hand.
+  attentionClearedAt DateTime?
 
   tickets        MaintenanceTicket[]
   communications CommunicationLog[]

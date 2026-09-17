@@ -287,10 +287,50 @@ Unlike Calendar/Dropbox there's no in-app "connect" step: instead, set
 that phone number's "A message comes in" webhook, in the Twilio
 Console, to the URL shown on Settings → Texting once deployed.
 
+## Orchestrator inbox
+
+`/inbox` — the actual "orchestrator agent" from the project's original
+design: every inbound text (tenant, lead, or vendor) lands here as a row
+needing attention, newest first, until someone replies or dismisses it.
+Two pieces:
+
+- **Routing.** Right after an inbound text is logged (the Twilio
+  webhook), `triageInboundMessage()` in `src/lib/orchestrator.ts` decides
+  what it needs and has the matching specialist draft it, so it's already
+  waiting when someone opens the Inbox instead of a human having to
+  notice the text and pick the right button themselves:
+  - A **tenant** text is classified first (`classifyTenantMessage()` in
+    `src/lib/claude.ts` — one cheap call, MAINTENANCE or QUESTION) so
+    exactly one draft gets generated, not both for every text: a
+    maintenance ticket draft, or a Q&A reply draft. A maintenance-shaped
+    text with no active lease/unit on file still gets a Q&A-style draft
+    instead — a ticket needs a unit, a reply doesn't.
+  - A **lead** text (existing or brand new, from an unrecognized number)
+    always gets a reply draft — same `draftSmsReply()` as before, just
+    now triggered automatically instead of only on a button click.
+  - A **vendor** text gets no AI draft — usually a status update ("done",
+    "tomorrow"), not something worth drafting a reply to. Just flagged.
+  - Never sends or creates anything, and a classification/drafting
+    failure here (e.g. no API key) is swallowed, not thrown — the
+    inbound text is already safely logged either way, and staff can
+    still draft manually from the tenant/lead page as before.
+- **Tracking.** `attentionClearedAt` on Tenant/Lead/Vendor marks when a
+  contact's latest inbound text was last handled; `threadNeedsAttention()`
+  in `src/lib/rules.ts` derives "needs a reply" from that plus the
+  contact's most recent `CommunicationLog` row — no separate "unread"
+  state to fall out of sync. Sending a real reply (any of the existing
+  `sendTenantText`/`sendLeadText`/`sendVendorText` actions) or creating a
+  ticket from a draft clears it automatically; a text that doesn't need a
+  reply (a "thanks", a vendor confirming a job's done) can be cleared by
+  hand with the Inbox row's **Dismiss** button. The Dashboard's "Needs a
+  reply" count is the same query, so the two pages can't disagree.
+
+No new setup required — reuses the Twilio and Anthropic credentials
+already configured above.
+
 ## AI-drafted lead replies
 
-The first piece of the project's original "orchestrator agent" concept:
-a "✨ Suggest a reply" button on a Lead's Texts panel (`MessagePanel` —
+A "✨ Suggest a reply" button on a Lead's Texts panel (`MessagePanel` —
 also wired up on the Tenant page, see "Tenant Q&A" below) that calls Claude
 (`draftSmsReply()` in `src/lib/claude.ts`, via the official
 `@anthropic-ai/sdk` — the one exception to this project's usual
@@ -304,9 +344,12 @@ the reply box for a staff member to review, edit, or discard before
 clicking Send (the existing `sendLeadText` action) — matching the
 project's own stated design that anything touching a prospective
 tenant, and certainly anything that could deny or condition someone's
-housing, goes through a person first. It also only ever runs when a
-staff member clicks the button — nothing triggers it automatically on
-an inbound lead or text. The system prompt hard-codes Alberta Human
+housing, goes through a person first. This button is the manual
+(re)run; the Orchestrator inbox above already runs the same drafting
+automatically right after an inbound text comes in, so most of the
+time a draft is already waiting — the button's still here for staff to
+regenerate it (e.g. after editing the lead's unit/status) or if the
+automatic one failed. The system prompt hard-codes Alberta Human
 Rights Act guardrails (never ask about protected characteristics,
 never imply an approval/rejection outcome, never invent unit details).
 The draft is cleared automatically once a real reply goes out for that
@@ -336,7 +379,9 @@ texted the details directly.
   to review, edit, and turn into a real `MaintenanceTicket` (unit comes
   from the tenant's own active lease, via `pickActiveLease()`, not from
   the draft — it can't drift from who the ticket is actually for).
-  Never creates a ticket itself.
+  Never creates a ticket itself. The Orchestrator inbox above already
+  runs this automatically for a maintenance-classified tenant text; this
+  button is the manual (re)run.
 - **"Notify vendor" on a ticket** (`notifyVendor()` in
   `src/lib/actions/tickets.ts`) texts the assigned vendor the unit
   address, priority, description, and tenant contact info so they can
@@ -358,12 +403,13 @@ issue, which uses the separate "Draft a ticket" button instead.
 `draftTenantReply()` in `src/lib/claude.ts` reads the tenant's active
 lease (via `pickActiveLease()`) and recent texts, and saves its draft to
 `Tenant.draftReply` — same review-before-send discipline as everything
-else here: never sends anything itself, only ever runs when a staff
-member clicks the button, and the system prompt hard-codes it to punt to
-a human for anything legal, anything that would change the lease/rent/
-deposit, anything about another tenant, or anything that reads like a
-safety emergency (told to call, not text). Cleared automatically once a
-real reply goes out, same as a lead's draft.
+else here: never sends anything itself, and the system prompt hard-codes
+it to punt to a human for anything legal, anything that would change the
+lease/rent/deposit, anything about another tenant, or anything that
+reads like a safety emergency (told to call, not text). Cleared
+automatically once a real reply goes out, same as a lead's draft. The
+Orchestrator inbox above already runs this automatically for a
+question-classified tenant text; this button is the manual (re)run.
 
 No new setup required — reuses the Anthropic credentials already
 configured above.

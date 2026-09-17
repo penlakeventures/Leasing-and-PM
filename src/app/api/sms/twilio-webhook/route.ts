@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { verifyTwilioSignature, getSmsWebhookUrl } from "@/lib/twilio";
 import { findContactByPhone, findOrCreateLeadForUnknownNumber } from "@/lib/sms-inbound";
+import { triageInboundMessage } from "@/lib/orchestrator";
 
 const EMPTY_TWIML = new NextResponse("<Response></Response>", {
   status: 200,
@@ -64,7 +65,16 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // The orchestrator: routes this text to the right specialist (a
+  // maintenance ticket draft, a Q&A reply draft, or a lead reply draft)
+  // so it's already waiting when someone opens the Inbox — never sends
+  // anything itself, and a failure here never loses the message, which
+  // is already safely logged above.
+  await triageInboundMessage(logData, body);
+
   revalidatePath("/communications");
+  revalidatePath("/inbox");
+  revalidatePath("/");
   if ("tenantId" in logData) revalidatePath(`/tenants/${logData.tenantId}`);
   if ("leadId" in logData) revalidatePath(`/leads/${logData.leadId}`);
   if ("vendorId" in logData) revalidatePath(`/vendors/${logData.vendorId}`);

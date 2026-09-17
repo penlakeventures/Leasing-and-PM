@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { pickActiveLease } from "@/lib/rules";
 import { draftMaintenanceTicket, draftTenantReply } from "@/lib/claude";
+import { buildTenantContext } from "@/lib/orchestrator";
 
 function parseTenantForm(formData: FormData) {
   return {
@@ -33,36 +34,11 @@ export async function updateTenant(id: string, formData: FormData) {
   redirect("/tenants");
 }
 
-function buildTenantContext(
-  tenant: { name: string },
-  activeLease: {
-    rentAmount: unknown;
-    startDate: Date;
-    endDate: Date | null;
-    periodic: boolean;
-    unit: { unitNumber: string; bedrooms: number; projectEntity: { internalName: string; address: string } };
-  } | null,
-): string {
-  const lines = [`Tenant: ${tenant.name}.`];
-  if (activeLease) {
-    lines.push(
-      `Unit: ${activeLease.unit.projectEntity.internalName} — Unit ${activeLease.unit.unitNumber}, ${activeLease.unit.bedrooms} bedroom(s), address ${activeLease.unit.projectEntity.address}.`,
-    );
-    lines.push(`Rent: $${activeLease.rentAmount}/month, due on the 1st of each month.`);
-    lines.push(
-      activeLease.periodic
-        ? `Lease type: month-to-month (periodic), started ${activeLease.startDate.toLocaleDateString()}.`
-        : `Lease type: fixed-term, ${activeLease.startDate.toLocaleDateString()} to ${activeLease.endDate?.toLocaleDateString() ?? "(no end date on file)"}.`,
-    );
-  } else {
-    lines.push("No active lease/unit on file for this tenant.");
-  }
-  return lines.join("\n");
-}
-
 // Generates a suggested reply and saves it to the tenant — never sends
-// anything. Only ever runs when a staff member clicks the button; nothing
-// in this app triggers it automatically on an inbound text.
+// anything. The orchestrator (triageInboundMessage) already runs this
+// automatically right after an inbound text comes in; this manual version
+// is for staff to (re)run it themselves — e.g. after editing the tenant's
+// lease info, or if the auto-draft failed.
 export async function generateTenantReplyDraft(tenantId: string) {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
@@ -93,8 +69,9 @@ export async function generateTenantReplyDraft(tenantId: string) {
 }
 
 // Generates a suggested maintenance ticket and saves it to the tenant —
-// never creates a real ticket. Only ever runs when a staff member clicks
-// the button; nothing triggers it automatically on an inbound text.
+// never creates a real ticket. Same relationship to the orchestrator as
+// generateTenantReplyDraft above: it already runs this on an inbound
+// text automatically; this is the manual (re)run.
 export async function generateTicketDraft(tenantId: string) {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
@@ -156,13 +133,16 @@ export async function createTicketFromDraft(tenantId: string, formData: FormData
     data: { unitId: activeLease.unitId, tenantId, description, priority },
   });
 
+  // Turning the draft into a real ticket is itself how this text got
+  // handled — a reply back to the tenant isn't required for it to count.
   await prisma.tenant.update({
     where: { id: tenantId },
-    data: { draftTicketDescription: null, draftTicketPriority: null },
+    data: { draftTicketDescription: null, draftTicketPriority: null, attentionClearedAt: new Date() },
   });
 
   revalidatePath(`/tenants/${tenantId}`);
   revalidatePath("/tickets");
+  revalidatePath("/inbox");
   redirect(`/tickets/${ticket.id}`);
 }
 
