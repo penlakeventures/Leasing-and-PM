@@ -174,6 +174,81 @@ export function checkRentIncreaseNotice({
   return { allowed: true };
 }
 
+// How far ahead of a fixed-term lease's end date to start flagging that it
+// needs a renewal decision, if nothing's been arranged for it yet.
+const RENEWAL_WINDOW_DAYS = 90;
+
+/**
+ * A fixed-term lease needs a renewal decision once it's within
+ * RENEWAL_WINDOW_DAYS of its end date and nothing's been arranged for
+ * what happens next — no successor lease already on file for the same
+ * unit (a new fixed term, or a switch to periodic). Deliberately has no
+ * upper bound once inside the window: an unresolved lease stays flagged
+ * even past its own end date, same as Rent's "Overdue" never quietly
+ * disappearing on its own.
+ */
+export function needsRenewalDecision({
+  periodic,
+  endDate,
+  hasSuccessorLease,
+  asOf = new Date(),
+}: {
+  periodic: boolean;
+  endDate: Date | null;
+  hasSuccessorLease: boolean;
+  asOf?: Date;
+}): boolean {
+  if (periodic || !endDate || hasSuccessorLease) return false;
+  const windowStart = new Date(endDate.getTime() - RENEWAL_WINDOW_DAYS * MS_PER_DAY);
+  return asOf >= windowStart;
+}
+
+/**
+ * Forward-looking companion to checkRentIncreaseNotice(): rather than only
+ * blocking a rent change that's too soon, works out *when* a periodic
+ * lease's rent next becomes eligible to raise, and the deadline for
+ * giving the 3-months'-written-notice that increase would need — so
+ * notice can go out ahead of time instead of the timing only being
+ * discovered when someone actually tries to save the increase.
+ */
+export function rentIncreaseNoticeWindow({
+  lastRentIncreaseDate,
+  leaseStartDate,
+}: {
+  lastRentIncreaseDate: Date | null;
+  leaseStartDate: Date;
+}): { nextEligibleDate: Date; noticeDeadline: Date } {
+  const anchor = lastRentIncreaseDate ?? leaseStartDate;
+  const nextEligibleDate = new Date(anchor.getTime() + 365 * MS_PER_DAY);
+  const noticeDeadline = new Date(nextEligibleDate);
+  noticeDeadline.setMonth(noticeDeadline.getMonth() - 3);
+  return { nextEligibleDate, noticeDeadline };
+}
+
+const RENT_INCREASE_NOTICE_LOOKAHEAD_DAYS = 30;
+
+/**
+ * True once a periodic lease's next notice deadline (from
+ * rentIncreaseNoticeWindow) is close enough to be worth surfacing — same
+ * fixed-lookahead idea as the rent reminder's own daysBefore. Whether
+ * notice was actually given isn't tracked ahead of time (the lease's
+ * rentIncreaseNoticeGivenDate only records notice for an increase that's
+ * already been applied), so this stays visible for the whole lookahead
+ * window rather than trying to guess it's been handled.
+ */
+export function isRentIncreaseNoticeDeadlineNear({
+  noticeDeadline,
+  asOf = new Date(),
+  lookaheadDays = RENT_INCREASE_NOTICE_LOOKAHEAD_DAYS,
+}: {
+  noticeDeadline: Date;
+  asOf?: Date;
+  lookaheadDays?: number;
+}): boolean {
+  const windowStart = new Date(noticeDeadline.getTime() - lookaheadDays * MS_PER_DAY);
+  return asOf >= windowStart;
+}
+
 /**
  * Alberta RTA: a landlord has 10 days after the tenancy ends to return the
  * deposit (less any itemized deductions).

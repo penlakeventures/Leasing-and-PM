@@ -28,6 +28,7 @@ const groups: { label: string | null; links: { href: string; label: string }[] }
     links: [
       { href: "/leads", label: "Leads" },
       { href: "/leases", label: "Leases" },
+      { href: "/renewals", label: "Renewals" },
     ],
   },
   {
