@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { Nav } from "@/components/nav";
 import { SignOutButton } from "@/components/sign-out-button";
+import { SettingsMenu } from "@/components/settings-menu";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 
@@ -20,6 +21,7 @@ export default async function AppLayout({
           </Link>
         </div>
         <div className="flex items-center gap-3">
+          <SettingsMenu />
           <Link
             href="/account/password"
             className="text-sm text-neutral-600 hover:text-neutral-900 hover:underline"
