@@ -5,8 +5,10 @@
      bars and white Cards sitting on top of it. */
   --background: #f5f5f5;
   --foreground: #171717;
-  /* Pen Lake Ventures brand amber, from the logo mark's dot. */
-  --brand: #f0a93d;
+  /* Pen Lake Ventures brand amber, from the logo mark's dot — the exact
+     value (#fbb03f) read out of the client's own Pen_Logo_Refresh_2021
+     vector file, not an approximation. */
+  --brand: #fbb03f;
 }
 
 @theme inline {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Geist, Geist_Mono, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,12 +12,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Used only for the "pen." wordmark in the logo — the geometric weight
-// matches the brand mark better than the app's own Geist UI font, which
-// stays as-is everywhere else.
-const poppins = Poppins({
-  variable: "--font-poppins",
-  weight: ["700"],
+// Fallback for the "pen." wordmark in the logo, used wherever the real
+// brand typeface (Avenir Next Condensed — a licensed font, so it's tried
+// by name first in logo.tsx rather than loaded here) isn't installed.
+// Barlow Condensed is the closest free equivalent's proportions; stays
+// out of the app's own Geist UI font everywhere else.
+const barlowCondensed = Barlow_Condensed({
+  variable: "--font-logo",
+  weight: ["500"],
   subsets: ["latin"],
 });
 
@@ -30,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-neutral-50">
         {children}
