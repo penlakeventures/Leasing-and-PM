@@ -14,7 +14,7 @@ const links = [
 export function SettingsMenu() {
   return (
     <details className="relative">
-      <summary className="cursor-pointer list-none text-sm text-neutral-600 hover:text-neutral-900 [&::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer list-none rounded-md px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 [&::-webkit-details-marker]:hidden">
         Settings ▾
       </summary>
       <div className="absolute right-0 z-10 mt-2 w-40 rounded-md border border-neutral-200 bg-white py-1 shadow-lg">
