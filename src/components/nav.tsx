@@ -94,7 +94,7 @@ export function Nav() {
           </div>
         </div>
       ))}
-      <div className="ml-auto self-center">
+      <div className="ml-auto self-end">
         <SettingsMenu />
       </div>
     </nav>
