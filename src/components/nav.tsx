@@ -94,7 +94,7 @@ export function Nav({ isOwner }: { isOwner: boolean }) {
           </div>
         </div>
       ))}
-      <div className="ml-auto flex items-end gap-5">
+      <div className="ml-auto flex items-end gap-5 self-end">
         {isOwner && (
           <Link
             href="/financials"
