@@ -22,13 +22,15 @@ export default async function AppLayout({
         </div>
         <div className="flex items-center gap-3">
           <SettingsMenu />
-          <Link
-            href="/account/password"
-            className="text-sm text-neutral-600 hover:text-neutral-900 hover:underline"
-          >
-            {session?.user?.name}
-          </Link>
-          <SignOutButton />
+          <div className="flex flex-col items-end gap-0.5">
+            <Link
+              href="/account/password"
+              className="text-sm text-neutral-600 hover:text-neutral-900 hover:underline"
+            >
+              {session?.user?.name}
+            </Link>
+            <SignOutButton />
+          </div>
         </div>
       </header>
       <Nav />
