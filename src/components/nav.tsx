@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SettingsMenu } from "@/components/settings-menu";
 
 // Grouped for display only — every tab keeps its existing path and label,
 // just clustered under a header so these tabs read as a handful of
 // related groups instead of one long flat row. Dashboard and Inbox stay
 // outside any group since neither is leasing/PM/compliance-specific —
 // they're the two landing pages (overview, and what needs a reply right
-// now). The five rarely-used Settings tabs live in SettingsMenu, in the
-// header next to the account controls, not here.
+// now). The five rarely-used Settings tabs live in SettingsMenu, pushed
+// to the far right of this same row rather than grouped with the rest.
 const groups: { label: string | null; links: { href: string; label: string }[] }[] = [
   {
     label: null,
@@ -93,6 +94,9 @@ export function Nav() {
           </div>
         </div>
       ))}
+      <div className="ml-auto self-center">
+        <SettingsMenu />
+      </div>
     </nav>
   );
 }

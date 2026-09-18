@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { Nav } from "@/components/nav";
 import { SignOutButton } from "@/components/sign-out-button";
-import { SettingsMenu } from "@/components/settings-menu";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
 
@@ -28,8 +27,7 @@ export default async function AppLayout({
             <Logo />
           </Link>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <SignOutButton />
+        <div className="flex items-center gap-2">
           <Link
             href="/account/password"
             title={session?.user?.name ?? undefined}
@@ -38,7 +36,7 @@ export default async function AppLayout({
           >
             {initials}
           </Link>
-          <SettingsMenu />
+          <SignOutButton />
         </div>
       </header>
       <Nav />
