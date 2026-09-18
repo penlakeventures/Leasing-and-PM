@@ -39,7 +39,7 @@ export default async function AppLayout({
           <SignOutButton />
         </div>
       </header>
-      <Nav />
+      <Nav isOwner={(session?.user as { role?: string } | undefined)?.role === "owner"} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         {children}
       </main>

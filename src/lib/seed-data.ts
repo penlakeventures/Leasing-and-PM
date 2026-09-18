@@ -118,7 +118,7 @@ export async function runSeed(prisma: PrismaClient): Promise<string[]> {
   ]) {
     const user = await prisma.user.upsert({
       where: { email },
-      create: { name, email, passwordHash, role: "admin", mustChangePassword: true },
+      create: { name, email, passwordHash, role: "owner", mustChangePassword: true },
       update: {},
     });
     // Self-healing: if this account still has the known default password

@@ -23,7 +23,11 @@ model User {
   name               String
   email              String   @unique
   passwordHash       String
-  role               String   @default("admin")
+  // "owner" (full access, including Financials) or "staff" (everything
+  // except Financials). Defaults to the least-privileged value on
+  // purpose — a row ever created without specifying this explicitly
+  // should never accidentally get owner-level access.
+  role               String   @default("staff")
   // Defaults to true (not false) so that adding this column to an
   // already-populated users table is the conservative choice: any
   // existing account is treated as "not confirmed to have rotated its
@@ -59,6 +63,7 @@ model ProjectEntity {
 
   units             Unit[]
   complianceRecords ComplianceRecord[]
+  monthlyExpenses   MonthlyExpense[]
 
   @@map("project_entities")
 }
@@ -359,6 +364,51 @@ model SigningSettings {
   updatedAt                DateTime @updatedAt
 
   @@map("signing_settings")
+}
+
+// Owner-only financials. Rental income is never stored here — it's summed
+// live from RentPayment (the same ledger Rent already uses), so there's
+// nothing to duplicate or let go stale. Expenses are the one thing nobody
+// else tracks yet, so they get one row per project per month, categorized
+// to match the categories on the spreadsheet this replaces. `month` follows
+// RentPayment.period's own convention: UTC midnight of the 1st, a calendar
+// marker rather than a real instant.
+model MonthlyExpense {
+  id                    String   @id @default(cuid())
+  projectEntityId       String
+  projectEntity         ProjectEntity @relation(fields: [projectEntityId], references: [id], onDelete: Restrict)
+  month                 DateTime
+  mortgage              Decimal  @db.Decimal(10, 2) @default(0)
+  propertyTax           Decimal  @db.Decimal(10, 2) @default(0)
+  insurance             Decimal  @db.Decimal(10, 2) @default(0)
+  propertyManagementFee Decimal  @db.Decimal(10, 2) @default(0)
+  leasingFee            Decimal  @db.Decimal(10, 2) @default(0)
+  maintenance           Decimal  @db.Decimal(10, 2) @default(0)
+  legal                 Decimal  @db.Decimal(10, 2) @default(0)
+  generalExpense        Decimal  @db.Decimal(10, 2) @default(0)
+  accounting            Decimal  @db.Decimal(10, 2) @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([projectEntityId, month])
+  @@index([month])
+  @@map("monthly_expenses")
+}
+
+// The rarely-changing, owner-only portfolio figures (property value, loan
+// rate, equity) — a handful of fields updated by hand occasionally, not
+// part of the monthly routine the way MonthlyExpense is. Singleton, same
+// pattern as SigningSettings above.
+model FinancialSettings {
+  id                   String   @id @default("singleton")
+  totalCityAssessment  Decimal? @db.Decimal(14, 2)
+  estimatedMarketValue Decimal? @db.Decimal(14, 2)
+  totalAssumedEquity   Decimal? @db.Decimal(14, 2)
+  avgLoanInterestRate  Decimal? @db.Decimal(6, 4)
+  iror                 Decimal? @db.Decimal(6, 4)
+  updatedAt            DateTime @updatedAt
+
+  @@map("financial_settings")
 }
 
 // ---------------------------------------------------------------------------
