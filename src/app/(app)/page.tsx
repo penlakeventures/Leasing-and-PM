@@ -112,9 +112,12 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
+      {/* Fixed-position row, same reasoning as the tab bar: flex-nowrap +
+          overflow-x-auto instead of a responsive grid, so narrowing the
+          window scrolls the row instead of reflowing tiles onto new lines. */}
+      <div className="flex flex-nowrap gap-4 overflow-x-auto pb-1">
         {stats.map((stat) => (
-          <Link key={stat.label} href={stat.href}>
+          <Link key={stat.label} href={stat.href} className="w-36 shrink-0">
             <Card className="border-t-4 border-t-brand">
               <p className="text-2xl font-semibold text-neutral-900">
                 {stat.value}
