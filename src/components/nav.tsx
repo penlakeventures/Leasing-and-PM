@@ -57,9 +57,9 @@ export function Nav({ isOwner }: { isOwner: boolean }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-wrap items-start gap-x-5 gap-y-2 border-b border-neutral-200 bg-white px-4 py-2">
+    <nav className="flex flex-nowrap items-start gap-x-5 overflow-x-auto border-b border-neutral-200 bg-white px-4 py-2">
       {groups.map((group, i) => (
-        <div key={i} className="flex flex-col gap-1">
+        <div key={i} className="flex shrink-0 flex-col gap-1">
           {/* Always reserve the label row's height, even for the unlabeled
               Dashboard group — otherwise its tab sits a full line higher
               than every other group's tabs instead of lining up with them. */}
@@ -71,7 +71,7 @@ export function Nav({ isOwner }: { isOwner: boolean }) {
           >
             {group.label ?? " "}
           </span>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-nowrap gap-1">
             {group.links.map((link) => {
               const active =
                 link.href === "/"
@@ -81,7 +81,7 @@ export function Nav({ isOwner }: { isOwner: boolean }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                  className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-medium ${
                     active
                       ? "bg-neutral-900 text-white"
                       : "text-neutral-600 hover:bg-neutral-100"
@@ -98,7 +98,7 @@ export function Nav({ isOwner }: { isOwner: boolean }) {
           above — Financials sits on the label row (in line with
           Portfolio/Leasing/etc.) rather than as its own wide button,
           keeping this trailing block no wider than Settings itself. */}
-      <div className="ml-auto flex flex-col gap-1">
+      <div className="ml-auto flex shrink-0 flex-col gap-1">
         {isOwner ? (
           <Link
             href="/financials"
