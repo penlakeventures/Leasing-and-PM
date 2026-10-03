@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureCurrentPeriodPayments, sendRentReminders } from "@/lib/rent-reminders";
+import { ensureCurrentPeriodPayments, sendRentReminders, remindersEnabled } from "@/lib/rent-reminders";
 
 // Meant to be hit once a day by an external scheduler (a GitHub Actions
 // cron workflow — see .github/workflows/rent-reminders.yml — rather than
@@ -26,7 +26,13 @@ export async function GET(req: NextRequest) {
   try {
     const created = await ensureCurrentPeriodPayments();
     const { sent, failed } = await sendRentReminders();
-    return NextResponse.json({ ok: true, periodsCreated: created, remindersSent: sent, remindersFailed: failed });
+    return NextResponse.json({
+      ok: true,
+      periodsCreated: created,
+      remindersSent: sent,
+      remindersFailed: failed,
+      remindersEnabled: remindersEnabled(),
+    });
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : String(error) },

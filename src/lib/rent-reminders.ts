@@ -2,6 +2,23 @@ import { prisma } from "@/lib/prisma";
 import { sendSms } from "@/lib/twilio";
 import { isRentReminderDue } from "@/lib/rules";
 
+// Kill switch: tenants were getting "rent is due" texts for rent they'd
+// already paid, because staff weren't yet using the Rent page day to day
+// to mark payments as they came in — the ledger had nothing current to
+// check the reminder against. Flip this back to true (and redeploy) once
+// the team is actively keeping Rent up to date and ready to go live with
+// automated reminders again. ensureCurrentPeriodPayments() below keeps
+// running regardless — it only creates this month's unpaid-charge rows,
+// never texts anyone, so the ledger stays accurate in the meantime.
+const REMINDERS_ENABLED = false;
+
+// Exposed so the cron route can report the paused state plainly in its
+// response, instead of a suspiciously-quiet "remindersSent: 0" that looks
+// like a silent failure.
+export function remindersEnabled(): boolean {
+  return REMINDERS_ENABLED;
+}
+
 // This business operates in exactly one timezone — Calgary/Mountain — same
 // reasoning as tour scheduling's own timezone handling.
 const RENT_TIMEZONE = "America/Edmonton";
@@ -62,6 +79,8 @@ export async function ensureCurrentPeriodPayments(asOf: Date = new Date()): Prom
 export async function sendRentReminders(
   asOf: Date = new Date(),
 ): Promise<{ sent: number; failed: number }> {
+  if (!REMINDERS_ENABLED) return { sent: 0, failed: 0 };
+
   const payments = await prisma.rentPayment.findMany({
     where: { paidDate: null, reminderSentAt: null },
     include: {
