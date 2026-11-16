@@ -9,6 +9,7 @@ const links = [
   { href: "/settings/dropbox", label: "Documents" },
   { href: "/settings/texting", label: "Texting" },
   { href: "/settings/signing", label: "Signing" },
+  { href: "/settings/staff", label: "Staff" },
 ];
 
 export function SettingsMenu() {

@@ -113,8 +113,8 @@ export async function runSeed(prisma: PrismaClient): Promise<string[]> {
   const defaultPassword = "ChangeMe123!"; // documented in README — not echoed here
   const passwordHash = await bcrypt.hash(defaultPassword, 12);
   for (const [name, email] of [
-    ["Ryan Doherty", "ryan@penventures.ca"],
-    ["Alina Sezanaeva", "alina@penventures.ca"],
+    ["Ryan Doherty", "info@penventures.ca"],
+    ["Alina Sezanaeva", "leasing@penventures.ca"],
   ]) {
     const user = await prisma.user.upsert({
       where: { email },

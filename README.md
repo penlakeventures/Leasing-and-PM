@@ -83,8 +83,12 @@ npm run dev
 Seeded login — **change these immediately**, before entering any real
 tenant/lease data. Click your name (top right) → Change password:
 
-- `ryan@penventures.ca` / `ChangeMe123!`
-- `alina@penventures.ca` / `ChangeMe123!`
+- `info@penventures.ca` / `ChangeMe123!`
+- `leasing@penventures.ca` / `ChangeMe123!`
+
+Additional staff accounts (e.g. a new hire) are created from inside the
+app itself, not the seed script — **Settings → Staff**, owner accounts
+only.
 
 Before affordable-unit rent changes or deposit interest will compute
 correctly, set the current year's rates under **Rates** in the nav
