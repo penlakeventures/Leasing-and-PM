@@ -6,6 +6,7 @@ export function UnitForm({
   defaultValues,
   defaultProjectId,
   error,
+  lockCurrentRent,
 }: {
   action: (formData: FormData) => void;
   projects: { id: string; internalName: string }[];
@@ -22,6 +23,11 @@ export function UnitForm({
   };
   defaultProjectId?: string;
   error?: string;
+  // True for a staff account editing an existing unit — rent changes go
+  // through a RentRecommendation instead (see the Rent recommendations
+  // section on the unit page), so the field is shown but not editable
+  // here rather than just left out, so staff can still see the number.
+  lockCurrentRent?: boolean;
 }) {
   return (
     <Card>
@@ -114,7 +120,11 @@ export function UnitForm({
           <Field
             label="Current rent"
             htmlFor="currentRent"
-            hint="Affordable-unit increases are capped at the year's CPI rate"
+            hint={
+              lockCurrentRent
+                ? "Only an owner can change this directly — submit a rent recommendation below instead"
+                : "Affordable-unit increases are capped at the year's CPI rate"
+            }
           >
             <Input
               id="currentRent"
@@ -123,6 +133,7 @@ export function UnitForm({
               step="0.01"
               min={0}
               required
+              readOnly={lockCurrentRent}
               defaultValue={
                 defaultValues?.currentRent
                   ? String(defaultValues.currentRent)

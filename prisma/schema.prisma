@@ -36,9 +36,11 @@ model User {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  handledCommunications CommunicationLog[]
-  decidedScreenings     TenantScreening[]
-  assignedTours         Lead[]
+  handledCommunications         CommunicationLog[]
+  decidedScreenings             TenantScreening[]
+  assignedTours                 Lead[]
+  proposedRentRecommendations   RentRecommendation[] @relation("ProposedRentRecommendations")
+  decidedRentRecommendations    RentRecommendation[] @relation("DecidedRentRecommendations")
 
   @@map("users")
 }
@@ -101,9 +103,10 @@ model Unit {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
-  leases    Lease[]
-  leads     Lead[]
-  tickets   MaintenanceTicket[]
+  leases              Lease[]
+  leads               Lead[]
+  tickets             MaintenanceTicket[]
+  rentRecommendations RentRecommendation[]
 
   @@index([projectEntityId])
   @@map("units")
@@ -216,6 +219,46 @@ model Lease {
 
   @@index([unitId])
   @@map("leases")
+}
+
+enum RentRecommendationDecision {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+// Staff-recommends / owner-approves rent changes (the "Yellow" decision
+// level in the leasing training manual — staff researches comparables and
+// recommends a rent, but an owner must approve it before it's communicated
+// or advertised). Same shape as TenantScreening's decidedBy/decidedAt
+// pattern, plus proposedBy since who recommended it matters here (it
+// doesn't for screening, which is always reviewed by whoever requested it).
+// Approving one writes currentRent on the linked Unit — see
+// decideRentRecommendation() in lib/actions/rent-recommendations.ts.
+model RentRecommendation {
+  id           String                     @id @default(cuid())
+  unitId       String
+  unit         Unit                       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  // Snapshot of Unit.currentRent at the time this was proposed — kept
+  // alongside the recommendation itself so the record reads correctly
+  // later even after currentRent has since moved on.
+  currentRent  Decimal                    @db.Decimal(10, 2)
+  proposedRent Decimal                    @db.Decimal(10, 2)
+  // The market evidence behind the number — comparables, how quickly they
+  // leased, season, etc. Free text, same reasoning as TenantScreening's
+  // summary field: staff writes the actual case, not a rigid field set.
+  reasoning    String
+  decision     RentRecommendationDecision @default(PENDING)
+  decisionNote String?
+  proposedById String
+  proposedBy   User                       @relation("ProposedRentRecommendations", fields: [proposedById], references: [id], onDelete: Restrict)
+  decidedById  String?
+  decidedBy    User?                      @relation("DecidedRentRecommendations", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt    DateTime?
+  createdAt    DateTime                   @default(now())
+
+  @@index([unitId])
+  @@map("rent_recommendations")
 }
 
 model LeaseTenant {

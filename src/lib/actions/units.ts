@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { checkRentEscalation } from "@/lib/rules";
@@ -42,6 +43,22 @@ export async function updateUnit(id: string, formData: FormData) {
   const data = parseUnitForm(formData);
   const existing = await prisma.unit.findUnique({ where: { id } });
   if (!existing) redirect("/units");
+
+  // Rent is a Red-level decision (owner-only) once a unit is live — staff
+  // propose a change via RentRecommendation instead (see
+  // lib/actions/rent-recommendations.ts) and an owner's approval of that
+  // is the only other thing allowed to move currentRent. Checked here too,
+  // not just hidden in the form, same "enforced, not just hidden" pattern
+  // as requireOwnerPage/Action elsewhere.
+  if (Number(existing!.currentRent) !== data.currentRent) {
+    const session = await auth();
+    const role = (session?.user as { role?: string } | undefined)?.role;
+    if (role !== "owner") {
+      redirect(
+        `/units/${id}?error=${encodeURIComponent("Only an owner can change current rent directly — submit a rent recommendation instead.")}`,
+      );
+    }
+  }
 
   // Rent changes on an affordable unit are capped at the current year's CPI.
   if (
