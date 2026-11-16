@@ -1,0 +1,40 @@
+name: CI
+
+# Runs on every push and pull request — lint, the automated test suite,
+# and a full production build, so a broken change gets caught here
+# instead of surfacing on Railway after it's already deployed. No real
+# database or secrets needed: the build/test steps never make an actual
+# connection, so these are just structurally-required placeholder values,
+# not anything sensitive.
+on:
+  push:
+  pull_request:
+
+env:
+  DATABASE_URL: "postgresql://user:password@localhost:5432/placeholder"
+  AUTH_SECRET: "placeholder"
+  NEXTAUTH_URL: "http://localhost:3000"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
