@@ -46,10 +46,22 @@ export default async function DashboardPage() {
         lease: { endDate: { not: null } },
       },
       include: { lease: { include: { unit: { include: { projectEntity: true } } } } },
+      // Owner's specified project order (ProjectEntity.displayOrder), not
+      // whatever order Postgres happens to return rows in — otherwise this
+      // list jumps between projects unpredictably instead of reading top
+      // to bottom the way the portfolio is actually organized.
+      orderBy: [
+        { lease: { unit: { projectEntity: { displayOrder: "asc" } } } },
+        { lease: { unit: { unitNumber: "asc" } } },
+      ],
     }),
     prisma.rentPayment.findMany({
       where: { paidDate: null },
       include: { lease: { include: { unit: { include: { projectEntity: true } } } } },
+      orderBy: [
+        { lease: { unit: { projectEntity: { displayOrder: "asc" } } } },
+        { lease: { unit: { unitNumber: "asc" } } },
+      ],
     }),
     getInboxRows(),
     prisma.unit.findMany({ include: { leases: true } }),
@@ -64,6 +76,29 @@ export default async function DashboardPage() {
   const overdueRent = rentUnpaid.filter((p) =>
     isRentOverdue({ period: p.period, paidDate: p.paidDate }),
   );
+
+  // Both lists are already sorted by project display order (see the
+  // queries above), so grouping is just folding consecutive same-project
+  // rows together — not a re-sort — to show each project's name once
+  // instead of repeating it on every unit's row.
+  function groupByProject<T extends { lease: { unit: { projectEntity: { internalName: string }; unitNumber: string } } }>(
+    items: T[],
+  ): { projectName: string; items: T[] }[] {
+    const groups: { projectName: string; items: T[] }[] = [];
+    for (const item of items) {
+      const projectName = item.lease.unit.projectEntity.internalName;
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup?.projectName === projectName) {
+        lastGroup.items.push(item);
+      } else {
+        groups.push({ projectName, items: [item] });
+      }
+    }
+    return groups;
+  }
+
+  const overdueDepositsByProject = groupByProject(overdueDeposits);
+  const overdueRentByProject = groupByProject(overdueRent);
 
   // Same logic as the Renewals page itself, just counted here rather than
   // rendered in full — one active lease per unit, checked for either a
@@ -135,22 +170,28 @@ export default async function DashboardPage() {
             <Badge tone="red">10-day deadline passed</Badge>
           </h2>
           <Card>
-            <ul className="space-y-2 text-sm">
-              {overdueDeposits.map((d) => (
-                <li key={d.id} className="flex justify-between">
-                  <span>
-                    {d.lease.unit.projectEntity.internalName} — Unit{" "}
-                    {d.lease.unit.unitNumber}
-                  </span>
-                  <Link
-                    href={`/leases/${d.lease.id}`}
-                    className="text-neutral-900 underline"
-                  >
-                    Review lease
-                  </Link>
-                </li>
+            <div className="space-y-4">
+              {overdueDepositsByProject.map((group) => (
+                <div key={group.projectName}>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    {group.projectName}
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    {group.items.map((d) => (
+                      <li key={d.id} className="flex justify-between">
+                        <span>Unit {d.lease.unit.unitNumber}</span>
+                        <Link
+                          href={`/leases/${d.lease.id}`}
+                          className="text-neutral-900 underline"
+                        >
+                          Review lease
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           </Card>
         </div>
       )}
@@ -161,19 +202,25 @@ export default async function DashboardPage() {
             Rent overdue <Badge tone="red">past due date</Badge>
           </h2>
           <Card>
-            <ul className="space-y-2 text-sm">
-              {overdueRent.map((p) => (
-                <li key={p.id} className="flex justify-between">
-                  <span>
-                    {p.lease.unit.projectEntity.internalName} — Unit{" "}
-                    {p.lease.unit.unitNumber}
-                  </span>
-                  <Link href="/rent" className="text-neutral-900 underline">
-                    Review rent
-                  </Link>
-                </li>
+            <div className="space-y-4">
+              {overdueRentByProject.map((group) => (
+                <div key={group.projectName}>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    {group.projectName}
+                  </p>
+                  <ul className="space-y-2 text-sm">
+                    {group.items.map((p) => (
+                      <li key={p.id} className="flex justify-between">
+                        <span>Unit {p.lease.unit.unitNumber}</span>
+                        <Link href="/rent" className="text-neutral-900 underline">
+                          Review rent
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           </Card>
         </div>
       )}
