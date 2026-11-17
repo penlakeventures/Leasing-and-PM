@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { PageHeader, Button } from "@/components/ui";
+import Link from "next/link";
+import { PageHeader, Button, Card, Table, Th, Td, Badge } from "@/components/ui";
 import { LeaseForm } from "@/components/lease-form";
 import { DepositPanel } from "@/components/deposit-panel";
 import { DocumentUploadPanel } from "@/components/document-upload-panel";
@@ -34,6 +35,16 @@ export default async function LeaseDetailPage({
     prisma.tenant.findMany({ orderBy: { name: "asc" } }),
   ]);
   if (!lease) notFound();
+
+  // Every lease this unit has ever had, each with its own document link —
+  // so "open this lease's documents" also surfaces the rest of the unit's
+  // lease history in the same spot, instead of only this one tenancy's
+  // folder.
+  const unitLeaseHistory = await prisma.lease.findMany({
+    where: { unitId: lease.unitId },
+    orderBy: { startDate: "desc" },
+    include: { tenants: { include: { tenant: true } } },
+  });
 
   const updateWithId = updateLease.bind(null, id);
   const deleteWithId = deleteLease.bind(null, id);
@@ -90,6 +101,58 @@ export default async function LeaseDetailPage({
         canUpload={Boolean(lease.documentsFolderPath)}
         uploadAction={uploadWithId}
       />
+
+      {unitLeaseHistory.length > 1 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-semibold text-neutral-900">
+            Lease history for {lease.unit.projectEntity.internalName} — Unit{" "}
+            {lease.unit.unitNumber}
+          </h2>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Tenant(s)</Th>
+                <Th>Start</Th>
+                <Th>End</Th>
+                <Th>Document</Th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {unitLeaseHistory.map((l) => (
+                <tr key={l.id} className={l.id === lease.id ? "bg-neutral-50" : undefined}>
+                  <Td>
+                    <Link href={`/leases/${l.id}`} className="underline">
+                      {l.tenants.map((t) => t.tenant.name).join(", ") || "—"}
+                    </Link>
+                    {l.id === lease.id && (
+                      <>
+                        {" "}
+                        <Badge tone="blue">This lease</Badge>
+                      </>
+                    )}
+                  </Td>
+                  <Td>{l.startDate.toLocaleDateString()}</Td>
+                  <Td>{l.periodic ? "Periodic" : (l.endDate?.toLocaleDateString() ?? "—")}</Td>
+                  <Td>
+                    {l.documentLink ? (
+                      <a
+                        href={l.documentLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        Open in Dropbox →
+                      </a>
+                    ) : (
+                      <span className="text-neutral-400">—</span>
+                    )}
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card>
+      )}
 
       <DepositPanel
         leaseId={lease.id}
