@@ -4,23 +4,31 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SettingsMenu } from "@/components/settings-menu";
 
+export type NavCounts = {
+  inbox: number;
+  renewals: number;
+  maintenance: number;
+  leads: number;
+};
+
 // Grouped for display only — every tab keeps its existing path and label,
 // just clustered under a header so these tabs read as a handful of
-// related groups instead of one long flat row. Dashboard and Inbox stay
-// outside any group since neither is leasing/PM/compliance-specific —
-// they're the two landing pages (overview, and what needs a reply right
-// now). The five rarely-used Settings tabs live in SettingsMenu, pushed
-// to the far right of this same row rather than grouped with the rest.
+// related groups instead of one long flat row. Inbox stays outside any
+// group since it isn't leasing/PM/compliance-specific — it's the one
+// "what needs a reply right now" landing page. The five rarely-used
+// Settings tabs live in SettingsMenu, pushed to the far right of this
+// same row rather than grouped with the rest.
+//
+// countKey ties a tab to a NavCounts field — these are what used to be
+// the Dashboard's stat tiles, shown as a badge on the tab itself instead
+// of needing a separate page to go check them.
 const groups: {
   label: string | null;
-  links: { href: string; label: string }[];
+  links: { href: string; label: string; countKey?: keyof NavCounts }[];
 }[] = [
   {
     label: null,
-    links: [
-      { href: "/", label: "Dashboard" },
-      { href: "/inbox", label: "Inbox" },
-    ],
+    links: [{ href: "/inbox", label: "Inbox", countKey: "inbox" }],
   },
   {
     label: "Portfolio",
@@ -32,16 +40,16 @@ const groups: {
   {
     label: "Leasing",
     links: [
-      { href: "/leads", label: "Leads" },
+      { href: "/leads", label: "Leads", countKey: "leads" },
       { href: "/leases", label: "Leases" },
-      { href: "/renewals", label: "Renewals" },
+      { href: "/renewals", label: "Renewals", countKey: "renewals" },
     ],
   },
   {
     label: "Property Management",
     links: [
       { href: "/tenants", label: "Tenants" },
-      { href: "/tickets", label: "Maintenance" },
+      { href: "/tickets", label: "Maintenance", countKey: "maintenance" },
       { href: "/vendors", label: "Vendors" },
       { href: "/rent", label: "Rent" },
       { href: "/communications", label: "Communications" },
@@ -56,7 +64,16 @@ const groups: {
   },
 ];
 
-export function Nav({ isOwner }: { isOwner: boolean }) {
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+      {count}
+    </span>
+  );
+}
+
+export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }) {
   const pathname = usePathname();
 
   return (
@@ -71,7 +88,7 @@ export function Nav({ isOwner }: { isOwner: boolean }) {
         {groups.map((group, i) => (
           <div key={i} className="flex shrink-0 flex-col gap-1">
             {/* Always reserve the label row's height, even for the unlabeled
-              Dashboard group — otherwise its tab sits a full line higher
+              Inbox group — otherwise its tab sits a full line higher
               than every other group's tabs instead of lining up with them. */}
             <span
               aria-hidden={!group.label}
@@ -79,7 +96,7 @@ export function Nav({ isOwner }: { isOwner: boolean }) {
                 group.label ? "" : "invisible"
               }`}
             >
-              {group.label ?? " "}
+              {group.label ?? " "}
             </span>
             <div className="flex flex-nowrap gap-1">
               {group.links.map((link) => {
@@ -98,6 +115,7 @@ export function Nav({ isOwner }: { isOwner: boolean }) {
                     }`}
                   >
                     {link.label}
+                    {link.countKey && <CountBadge count={counts[link.countKey]} />}
                   </Link>
                 );
               })}

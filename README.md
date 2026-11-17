@@ -24,7 +24,7 @@ data model, authentication, and CRUD for every entity — not just a schema.
     Statistics Canada CPI rate (CMHC MLI Select requirement).
   - A security deposit can't exceed one month's rent, and can't be
     increased once set (Alberta RTA).
-  - The dashboard flags any deposit past its 10-day return deadline.
+  - The Units page flags any deposit past its 10-day return deadline.
   - A periodic lease's rent can be raised at most once every 365 days,
     and only with ≥3 months' written notice recorded before the increase
     takes effect (Alberta RTA). Doesn't apply to fixed-term leases, and
@@ -341,8 +341,8 @@ Two pieces:
   `sendTenantText`/`sendLeadText`/`sendVendorText` actions) or creating a
   ticket from a draft clears it automatically; a text that doesn't need a
   reply (a "thanks", a vendor confirming a job's done) can be cleared by
-  hand with the Inbox row's **Dismiss** button. The Dashboard's "Needs a
-  reply" count is the same query, so the two pages can't disagree.
+  hand with the Inbox row's **Dismiss** button. The nav bar's "Needs a
+  reply" badge is the same query, so it and the Inbox page can't disagree.
 
 No new setup required — reuses the Twilio and Anthropic credentials
 already configured above.
@@ -436,8 +436,9 @@ configured above.
 ## Rent tracking & reminders
 
 `/rent` — a monthly rent ledger, one row per lease per calendar month
-(`RentPayment`), with a running unpaid/overdue count on the page and on
-the Dashboard, and a one-click Mark paid / Undo per row.
+(`RentPayment`), with a running unpaid/overdue count on the page, a
+"Rent overdue" badge on the affected unit's row on `/units`, and a
+one-click Mark paid / Undo per row.
 
 Unlike the AI-drafted features above, a rent reminder is a fixed,
 factual statement ("rent of $X is due on the 1st") rather than an
@@ -590,7 +591,7 @@ prisma/schema.prisma       Data model
 prisma/seed.ts              Real-portfolio seed data
 src/lib/rules.ts            Compliance rules (CPI cap, deposit cap, 10-day return)
 src/lib/actions/*.ts        Server actions (create/update/delete) per entity
-src/app/(app)/*             Authenticated pages (dashboard + one folder per entity)
+src/app/(app)/*             Authenticated pages (one folder per entity; "/" just redirects to /units)
 src/app/login               Login page
 src/components/*            Shared UI + per-entity forms
 ```

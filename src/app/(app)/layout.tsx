@@ -1,15 +1,34 @@
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { getInboxRows } from "@/lib/inbox";
+import { unitNeedsRenewalAttention } from "@/lib/rules";
 import { Nav } from "@/components/nav";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Logo } from "@/components/logo";
 import Link from "next/link";
+
+// Small pending-work counts shown as badges on their own nav tabs — this
+// is what used to be the Dashboard's stat-tile row. No separate landing
+// page for them now: they're visible from every page instead of only one.
+async function getNavCounts() {
+  const [inboxRows, unitsWithLeases, openTickets, activeLeads] = await Promise.all([
+    getInboxRows(),
+    prisma.unit.findMany({ include: { leases: true } }),
+    prisma.maintenanceTicket.count({ where: { status: { not: "RESOLVED" } } }),
+    prisma.lead.count({ where: { status: { notIn: ["LEASED", "LOST"] } } }),
+  ]);
+
+  const renewals = unitsWithLeases.filter((u) => unitNeedsRenewalAttention(u)).length;
+
+  return { inbox: inboxRows.length, renewals, maintenance: openTickets, leads: activeLeads };
+}
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const [session, counts] = await Promise.all([auth(), getNavCounts()]);
   // First + last initials (e.g. "Ryan Doherty" -> "RD") rather than just
   // the first letter, so the avatar stays distinguishable between the
   // two accounts sharing this app.
@@ -23,7 +42,7 @@ export default async function AppLayout({
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
         <div>
-          <Link href="/" aria-label="Pen Lake Ventures — home">
+          <Link href="/units" aria-label="Pen Lake Ventures — home">
             <Logo />
           </Link>
         </div>
@@ -39,7 +58,10 @@ export default async function AppLayout({
           <SignOutButton />
         </div>
       </header>
-      <Nav isOwner={(session?.user as { role?: string } | undefined)?.role === "owner"} />
+      <Nav
+        isOwner={(session?.user as { role?: string } | undefined)?.role === "owner"}
+        counts={counts}
+      />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         {children}
       </main>

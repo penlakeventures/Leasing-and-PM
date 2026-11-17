@@ -12,6 +12,7 @@ import {
   isRentReminderDue,
   threadNeedsAttention,
   isRentOverdue,
+  unitNeedsRenewalAttention,
 } from "./rules";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -471,5 +472,95 @@ describe("isRentOverdue — Mountain-time due date boundary", () => {
   it("is never overdue once paid, no matter how late", () => {
     const asOf = new Date(Date.UTC(2026, 10, 10, 0, 0, 0));
     expect(isRentOverdue({ period, paidDate: d(2026, 11, 5), asOf })).toBe(false);
+  });
+});
+
+describe("unitNeedsRenewalAttention", () => {
+  it("is false when there's no active lease at all", () => {
+    expect(unitNeedsRenewalAttention({ leases: [] })).toBe(false);
+  });
+
+  it("is true when the active fixed-term lease needs a renewal decision", () => {
+    const endDate = d(2026, 12, 1);
+    const asOf = new Date(endDate.getTime() - 30 * MS_PER_DAY); // inside the 90-day window
+    const unit = {
+      leases: [
+        {
+          id: "l1",
+          startDate: d(2026, 1, 1),
+          endDate,
+          periodic: false,
+          lastRentIncreaseDate: null,
+          renewedFromLeaseId: null,
+        },
+      ],
+    };
+    expect(unitNeedsRenewalAttention(unit, asOf)).toBe(true);
+  });
+
+  it("is false for a fixed-term lease within the window that already has a successor lease", () => {
+    const endDate = d(2026, 12, 1);
+    const asOf = new Date(endDate.getTime() - 30 * MS_PER_DAY);
+    const unit = {
+      leases: [
+        {
+          id: "l1",
+          startDate: d(2026, 1, 1),
+          endDate,
+          periodic: false,
+          lastRentIncreaseDate: null,
+          renewedFromLeaseId: null,
+        },
+        {
+          id: "l2",
+          startDate: endDate,
+          endDate: null,
+          periodic: true,
+          lastRentIncreaseDate: null,
+          renewedFromLeaseId: "l1",
+        },
+      ],
+    };
+    // asOf is before l2 even starts, so l1 is still the active lease —
+    // but it already has a successor on file.
+    expect(unitNeedsRenewalAttention(unit, asOf)).toBe(false);
+  });
+
+  it("is true when a periodic lease's rent-increase notice deadline is near", () => {
+    const leaseStartDate = d(2024, 1, 1);
+    // Far enough past 365 days that the notice deadline (nextEligible - 3
+    // months) is within the 30-day lookahead.
+    const asOf = new Date(leaseStartDate.getTime() + 340 * MS_PER_DAY);
+    const unit = {
+      leases: [
+        {
+          id: "l1",
+          startDate: leaseStartDate,
+          endDate: null,
+          periodic: true,
+          lastRentIncreaseDate: null,
+          renewedFromLeaseId: null,
+        },
+      ],
+    };
+    expect(unitNeedsRenewalAttention(unit, asOf)).toBe(true);
+  });
+
+  it("is false for a periodic lease with nothing due soon", () => {
+    const leaseStartDate = d(2026, 1, 1);
+    const asOf = new Date(leaseStartDate.getTime() + 10 * MS_PER_DAY);
+    const unit = {
+      leases: [
+        {
+          id: "l1",
+          startDate: leaseStartDate,
+          endDate: null,
+          periodic: true,
+          lastRentIncreaseDate: null,
+          renewedFromLeaseId: null,
+        },
+      ],
+    };
+    expect(unitNeedsRenewalAttention(unit, asOf)).toBe(false);
   });
 });

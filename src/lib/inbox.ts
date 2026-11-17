@@ -17,7 +17,7 @@ export type InboxRow = {
   dismissAction: (formData: FormData) => Promise<void>;
 };
 
-// Shared by the Inbox page and the Dashboard's "Needs a reply" count —
+// Shared by the Inbox page and the nav bar's "Needs a reply" badge —
 // one query, one definition of "needs attention" (threadNeedsAttention in
 // rules.ts), so the two pages can't ever disagree with each other.
 export async function getInboxRows(): Promise<InboxRow[]> {

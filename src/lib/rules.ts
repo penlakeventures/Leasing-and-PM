@@ -249,6 +249,56 @@ export function isRentIncreaseNoticeDeadlineNear({
   return asOf >= windowStart;
 }
 
+type RenewalAttentionLease = {
+  id: string;
+  startDate: Date;
+  endDate: Date | null;
+  periodic: boolean;
+  lastRentIncreaseDate: Date | null;
+  renewedFromLeaseId: string | null;
+};
+
+/**
+ * True if this unit's active lease needs either a renewal decision or a
+ * rent-increase notice soon — the same two checks the Renewals page itself
+ * runs in full, factored out so a simple "does this unit need attention"
+ * count (the Renewals nav badge) doesn't have to re-derive the same logic
+ * a second time and risk drifting out of sync with the real page.
+ */
+export function unitNeedsRenewalAttention(
+  unit: { leases: RenewalAttentionLease[] },
+  asOf: Date = new Date(),
+): boolean {
+  const active = pickActiveLease(unit.leases, asOf);
+  if (!active) return false;
+
+  if (!active.periodic && active.endDate) {
+    const hasSuccessorLease = unit.leases.some(
+      (l) => l.renewedFromLeaseId === active.id,
+    );
+    if (
+      needsRenewalDecision({
+        periodic: active.periodic,
+        endDate: active.endDate,
+        hasSuccessorLease,
+        asOf,
+      })
+    ) {
+      return true;
+    }
+  }
+
+  if (active.periodic) {
+    const { noticeDeadline } = rentIncreaseNoticeWindow({
+      lastRentIncreaseDate: active.lastRentIncreaseDate,
+      leaseStartDate: active.startDate,
+    });
+    if (isRentIncreaseNoticeDeadlineNear({ noticeDeadline, asOf })) return true;
+  }
+
+  return false;
+}
+
 /**
  * Alberta RTA: a landlord has 10 days after the tenancy ends to return the
  * deposit (less any itemized deductions).
