@@ -96,7 +96,12 @@ export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }
                 group.label ? "" : "invisible"
               }`}
             >
-              {group.label ?? " "}
+              {/* A plain space collapses to nothing (and so to zero
+                  height) when it's the only content on its line — a
+                  non-breaking space still renders as a real character,
+                  so this placeholder actually reserves the same line
+                  height as a sibling group's real label text. */}
+              {group.label ?? " "}
             </span>
             <div className="flex flex-nowrap gap-1">
               {group.links.map((link) => {
@@ -146,7 +151,11 @@ export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }
             aria-hidden
             className="invisible px-3 text-[11px] font-semibold uppercase tracking-wide"
           >
-            {" "}
+            {/* Same reasoning as the group-label placeholder above: a
+                non-breaking space, not a plain one, or this collapses to
+                zero height and misaligns Settings for any non-owner
+                account (staff like Cindy, not just Ryan/Alina). */}
+            {" "}
           </span>
         )}
         <SettingsMenu />
