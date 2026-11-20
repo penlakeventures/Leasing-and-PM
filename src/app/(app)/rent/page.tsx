@@ -6,12 +6,19 @@ import { ensureCurrentPeriodPayments } from "@/lib/rent-reminders";
 import { isRentOverdue } from "@/lib/rules";
 import Link from "next/link";
 
-export default async function RentPage() {
+export default async function RentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>;
+}) {
+  const { all } = await searchParams;
+  const showAll = all === "1";
+
   // Guarantees the current month's charges exist even if the daily cron
   // hasn't run yet today — cheap and idempotent, safe to do on every load.
   await ensureCurrentPeriodPayments();
 
-  const payments = await prisma.rentPayment.findMany({
+  const allPayments = await prisma.rentPayment.findMany({
     orderBy: [
       { lease: { unit: { projectEntity: { displayOrder: "asc" } } } },
       { lease: { unit: { unitNumber: "asc" } } },
@@ -27,8 +34,13 @@ export default async function RentPage() {
     },
   });
 
-  const unpaid = payments.filter((p) => !p.paidDate);
-  const overdue = payments.filter((p) => isRentOverdue({ period: p.period, paidDate: p.paidDate }));
+  // Rent charges accumulate one per lease per month forever — the fastest-
+  // growing list in the app. Default to just what's outstanding, same
+  // pattern as Leases/Tenants/Tickets; the summary cards and bulk
+  // catch-up below still look at the full history regardless of this.
+  const unpaid = allPayments.filter((p) => !p.paidDate);
+  const overdue = allPayments.filter((p) => isRentOverdue({ period: p.period, paidDate: p.paidDate }));
+  const payments = showAll ? allPayments : unpaid;
 
   // Grouped so a whole period already collected outside the app (e.g. this
   // feature going live mid-month) can be cleared in one confirmed action,
@@ -76,6 +88,12 @@ export default async function RentPage() {
           </div>
         </Card>
       )}
+
+      <div className="flex justify-end">
+        <Link href={showAll ? "/rent" : "/rent?all=1"} className="text-sm text-neutral-600 underline">
+          {showAll ? "Show unpaid only" : "Show all (including paid history)"}
+        </Link>
+      </div>
 
       <Table>
         <thead>
@@ -137,7 +155,9 @@ export default async function RentPage() {
           })}
         </tbody>
       </Table>
-      {payments.length === 0 && <EmptyState>No rent charges yet.</EmptyState>}
+      {payments.length === 0 && (
+        <EmptyState>{showAll ? "No rent charges yet." : "Nothing unpaid right now."}</EmptyState>
+      )}
     </div>
   );
 }
