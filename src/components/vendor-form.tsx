@@ -26,7 +26,11 @@ export function VendorForm({
           <Field label="Name" htmlFor="name">
             <Input id="name" name="name" required defaultValue={defaultValues?.name} />
           </Field>
-          <Field label="Type" htmlFor="type" hint="e.g. handyman, plumber">
+          <Field
+            label="Type"
+            htmlFor="type"
+            hint={'Be specific about what they handle, e.g. "Plumbing — general" vs. "Plumbing — drain/sewer", not just "plumber"'}
+          >
             <Input id="type" name="type" required defaultValue={defaultValues?.type} />
           </Field>
           <Field label="Phone" htmlFor="contactPhone">
