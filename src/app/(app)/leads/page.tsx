@@ -4,7 +4,7 @@ import { TOUR_TIMEZONE } from "@/lib/google-calendar";
 import Link from "next/link";
 
 const statusTone: Record<string, "neutral" | "green" | "amber" | "red" | "blue"> = {
-  NEW: "blue",
+  NEW: "red",
   CONTACTED: "blue",
   TOURING: "amber",
   APPLIED: "amber",
