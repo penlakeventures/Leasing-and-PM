@@ -6,8 +6,15 @@ import Link from "next/link";
 
 const COLUMN_COUNT = 7;
 
-export default async function UnitsPage() {
-  const units = await prisma.unit.findMany({
+export default async function UnitsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ vacant?: string }>;
+}) {
+  const { vacant } = await searchParams;
+  const vacantOnly = vacant === "1";
+
+  const allUnits = await prisma.unit.findMany({
     orderBy: [{ projectEntity: { displayOrder: "asc" } }, { unitNumber: "asc" }],
     include: {
       projectEntity: true,
@@ -24,24 +31,40 @@ export default async function UnitsPage() {
     },
   });
 
+  // Compute each unit's active lease/vacancy once, up front, so the
+  // vacant-only filter below can run before grouping instead of after.
+  const withActiveLease = allUnits.map((u) => ({
+    unit: u,
+    activeLease: pickActiveLease(u.leases),
+  }));
+  const units = vacantOnly
+    ? withActiveLease.filter(({ activeLease }) => !activeLease)
+    : withActiveLease;
+
   // Units are already sorted by project display order above, so grouping
   // is just folding consecutive same-project rows together — not a
   // re-sort — to show each project's name once as a heading instead of
   // repeating it on every unit's row.
   const groups: { projectName: string; units: typeof units }[] = [];
-  for (const u of units) {
-    const projectName = u.projectEntity.internalName;
+  for (const row of units) {
+    const projectName = row.unit.projectEntity.internalName;
     const lastGroup = groups[groups.length - 1];
     if (lastGroup?.projectName === projectName) {
-      lastGroup.units.push(u);
+      lastGroup.units.push(row);
     } else {
-      groups.push({ projectName, units: [u] });
+      groups.push({ projectName, units: [row] });
     }
   }
 
   return (
     <div>
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex items-center justify-between">
+        <Link
+          href={vacantOnly ? "/units" : "/units?vacant=1"}
+          className="text-sm text-neutral-600 underline"
+        >
+          {vacantOnly ? "Show all units" : "Show vacant only"}
+        </Link>
         <LinkButton href="/units/new">+ New unit</LinkButton>
       </div>
       <Table>
@@ -67,8 +90,7 @@ export default async function UnitsPage() {
                   {group.projectName}
                 </td>
               </tr>
-              {group.units.map((u) => {
-                const activeLease = pickActiveLease(u.leases);
+              {group.units.map(({ unit: u, activeLease }) => {
                 const tenants = activeLease?.tenants.map((t) => t.tenant) ?? [];
                 const depositOverdue = u.leases.some(
                   (l) =>
@@ -127,7 +149,9 @@ export default async function UnitsPage() {
           ))}
         </tbody>
       </Table>
-      {units.length === 0 && <EmptyState>No units yet.</EmptyState>}
+      {units.length === 0 && (
+        <EmptyState>{vacantOnly ? "No vacant units right now." : "No units yet."}</EmptyState>
+      )}
     </div>
   );
 }
