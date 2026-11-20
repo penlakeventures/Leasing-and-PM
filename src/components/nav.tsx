@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { SettingsMenu } from "@/components/settings-menu";
 
 export type NavCounts = {
@@ -75,6 +76,32 @@ function CountBadge({ count }: { count: number }) {
 
 export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }) {
   const pathname = usePathname();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Whether there's more nav content hidden to the right of the scrollable
+  // strip right now — e.g. the Compliance group (Trust ledger) can sit
+  // just past the visible edge at common window widths, clipped with no
+  // native scrollbar visible on most systems (macOS hides it by default).
+  // This drives a fade + "more" cue so that content doesn't go unnoticed
+  // instead of looking like it simply isn't there.
+  const [hasMoreRight, setHasMoreRight] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const update = () => {
+      setHasMoreRight(el.scrollWidth - el.clientWidth - el.scrollLeft > 1);
+    };
+    update();
+
+    el.addEventListener("scroll", update);
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(el);
+    return () => {
+      el.removeEventListener("scroll", update);
+      resizeObserver.disconnect();
+    };
+  }, [counts]);
 
   return (
     <nav className="flex flex-nowrap items-start gap-x-5 border-b border-neutral-200 bg-white px-4 py-2">
@@ -84,7 +111,11 @@ export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }
           absolutely positioned dropdown the moment it drops below the
           row. min-w-0 lets this wrapper shrink and scroll on its own
           instead of forcing the whole nav wider than the viewport. */}
-      <div className="flex min-w-0 flex-nowrap items-start gap-x-5 overflow-x-auto">
+      <div className="relative min-w-0 shrink grow">
+        <div
+          ref={scrollRef}
+          className="flex min-w-0 flex-nowrap items-start gap-x-5 overflow-x-auto"
+        >
         {groups.map((group, i) => (
           <div key={i} className="flex shrink-0 flex-col gap-1">
             {/* Always reserve the label row's height, even for the unlabeled
@@ -127,6 +158,13 @@ export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }
             </div>
           </div>
         ))}
+        </div>
+        {hasMoreRight && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent"
+          />
+        )}
       </div>
       {/* Same top-aligned label-row + content-row shape as every group
           above — Financials sits on the label row (in line with
