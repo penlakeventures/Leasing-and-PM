@@ -16,15 +16,35 @@ const priorityTone: Record<string, "neutral" | "green" | "amber" | "red" | "blue
   URGENT: "red",
 };
 
-export default async function TicketsPage() {
+export default async function TicketsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>;
+}) {
+  const { all } = await searchParams;
+  const showAll = all === "1";
+
   const tickets = await prisma.maintenanceTicket.findMany({
-    orderBy: { createdAt: "desc" },
+    // Resolved tickets pile up forever, same as ended leases/past tenants —
+    // default to what's actually open, matching the nav badge's own
+    // definition of "needs attention" (status !== RESOLVED).
+    where: showAll ? undefined : { status: { not: "RESOLVED" } },
+    // Postgres enums sort by declaration order (LOW < MEDIUM < HIGH <
+    // URGENT), so priority desc surfaces the most urgent first; createdAt
+    // desc breaks ties within a priority.
+    orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     include: { unit: { include: { projectEntity: true } }, vendor: true },
   });
 
   return (
     <div>
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex items-center justify-between">
+        <Link
+          href={showAll ? "/tickets" : "/tickets?all=1"}
+          className="text-sm text-neutral-600 underline"
+        >
+          {showAll ? "Show open only" : "Show all tickets (including resolved)"}
+        </Link>
         <LinkButton href="/tickets/new">+ New ticket</LinkButton>
       </div>
       <Table>
@@ -59,7 +79,9 @@ export default async function TicketsPage() {
           ))}
         </tbody>
       </Table>
-      {tickets.length === 0 && <EmptyState>No maintenance tickets yet.</EmptyState>}
+      {tickets.length === 0 && (
+        <EmptyState>{showAll ? "No maintenance tickets yet." : "No open tickets right now."}</EmptyState>
+      )}
     </div>
   );
 }
