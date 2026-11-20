@@ -17,6 +17,11 @@ export function LeadForm({
     requestedMoveInDate: Date | null;
     message: string | null;
     status: string;
+    occupantCount: number | null;
+    pets: string | null;
+    reasonForMoving: string | null;
+    moveInFlexible: boolean | null;
+    employmentNotes: string | null;
   };
   error?: string;
 }) {
@@ -82,6 +87,60 @@ export function LeadForm({
         <Field label="Notes" htmlFor="message" hint="Their inquiry, listing details, anything worth keeping on file">
           <Textarea id="message" name="message" defaultValue={defaultValues?.message ?? ""} />
         </Field>
+
+        <div>
+          <h2 className="mb-1 text-sm font-semibold text-neutral-900">
+            Phone screening
+          </h2>
+          <p className="mb-3 text-sm text-neutral-500">
+            From the initial phone call — understand occupants, pets, reason
+            for moving and timing before deciding whether to show the home.
+          </p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Number of occupants" htmlFor="occupantCount" hint="Optional">
+                <Input
+                  id="occupantCount"
+                  name="occupantCount"
+                  type="number"
+                  min={0}
+                  defaultValue={defaultValues?.occupantCount ?? ""}
+                />
+              </Field>
+              <Field label="Pets" htmlFor="pets" hint="e.g. &quot;dog, cat&quot; — optional">
+                <Input id="pets" name="pets" defaultValue={defaultValues?.pets ?? ""} />
+              </Field>
+            </div>
+            <Field label="Reason for moving" htmlFor="reasonForMoving" hint="Optional">
+              <Input
+                id="reasonForMoving"
+                name="reasonForMoving"
+                defaultValue={defaultValues?.reasonForMoving ?? ""}
+              />
+            </Field>
+            <label className="flex items-center gap-2 text-sm text-neutral-700">
+              <input
+                type="checkbox"
+                name="moveInFlexible"
+                defaultChecked={defaultValues?.moveInFlexible ?? false}
+                className="rounded border-neutral-300"
+              />
+              Flexible on move-in date
+            </label>
+            <Field
+              label="Employment"
+              htmlFor="employmentNotes"
+              hint="Not always necessary for townhomes — the policy on other income/retirement/guarantors is still being finalized, so just record what was said"
+            >
+              <Textarea
+                id="employmentNotes"
+                name="employmentNotes"
+                defaultValue={defaultValues?.employmentNotes ?? ""}
+              />
+            </Field>
+          </div>
+        </div>
+
         <div className="flex gap-2 pt-2">
           <Button type="submit">Save</Button>
           <LinkButton href="/leads" variant="secondary">

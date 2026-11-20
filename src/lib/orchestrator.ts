@@ -46,6 +46,11 @@ export function buildLeadContext(lead: {
   status: string;
   requestedMoveInDate: Date | null;
   message: string | null;
+  occupantCount: number | null;
+  pets: string | null;
+  reasonForMoving: string | null;
+  moveInFlexible: boolean | null;
+  employmentNotes: string | null;
   unit:
     | {
         unitNumber: string;
@@ -65,6 +70,15 @@ export function buildLeadContext(lead: {
   if (lead.requestedMoveInDate) {
     lines.push(`Requested move-in date on file: ${lead.requestedMoveInDate.toLocaleDateString()}.`);
   }
+  // Already-gathered phone-screening answers — included so a drafted
+  // reply doesn't ask something staff already found out on the call.
+  if (lead.occupantCount != null) lines.push(`Number of occupants: ${lead.occupantCount}.`);
+  if (lead.pets) lines.push(`Pets: ${lead.pets}.`);
+  if (lead.reasonForMoving) lines.push(`Reason for moving: ${lead.reasonForMoving}.`);
+  if (lead.moveInFlexible != null) {
+    lines.push(`Flexible on move-in date: ${lead.moveInFlexible ? "yes" : "no"}.`);
+  }
+  if (lead.employmentNotes) lines.push(`Employment notes: ${lead.employmentNotes}.`);
   if (lead.message) lines.push(`Notes/original inquiry: ${lead.message}`);
   lines.push(`Current status in our system: ${lead.status}.`);
   return lines.join("\n");

@@ -484,6 +484,22 @@ model Lead {
   status       LeadStatus @default(NEW)
   requestedMoveInDate DateTime?
   message      String? // free-text inquiry from the lead, plus listing details for auto-captured leads that couldn't be matched to a specific unit
+
+  // Phone-screening answers (leasing training manual, Section 2 Step 4 —
+  // "Understand their needs"), captured as real fields instead of more
+  // free text piled into `message` so they're visible at a glance and
+  // don't get mixed in with the auto-captured listing details above.
+  // Null just means "not asked yet," not "no occupants/pets/etc."
+  occupantCount    Int?
+  pets             String? // free text, e.g. "dog, cat" — same convention as Lease.pets
+  reasonForMoving  String?
+  moveInFlexible   Boolean?
+  // Free text, not a strict employer/income field — the manual itself
+  // flags that the actual employment-screening policy (how to treat
+  // other income, retirement income, savings, a guarantor) is still
+  // being finalized with Alina, so this just records what was said.
+  employmentNotes  String?
+
   // Dedupe key for auto-captured leads (e.g. RentFaster's per-lead reply
   // token) so the same inbound email can't create the lead twice if it's
   // ever delivered/retried more than once. Null for manually-entered leads.

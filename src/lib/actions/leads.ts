@@ -9,6 +9,7 @@ import { buildLeadContext } from "@/lib/orchestrator";
 function parseLeadForm(formData: FormData) {
   const unitId = (formData.get("unitId") as string) || null;
   const moveInRaw = formData.get("requestedMoveInDate") as string;
+  const occupantCountRaw = formData.get("occupantCount") as string;
   return {
     source: formData.get("source") as "RENTFASTER" | "FACEBOOK_MARKETPLACE" | "OTHER",
     unitId,
@@ -25,6 +26,11 @@ function parseLeadForm(formData: FormData) {
       | "SCREENED"
       | "LEASED"
       | "LOST",
+    occupantCount: occupantCountRaw ? Number(occupantCountRaw) : null,
+    pets: (formData.get("pets") as string)?.trim() || null,
+    reasonForMoving: (formData.get("reasonForMoving") as string)?.trim() || null,
+    moveInFlexible: formData.get("moveInFlexible") === "on",
+    employmentNotes: (formData.get("employmentNotes") as string)?.trim() || null,
   };
 }
 
