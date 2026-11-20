@@ -49,6 +49,16 @@ async function sendText({
         where: { id: leadId },
         data: { draftReply: null, attentionClearedAt: new Date() },
       });
+      // First real reply to a lead moves it off "New" automatically —
+      // staff were otherwise relying on remembering to flip this by hand,
+      // same class of thing that let the Rent page fall two months
+      // behind. updateMany (not update) so this is a no-op, not an
+      // accidental downgrade, once the lead's already further along
+      // (Touring, Applied, etc.) than Contacted.
+      await prisma.lead.updateMany({
+        where: { id: leadId, status: "NEW" },
+        data: { status: "CONTACTED" },
+      });
     }
     if (tenantId) {
       await prisma.tenant.update({
