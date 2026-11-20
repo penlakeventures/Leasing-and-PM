@@ -21,8 +21,19 @@ function parseTenantForm(formData: FormData) {
 
 export async function createTenant(formData: FormData) {
   const data = parseTenantForm(formData);
-  await prisma.tenant.create({ data });
+  const tenant = await prisma.tenant.create({ data });
   revalidatePath("/tenants");
+
+  // Came from a lead's "Create lease from this lead" shortcut — go
+  // straight on to creating the lease with this tenant (and the lead's
+  // unit, if it had one) preselected, instead of back to the tenant list.
+  const leadId = formData.get("leadId") as string;
+  if (leadId) {
+    const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+    const unitParam = lead?.unitId ? `&unitId=${lead.unitId}` : "";
+    redirect(`/leases/new?tenantId=${tenant.id}${unitParam}`);
+  }
+
   redirect("/tenants");
 }
 

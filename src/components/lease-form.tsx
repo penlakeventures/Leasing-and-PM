@@ -6,6 +6,7 @@ export function LeaseForm({
   tenants,
   defaultValues,
   defaultUnitId,
+  defaultTenantIds,
   renewalOf,
   error,
 }: {
@@ -27,6 +28,10 @@ export function LeaseForm({
     documentLink: string | null;
   };
   defaultUnitId?: string;
+  // Same lightweight prefill as defaultUnitId — used when arriving fresh
+  // from "Create lease from this lead" (a brand-new tenant, not a full
+  // renewal's worth of defaults) rather than carried via defaultValues.
+  defaultTenantIds?: string[];
   // Present only when this form was opened via the Renewals page's
   // "Create renewal" shortcut — carried through as a hidden field so
   // createLease() can tell this is the same tenant continuing, not a new
@@ -183,7 +188,7 @@ export function LeaseForm({
             name="tenantIds"
             multiple
             size={Math.min(6, Math.max(3, tenants.length))}
-            defaultValue={defaultValues?.tenantIds}
+            defaultValue={defaultValues?.tenantIds ?? defaultTenantIds}
             className="block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none"
           >
             {tenants.map((t) => (

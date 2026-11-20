@@ -4,6 +4,7 @@ export function TenantForm({
   action,
   defaultValues,
   error,
+  leadId,
 }: {
   action: (formData: FormData) => void;
   defaultValues?: {
@@ -14,6 +15,12 @@ export function TenantForm({
     emergencyContactPhone: string | null;
   };
   error?: string;
+  // Present only when opened via a lead's "Create lease from this lead"
+  // shortcut — carried through as a hidden field so createTenant() can
+  // send staff straight on to /leases/new with this tenant (and the
+  // lead's unit, if any) preselected, instead of back to the plain
+  // tenant list.
+  leadId?: string;
 }) {
   return (
     <Card>
@@ -23,6 +30,7 @@ export function TenantForm({
         </p>
       )}
       <form action={action} className="space-y-4">
+        {leadId && <input type="hidden" name="leadId" value={leadId} />}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Name" htmlFor="name">
             <Input id="name" name="name" required defaultValue={defaultValues?.name} />

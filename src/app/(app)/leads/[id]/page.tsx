@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { PageHeader, Button } from "@/components/ui";
+import { PageHeader, Button, LinkButton } from "@/components/ui";
 import { LeadForm } from "@/components/lead-form";
 import { ScreeningPanel } from "@/components/screening-panel";
 import { TourPanel } from "@/components/tour-panel";
@@ -55,6 +55,16 @@ export default async function LeadDetailPage({
         calendarConnected={!!calendarConnection}
       />
       <ScreeningPanel leadId={id} screening={lead.screening} />
+      <div className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+        <p className="text-sm text-neutral-600">
+          Ready to move forward? This creates a new tenant record from this
+          lead&apos;s contact info, then takes you straight to creating the
+          lease with that tenant (and unit, if set) preselected.
+        </p>
+        <LinkButton href={`/tenants/new?leadId=${id}`}>
+          Create lease from this lead
+        </LinkButton>
+      </div>
       <MessagePanel
         messages={lead.communications}
         phone={lead.contactPhone}

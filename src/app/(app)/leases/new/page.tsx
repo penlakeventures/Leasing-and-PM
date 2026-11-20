@@ -6,9 +6,14 @@ import { createLease } from "@/lib/actions/leases";
 export default async function NewLeasePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; unitId?: string; renewFromLeaseId?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    unitId?: string;
+    renewFromLeaseId?: string;
+    tenantId?: string;
+  }>;
 }) {
-  const { error, unitId, renewFromLeaseId } = await searchParams;
+  const { error, unitId, renewFromLeaseId, tenantId } = await searchParams;
   const [units, tenants] = await Promise.all([
     prisma.unit.findMany({
       orderBy: { projectEntity: { displayOrder: "asc" } },
@@ -68,6 +73,7 @@ export default async function NewLeasePage({
         tenants={tenants}
         defaultValues={defaultValues}
         defaultUnitId={unitId}
+        defaultTenantIds={tenantId ? [tenantId] : undefined}
         renewalOf={renewalOf}
         error={error}
       />
