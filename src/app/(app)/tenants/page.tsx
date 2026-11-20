@@ -3,8 +3,15 @@ import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
 import { pickActiveLease } from "@/lib/rules";
 import Link from "next/link";
 
-export default async function TenantsPage() {
-  const tenants = await prisma.tenant.findMany({
+export default async function TenantsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>;
+}) {
+  const { all } = await searchParams;
+  const showAll = all === "1";
+
+  const allTenants = await prisma.tenant.findMany({
     orderBy: { name: "asc" },
     include: {
       leases: {
@@ -13,9 +20,26 @@ export default async function TenantsPage() {
     },
   });
 
+  // A tenant with no currently-active lease is a past tenant. Same pattern
+  // as the Leases list: past records pile up forever, so default to who's
+  // actually here today, with a link back to the full roster.
+  const withActiveLease = allTenants.map((t) => ({
+    tenant: t,
+    activeLease: pickActiveLease(t.leases.map((lt) => lt.lease)),
+  }));
+  const tenants = showAll
+    ? withActiveLease
+    : withActiveLease.filter((t) => t.activeLease);
+
   return (
     <div>
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex items-center justify-between">
+        <Link
+          href={showAll ? "/tenants" : "/tenants?all=1"}
+          className="text-sm text-neutral-600 underline"
+        >
+          {showAll ? "Show current only" : "Show all tenants (including past)"}
+        </Link>
         <LinkButton href="/tenants/new">+ New tenant</LinkButton>
       </div>
       <Table>
@@ -30,8 +54,16 @@ export default async function TenantsPage() {
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
-          {tenants.map((t) => {
-            const activeLease = pickActiveLease(t.leases.map((lt) => lt.lease));
+          {tenants.map(({ tenant: t, activeLease }) => {
+            // No active lease — fall back to whichever lease started most
+            // recently, so a past tenant still shows where they used to
+            // live instead of blank dashes.
+            const mostRecentLease = activeLease
+              ? null
+              : [...t.leases]
+                  .map((lt) => lt.lease)
+                  .sort((a, b) => b.startDate.getTime() - a.startDate.getTime())[0] ?? null;
+            const displayLease = activeLease ?? mostRecentLease;
             return (
               <tr key={t.id} className="hover:bg-neutral-50">
                 <Td>
@@ -39,8 +71,8 @@ export default async function TenantsPage() {
                     {t.name}
                   </Link>
                 </Td>
-                <Td>{activeLease?.unit.projectEntity.internalName ?? "—"}</Td>
-                <Td>{activeLease?.unit.unitNumber ?? "—"}</Td>
+                <Td>{displayLease?.unit.projectEntity.internalName ?? "—"}</Td>
+                <Td>{displayLease?.unit.unitNumber ?? "—"}</Td>
                 <Td>{t.phone ?? "—"}</Td>
                 <Td>{t.email ?? "—"}</Td>
                 <Td>
@@ -55,7 +87,9 @@ export default async function TenantsPage() {
           })}
         </tbody>
       </Table>
-      {tenants.length === 0 && <EmptyState>No tenants yet.</EmptyState>}
+      {tenants.length === 0 && (
+        <EmptyState>{showAll ? "No tenants yet." : "No current tenants right now."}</EmptyState>
+      )}
     </div>
   );
 }
