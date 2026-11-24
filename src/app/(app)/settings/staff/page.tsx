@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireOwnerPage } from "@/lib/require-owner";
-import { createStaffMember } from "@/lib/actions/staff";
+import {
+  createStaffMember,
+  resetStaffPassword,
+  setStaffActive,
+  setStaffRole,
+} from "@/lib/actions/staff";
 import {
   PageHeader,
   Card,
@@ -19,10 +24,11 @@ export default async function StaffPage({
 }: {
   searchParams: Promise<{ error?: string; createdEmail?: string; tempPassword?: string }>;
 }) {
-  await requireOwnerPage();
+  const session = await requireOwnerPage();
 
   const { error, createdEmail, tempPassword } = await searchParams;
   const users = await prisma.user.findMany({ orderBy: { createdAt: "asc" } });
+  const currentUserId = session?.user?.id;
 
   return (
     <div>
@@ -93,28 +99,80 @@ export default async function StaffPage({
                 <Th>Name</Th>
                 <Th>Email</Th>
                 <Th>Access</Th>
+                <Th>Status</Th>
                 <Th>Password</Th>
+                <Th></Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <Td>{u.name}</Td>
-                  <Td>{u.email}</Td>
-                  <Td>
-                    <Badge tone={u.role === "owner" ? "blue" : "neutral"}>
-                      {u.role === "owner" ? "Owner" : "Staff"}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    {u.mustChangePassword ? (
-                      <Badge tone="amber">Still temporary</Badge>
-                    ) : (
-                      <Badge tone="green">Set by user</Badge>
-                    )}
-                  </Td>
-                </tr>
-              ))}
+              {users.map((u) => {
+                const isSelf = u.id === currentUserId;
+                return (
+                  <tr key={u.id}>
+                    <Td>
+                      {u.name}
+                      {isSelf && <span className="text-neutral-400"> (you)</span>}
+                    </Td>
+                    <Td>{u.email}</Td>
+                    <Td>
+                      {isSelf ? (
+                        <Badge tone={u.role === "owner" ? "blue" : "neutral"}>
+                          {u.role === "owner" ? "Owner" : "Staff"}
+                        </Badge>
+                      ) : (
+                        <form
+                          action={setStaffRole.bind(null, u.id)}
+                          className="flex items-center gap-2"
+                        >
+                          <Select name="role" defaultValue={u.role}>
+                            <option value="staff">Staff</option>
+                            <option value="owner">Owner (full access)</option>
+                          </Select>
+                          <Button type="submit" variant="secondary">
+                            Save
+                          </Button>
+                        </form>
+                      )}
+                    </Td>
+                    <Td>
+                      <div className="flex items-center gap-2">
+                        <Badge tone={u.active ? "green" : "neutral"}>
+                          {u.active ? "Active" : "Deactivated"}
+                        </Badge>
+                        {!isSelf && (
+                          <form action={setStaffActive.bind(null, u.id, !u.active)}>
+                            <button
+                              type="submit"
+                              className="text-xs text-neutral-600 underline"
+                            >
+                              {u.active ? "Deactivate" : "Reactivate"}
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    </Td>
+                    <Td>
+                      {u.mustChangePassword ? (
+                        <Badge tone="amber">Still temporary</Badge>
+                      ) : (
+                        <Badge tone="green">Set by user</Badge>
+                      )}
+                    </Td>
+                    <Td>
+                      {!isSelf && (
+                        <form action={resetStaffPassword.bind(null, u.id)}>
+                          <button
+                            type="submit"
+                            className="text-xs text-neutral-600 underline"
+                          >
+                            Reset password
+                          </button>
+                        </form>
+                      )}
+                    </Td>
+                  </tr>
+                );
+              })}
             </tbody>
           </Table>
         </div>

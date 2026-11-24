@@ -47,6 +47,22 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
+  // A deactivated account is meant to lose access right away, not just at
+  // its next login — req.auth is re-derived through the jwt callback
+  // (lib/auth.ts), which re-checks `active` against the database on
+  // every request, so this catches an already-open session too. Checked
+  // ahead of every other logged-in rule below (login-page bounce,
+  // forced password change), and returns immediately either way, so a
+  // deactivated-but-still-cookied visitor always lands on a plain /login
+  // page instead of being bounced somewhere else by one of those rules.
+  const isActive = (req.auth?.user as { active?: boolean } | undefined)?.active ?? true;
+  if (isLoggedIn && !isActive) {
+    if (isLoginPage) return NextResponse.next();
+    const loginUrl = new URL("/login", req.nextUrl.origin);
+    loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
   if (isLoggedIn && isLoginPage) {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }

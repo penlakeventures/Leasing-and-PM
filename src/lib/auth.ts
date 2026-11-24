@@ -30,6 +30,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: email.toLowerCase().trim() },
         });
         if (!user) return null;
+        if (!user.active) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
@@ -56,6 +57,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user as { mustChangePassword?: boolean }
         ).mustChangePassword ?? false;
       }
+      // Re-checked on every subsequent request (not just at sign-in),
+      // unlike role/mustChangePassword above — deactivating someone is
+      // meant to cut them off right away, not just block their next
+      // login, so an already-open session has to be caught here too.
+      // Skipped on the initial sign-in call (`user` present): `authorize`
+      // already confirmed `active` directly, so re-querying it here
+      // again in the same call would just be a redundant DB round trip.
+      if (!user && token.id) {
+        const current = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { active: true },
+        });
+        token.active = current?.active ?? false;
+      } else if (user) {
+        token.active = true;
+      }
       return token;
     },
     session: async ({ session, token }) => {
@@ -64,9 +81,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const sessionUser = session.user as typeof session.user & {
           role: string;
           mustChangePassword: boolean;
+          active: boolean;
         };
         sessionUser.role = (token.role as string) ?? "admin";
         sessionUser.mustChangePassword = Boolean(token.mustChangePassword);
+        sessionUser.active = Boolean(token.active);
       }
       return session;
     },

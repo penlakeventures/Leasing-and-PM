@@ -47,3 +47,73 @@ export async function createStaffMember(formData: FormData) {
     `/settings/staff?createdEmail=${encodeURIComponent(email)}&tempPassword=${encodeURIComponent(tempPassword)}`,
   );
 }
+
+// True if demoting/deactivating this user would leave zero active owner
+// accounts — the one thing that would brick owner-only access (Financials,
+// this very page) with no way back in short of a direct database edit.
+async function wouldRemoveLastOwner(targetId: string): Promise<boolean> {
+  const remaining = await prisma.user.count({
+    where: { role: "owner", active: true, id: { not: targetId } },
+  });
+  return remaining === 0;
+}
+
+export async function resetStaffPassword(id: string) {
+  const session = await requireOwnerAction();
+  if (session?.user?.id === id) {
+    redirectWithError("Use Account settings to change your own password.");
+  }
+
+  const tempPassword = crypto.randomBytes(9).toString("base64url");
+  const passwordHash = await bcrypt.hash(tempPassword, 12);
+  const user = await prisma.user.update({
+    where: { id },
+    data: { passwordHash, mustChangePassword: true },
+  });
+
+  revalidatePath("/settings/staff");
+  redirect(
+    `/settings/staff?createdEmail=${encodeURIComponent(user.email)}&tempPassword=${encodeURIComponent(tempPassword)}`,
+  );
+}
+
+export async function setStaffActive(id: string, active: boolean) {
+  const session = await requireOwnerAction();
+  if (session?.user?.id === id) {
+    redirectWithError("You can't deactivate your own account.");
+  }
+
+  if (!active) {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (user?.role === "owner" && (await wouldRemoveLastOwner(id))) {
+      redirectWithError("At least one owner account must stay active.");
+    }
+  }
+
+  await prisma.user.update({ where: { id }, data: { active } });
+  revalidatePath("/settings/staff");
+  redirect("/settings/staff");
+}
+
+export async function setStaffRole(id: string, formData: FormData) {
+  const session = await requireOwnerAction();
+  if (session?.user?.id === id) {
+    redirectWithError("You can't change your own access level.");
+  }
+
+  const role = formData.get("role") as string;
+  if (!ROLES.includes(role as (typeof ROLES)[number])) {
+    redirectWithError("Invalid role.");
+  }
+
+  if (role === "staff") {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (user?.role === "owner" && (await wouldRemoveLastOwner(id))) {
+      redirectWithError("At least one owner account must remain.");
+    }
+  }
+
+  await prisma.user.update({ where: { id }, data: { role } });
+  revalidatePath("/settings/staff");
+  redirect("/settings/staff");
+}

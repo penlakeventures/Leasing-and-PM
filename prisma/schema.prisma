@@ -33,6 +33,11 @@ model User {
   // existing account is treated as "not confirmed to have rotated its
   // password" until proven otherwise, rather than silently trusting it.
   mustChangePassword Boolean  @default(true)
+  // Defaults to true for the same reason mustChangePassword does — an
+  // account is assumed usable unless explicitly deactivated. Blocks both
+  // new logins and an already-open session (checked on every request,
+  // not just at sign-in) — see auth.ts.
+  active             Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
