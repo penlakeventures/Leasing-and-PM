@@ -49,6 +49,24 @@ function displayValue(row: LeaseRow, key: ColumnKey): string {
   }
 }
 
+// Same colour-coding Alina kept by hand on her own spreadsheet — a lease
+// already past its end date is at least as urgent as one 30 days out, so
+// it gets the same red as that window rather than no colour at all.
+// Periodic leases have no end date to measure against, so they never get
+// a colour regardless of how the rest of the roster looks.
+function leaseEndUrgency(row: LeaseRow): "red" | "orange" | null {
+  if (row.periodic || !row.leaseEnd) return null;
+  const daysUntilEnd = (new Date(row.leaseEnd).getTime() - Date.now()) / 86_400_000;
+  if (daysUntilEnd <= 30) return "red";
+  if (daysUntilEnd <= 90) return "orange";
+  return null;
+}
+
+const ROW_TINT: Record<"red" | "orange", string> = {
+  red: "bg-red-50 hover:bg-red-100",
+  orange: "bg-orange-50 hover:bg-orange-100",
+};
+
 function sortValue(row: LeaseRow, key: ColumnKey): string | number {
   switch (key) {
     case "rent":
@@ -174,7 +192,16 @@ export function LeasesGrid({ rows }: { rows: LeaseRow[] }) {
   };
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white shadow-sm">
+    <div>
+      <div className="mb-2 flex items-center gap-4 text-xs text-neutral-500">
+        <span className="flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-sm bg-red-50" /> Ending within 30 days
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-sm bg-orange-50" /> Ending within 90 days
+        </span>
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white shadow-sm">
       <table className="min-w-full divide-y divide-neutral-200 text-sm">
         <thead>
           <tr>
@@ -211,8 +238,10 @@ export function LeasesGrid({ rows }: { rows: LeaseRow[] }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
-          {visibleRows.map((row) => (
-            <tr key={row.id} className="hover:bg-neutral-50">
+          {visibleRows.map((row) => {
+            const urgency = leaseEndUrgency(row);
+            return (
+            <tr key={row.id} className={urgency ? ROW_TINT[urgency] : "hover:bg-neutral-50"}>
               <td className="px-4 py-2 text-neutral-700">
                 <Link href={`/leases/${row.id}`} className="underline">
                   {row.address}
@@ -238,7 +267,8 @@ export function LeasesGrid({ rows }: { rows: LeaseRow[] }) {
                 <NotesCell leaseId={row.id} initialNotes={row.notes} />
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
       {visibleRows.length === 0 && (
@@ -246,6 +276,7 @@ export function LeasesGrid({ rows }: { rows: LeaseRow[] }) {
           No leases match the current filters.
         </div>
       )}
+      </div>
     </div>
   );
 }
