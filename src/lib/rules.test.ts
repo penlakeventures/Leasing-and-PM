@@ -13,6 +13,7 @@ import {
   threadNeedsAttention,
   isRentOverdue,
   unitNeedsRenewalAttention,
+  isDepositInterestStale,
 } from "./rules";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -361,6 +362,24 @@ describe("isDepositOverdue", () => {
   it("is true the moment the deadline passes", () => {
     const asOf = new Date(tenancyEndDate.getTime() + 10 * MS_PER_DAY + 1);
     expect(isDepositOverdue({ tenancyEndDate, dateReturned: null, asOf })).toBe(true);
+  });
+});
+
+describe("isDepositInterestStale", () => {
+  it("is true when no interest year has ever been recorded", () => {
+    expect(isDepositInterestStale({ interestRateYear: null, asOf: d(2026, 6, 1) })).toBe(true);
+  });
+
+  it("is false when the interest year matches the current year", () => {
+    expect(isDepositInterestStale({ interestRateYear: 2026, asOf: d(2026, 6, 1) })).toBe(false);
+  });
+
+  it("is true once the interest year falls behind the current year", () => {
+    expect(isDepositInterestStale({ interestRateYear: 2025, asOf: d(2026, 1, 1) })).toBe(true);
+  });
+
+  it("is false for an interest year ahead of the current year", () => {
+    expect(isDepositInterestStale({ interestRateYear: 2027, asOf: d(2026, 6, 1) })).toBe(false);
   });
 });
 

@@ -321,6 +321,24 @@ export function isDepositOverdue({
 }
 
 /**
+ * Alberta requires paying prescribed interest on a held security deposit,
+ * recalculated as each year's rate is published — but interestAccrued/
+ * interestRateYear are plain manual-entry fields with nothing that
+ * recalculates them. True once a still-held deposit's interestRateYear
+ * is behind the current year, so a deposit nobody's touched since it was
+ * received doesn't go quietly stale with nothing to flag it.
+ */
+export function isDepositInterestStale({
+  interestRateYear,
+  asOf = new Date(),
+}: {
+  interestRateYear: number | null;
+  asOf?: Date;
+}): boolean {
+  return interestRateYear === null || interestRateYear < asOf.getFullYear();
+}
+
+/**
  * Rent is assumed due on the 1st of each month (this app has no per-lease
  * due-day field, so `period` itself — always the 1st — doubles as the due
  * date). A reminder is due once inside a window starting `daysBefore` the

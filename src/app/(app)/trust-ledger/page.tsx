@@ -1,13 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { Card, Table, Th, Td, Badge, EmptyState } from "@/components/ui";
-import { isDepositOverdue, depositReturnDeadline } from "@/lib/rules";
+import { isDepositOverdue, depositReturnDeadline, isDepositInterestStale } from "@/lib/rules";
 import Link from "next/link";
 
 const money = (n: number) =>
   n.toLocaleString("en-CA", { style: "currency", currency: "CAD" });
 
-export default async function TrustLedgerPage() {
-  const deposits = await prisma.securityDeposit.findMany({
+export default async function TrustLedgerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>;
+}) {
+  const { all } = await searchParams;
+  const showAll = all === "1";
+
+  const allDeposits = await prisma.securityDeposit.findMany({
     include: {
       lease: {
         include: {
@@ -27,7 +34,12 @@ export default async function TrustLedgerPage() {
     ],
   });
 
-  const held = deposits.filter((d) => !d.dateReturned);
+  // Deposits don't pile up nearly as fast as rent charges (one per lease,
+  // not one per month), but "All deposits" is still a growing record of
+  // every deposit ever received — default to held-only, same pattern as
+  // the other lists, with a link back to the full audit history.
+  const held = allDeposits.filter((d) => !d.dateReturned);
+  const deposits = showAll ? allDeposits : held;
   const totalHeld = held.reduce((sum, d) => sum + Number(d.amount), 0);
   const totalInterestAccrued = held.reduce(
     (sum, d) => sum + Number(d.interestAccrued ?? 0),
@@ -38,6 +50,9 @@ export default async function TrustLedgerPage() {
       tenancyEndDate: d.lease.endDate,
       dateReturned: d.dateReturned,
     }),
+  );
+  const staleInterest = held.filter((d) =>
+    isDepositInterestStale({ interestRateYear: d.interestRateYear }),
   );
 
   // Reconciliation aid: what the app says should be sitting in each trust
@@ -57,7 +72,7 @@ export default async function TrustLedgerPage() {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <p className="text-2xl font-semibold text-neutral-900">
             {money(totalHeld)}
@@ -80,6 +95,14 @@ export default async function TrustLedgerPage() {
           </p>
           <p className="mt-1 text-sm text-neutral-500">
             Overdue for return (10-day deadline passed)
+          </p>
+        </Card>
+        <Card>
+          <p className="text-2xl font-semibold text-neutral-900">
+            {staleInterest.length}
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">
+            Interest needs updating (prior year or never recorded)
           </p>
         </Card>
       </div>
@@ -112,9 +135,17 @@ export default async function TrustLedgerPage() {
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-neutral-900">
-          All deposits
-        </h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-neutral-900">
+            All deposits
+          </h2>
+          <Link
+            href={showAll ? "/trust-ledger" : "/trust-ledger?all=1"}
+            className="text-sm text-neutral-600 underline"
+          >
+            {showAll ? "Show held only" : "Show all (including returned)"}
+          </Link>
+        </div>
         <Table>
           <thead>
             <tr>
@@ -154,22 +185,28 @@ export default async function TrustLedgerPage() {
                   <Td>{d.dateReceived.toLocaleDateString()}</Td>
                   <Td>{money(refundable)}</Td>
                   <Td>
-                    {d.dateReturned ? (
-                      <Badge tone="neutral">
-                        Returned {d.dateReturned.toLocaleDateString()}
-                      </Badge>
-                    ) : isOverdue ? (
-                      <Badge tone="red">
-                        Overdue — due{" "}
-                        {d.lease.endDate
-                          ? depositReturnDeadline(
-                              d.lease.endDate,
-                            ).toLocaleDateString()
-                          : ""}
-                      </Badge>
-                    ) : (
-                      <Badge tone="green">Held</Badge>
-                    )}
+                    <div className="flex flex-wrap gap-1">
+                      {d.dateReturned ? (
+                        <Badge tone="neutral">
+                          Returned {d.dateReturned.toLocaleDateString()}
+                        </Badge>
+                      ) : isOverdue ? (
+                        <Badge tone="red">
+                          Overdue — due{" "}
+                          {d.lease.endDate
+                            ? depositReturnDeadline(
+                                d.lease.endDate,
+                              ).toLocaleDateString()
+                            : ""}
+                        </Badge>
+                      ) : (
+                        <Badge tone="green">Held</Badge>
+                      )}
+                      {!d.dateReturned &&
+                        isDepositInterestStale({ interestRateYear: d.interestRateYear }) && (
+                          <Badge tone="amber">Interest needs updating</Badge>
+                        )}
+                    </div>
                   </Td>
                 </tr>
               );
@@ -177,7 +214,9 @@ export default async function TrustLedgerPage() {
           </tbody>
         </Table>
         {deposits.length === 0 && (
-          <EmptyState>No security deposits on file yet.</EmptyState>
+          <EmptyState>
+            {showAll ? "No security deposits on file yet." : "No deposits currently held."}
+          </EmptyState>
         )}
       </div>
     </div>
