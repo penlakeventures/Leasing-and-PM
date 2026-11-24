@@ -7,8 +7,8 @@
 // already has real leases (either from an earlier run of this same
 // import, or real work entered through the app), it's never deleted —
 // instead this backfills any of rentRollUnits' fields that are still
-// null on the matching existing lease (currently just
-// lastMonthRentPrepaid and pets, added after the first import already
+// null on the matching existing lease (currently lastMonthRentPrepaid,
+// pets, and endDate/periodic — each added after the first import already
 // ran in production), matched by the unit's unitNumber. Unit->Lease and
 // Unit->MaintenanceTicket are both onDelete: Restrict at the DB level as
 // a second line of defence, so an unexpected attachment fails the
@@ -47,6 +47,7 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
   let depositsCreated = 0;
   let depositDatesAssumed = 0;
   let leasesBackfilled = 0;
+  let leaseEndsBackfilled = 0;
   let backfillMisses = 0;
   const backfilledProjects: string[] = [];
 
@@ -92,16 +93,24 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
         const needsPrepaid =
           lease.lastMonthRentPrepaid === null && u.lastMonthRentPrepaid !== null;
         const needsPets = lease.pets === null && u.pets !== null;
-        if (needsPrepaid || needsPets) {
+        // A lease imported before the lease-expiry tracker existed has no
+        // endDate and periodic:true (treated as open-ended) — once a real
+        // end date is on file for it, it's not open-ended anymore, so
+        // periodic flips to false alongside it. Only ever fills this in,
+        // never overwrites a real end date someone's since entered by hand.
+        const needsLeaseEnd = lease.endDate === null && u.leaseEnd !== null;
+        if (needsPrepaid || needsPets || needsLeaseEnd) {
           await prisma.lease.update({
             where: { id: lease.id },
             data: {
               ...(needsPrepaid && { lastMonthRentPrepaid: u.lastMonthRentPrepaid }),
               ...(needsPets && { pets: u.pets }),
+              ...(needsLeaseEnd && { endDate: new Date(u.leaseEnd!), periodic: false }),
             },
           });
           leasesBackfilled++;
           backfilledHere++;
+          if (needsLeaseEnd) leaseEndsBackfilled++;
         }
       }
       say(
@@ -152,7 +161,10 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
         data: {
           unitId: unit.id,
           startDate: new Date(u.leaseStart),
-          periodic: true, // rent roll has no lease end date — treated as ongoing
+          // periodic/open-ended unless the lease-expiry tracker has a real
+          // end date for this unit.
+          periodic: u.leaseEnd === null,
+          endDate: u.leaseEnd ? new Date(u.leaseEnd) : null,
           rentAmount: u.rent,
           lastMonthRentPrepaid: u.lastMonthRentPrepaid,
           pets: u.pets,
@@ -179,7 +191,7 @@ export async function runRentRollImport(prisma: PrismaClient): Promise<string[]>
   );
   if (backfilledProjects.length > 0) {
     say(
-      `Already-imported projects checked for backfill: ${backfilledProjects.join(", ")} (${leasesBackfilled} lease(s) updated).`,
+      `Already-imported projects checked for backfill: ${backfilledProjects.join(", ")} (${leasesBackfilled} lease(s) updated, ${leaseEndsBackfilled} of those with a lease-end date from the tracker).`,
     );
   }
   if (backfillMisses > 0) {

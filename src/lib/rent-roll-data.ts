@@ -1,12 +1,15 @@
 // Generated from the 2026 Current Rent Roll (xlsx) + Tenant Contact Info (pdf)
-// the user provided. Do not hand-edit; regenerate from source if it changes.
-// Phone numbers come from the contact PDF, matched by row position within
-// each project (verified identical order to the rent roll) since the PDF is
-// explicitly "not current" and can't be trusted for tenant names/turnover.
+// the user provided, with leaseEnd later spliced in from Alina's Nov 2026
+// lease-expiry tracker (xlsx). Do not hand-edit; regenerate from source if
+// either changes. Phone numbers come from the contact PDF, matched by row
+// position within each project (verified identical order to the rent roll)
+// since the PDF is explicitly "not current" and can't be trusted for
+// tenant names/turnover.
 
 export type RentRollUnit = {
   project: string;
   unitNumber: string;
+  leaseEnd: string | null; // ISO date, from Alina's Nov 2026 lease-expiry tracker — null = no end date on file there (vacant or internal/Pen-to-Pen)
   bedrooms: number;
   isInternal: boolean; // the Inglewood14 barn — Pen-to-Pen, not a real tenancy
   tenantNames: string[];
@@ -35,6 +38,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney23",
     unitNumber: "3760 23 AVE SW",
+    leaseEnd: "2027-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Lisa Ramsay"],
@@ -50,6 +54,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney23",
     unitNumber: "3760B 23 AVE SW",
+    leaseEnd: "2027-02-28", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["David Okemakinde", "Rachel Yee"],
@@ -65,6 +70,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney23",
     unitNumber: "3764 23 AVE SW",
+    leaseEnd: "2027-03-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Edmond Lopez", "Madisen Frehlich"],
@@ -80,6 +86,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney23",
     unitNumber: "3764B 23 AVE SW",
+    leaseEnd: "2027-09-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Brittany Pritchard"],
@@ -95,6 +102,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney23",
     unitNumber: "3768 23 AVE SW",
+    leaseEnd: "2027-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Brenda Galonski"],
@@ -110,6 +118,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney23",
     unitNumber: "3768B 23 AVE SW",
+    leaseEnd: "2027-02-28", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Katie Gregus"],
@@ -125,6 +134,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney23",
     unitNumber: "2240 37th ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Pedro Santos"],
@@ -140,6 +150,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney23",
     unitNumber: "2240B 37th ST SW",
+    leaseEnd: "2027-04-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Dylan Jackson"],
@@ -155,6 +166,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Glenbrook30",
     unitNumber: "3904 30 AVE SW",
+    leaseEnd: "2027-07-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Christopher Holford", "Elizabeth French"],
@@ -170,6 +182,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Glenbrook30",
     unitNumber: "3904B 30 AVE SW",
+    leaseEnd: "2027-07-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Teala Kiroff"],
@@ -185,6 +198,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Glenbrook30",
     unitNumber: "3906 30 AVE SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Molly Norris", "Roburta Norris"],
@@ -200,6 +214,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Glenbrook30",
     unitNumber: "3906B 30 AVE SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Cameron Hill", "Michelle Hofer"],
@@ -215,6 +230,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Glenbrook30",
     unitNumber: "3908 30 AVE SW",
+    leaseEnd: "2027-06-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Andrew Boivin", "Lucy O'Toole"],
@@ -230,6 +246,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Glenbrook30",
     unitNumber: "3908B 30 AVE SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Taline Lo-Schiavo"],
@@ -245,6 +262,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Glenbrook30",
     unitNumber: "3910 30 AVE SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Keegan Dargie", "Bettian Dargie"],
@@ -260,6 +278,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Glenbrook30",
     unitNumber: "3910B 30 AVE SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Cara Thompson"],
@@ -275,6 +294,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney26",
     unitNumber: "2640 32 ST SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Nicholas Wooster", "Ashley Janzen"],
@@ -290,6 +310,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney26",
     unitNumber: "2640B 32 ST SW",
+    leaseEnd: null, // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Cassidy Blundon"],
@@ -305,6 +326,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney26",
     unitNumber: "3222 26 AVE SW",
+    leaseEnd: "2027-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Paul LeDrew"],
@@ -320,6 +342,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney26",
     unitNumber: "3222B 26 AVE SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Michaela Kunnas"],
@@ -335,6 +358,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney26",
     unitNumber: "3220 26 AVE SW",
+    leaseEnd: "2027-07-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Christopher True", "Kyesha Mohamud"],
@@ -350,6 +374,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney26",
     unitNumber: "3220B 26 AVE SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Taylor DeBrouwer"],
@@ -365,6 +390,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney26",
     unitNumber: "3218 26 AVE SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Sobhy Hajji", "and Svitlana Akimova"],
@@ -380,6 +406,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney26",
     unitNumber: "3218B 26 AVE SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Kelsey Williamson"],
@@ -395,6 +422,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney25",
     unitNumber: "3102 25 AVE SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Kyle Reid", "Travis Gallagher"],
@@ -410,6 +438,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney25",
     unitNumber: "3102B 25 AVE SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Sheryl Campbell"],
@@ -425,6 +454,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney25",
     unitNumber: "3104 25 AVE SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Isabel Alorda", "Miguel Mascaro"],
@@ -440,6 +470,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney25",
     unitNumber: "3104B 25 AVE SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Steve Horner"],
@@ -455,6 +486,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney25",
     unitNumber: "3106 25 AVE SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Kerry Sedran", "Kevin Sedran"],
@@ -470,6 +502,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney25",
     unitNumber: "3106B 25 AVE SW",
+    leaseEnd: "2027-02-28", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Emmanuel Amos Esonwanne"],
@@ -485,6 +518,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney25",
     unitNumber: "3108 25 AVE SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Michael Ruddy", "Katherine Clarke"],
@@ -500,6 +534,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney25",
     unitNumber: "3108B 25 AVE SW",
+    leaseEnd: "2027-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Melarvin Estepa", "Carmelita Bareng"],
@@ -515,6 +550,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney27",
     unitNumber: "2748 23 AVE SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Laura Petros", "Jordan Petros"],
@@ -530,6 +566,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney27",
     unitNumber: "2748B 23 AVE SW",
+    leaseEnd: "2027-02-28", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Meryl McKenna", "Loretta McKenna"],
@@ -545,6 +582,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney27",
     unitNumber: "2746 23 AVE SW",
+    leaseEnd: "2027-06-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Cheryl Thorsteinson"],
@@ -560,6 +598,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney27",
     unitNumber: "2746B 23 AVE SW",
+    leaseEnd: "2026-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Lauren Munroe"],
@@ -575,6 +614,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney27",
     unitNumber: "2744 23 AVE SW",
+    leaseEnd: "2027-06-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Kaylie Magidson", "Michael Tauro"],
@@ -590,6 +630,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney27",
     unitNumber: "2744B 23 AVE SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Victoria Sherlock", "Quinn Costello"],
@@ -605,6 +646,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney27",
     unitNumber: "2742 23 AVE SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Tino", "Theresia"],
@@ -620,6 +662,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Killarney27",
     unitNumber: "2742B 23 AVE SW",
+    leaseEnd: "2028-04-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Charlie Clarry"],
@@ -635,6 +678,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "1503 8 AVE SE",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Molly", "Emile"],
@@ -650,6 +694,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "1503R 8 AVE SE",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Callum Dear"],
@@ -665,6 +710,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "1505 8 AVE SE",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Tracy Watson"],
@@ -680,6 +726,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "1505R 8 AVE SE",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Alex Low"],
@@ -695,6 +742,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "1501 8 AVE SE",
+    leaseEnd: "2027-02-28", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Tyler", "Brenna", "Claire"],
@@ -710,6 +758,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "1501R 8 AVE SE",
+    leaseEnd: "2027-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Blake Jensen"],
@@ -725,6 +774,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "802 14 ST SE",
+    leaseEnd: "2027-02-28", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Read", "Becky"],
@@ -740,6 +790,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "802R 14 ST SE",
+    leaseEnd: "2026-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Joshua", "Noemi"],
@@ -755,6 +806,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "804 14 ST SE",
+    leaseEnd: "2027-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Tyler Christian"],
@@ -770,6 +822,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "804R 14 ST SE",
+    leaseEnd: "2027-07-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Alyson Moylan"],
@@ -785,6 +838,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "806 14 ST SE",
+    leaseEnd: "2026-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Lucas Scheer"],
@@ -800,6 +854,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "806R 14 ST SE",
+    leaseEnd: "2027-02-28", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Chris Birrell"],
@@ -815,6 +870,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "808 14 ST SE",
+    leaseEnd: "2027-11-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Alex", "Janna"],
@@ -830,6 +886,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "808R 14 ST SE",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Gerardo Vilella"],
@@ -845,6 +902,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Inglewood14",
     unitNumber: "810 14 ST SE",
+    leaseEnd: null, // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 2,
     isInternal: true,
     tenantNames: ["Pen Lake Ventures"],
@@ -860,6 +918,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#101 - 1732 31 ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Nick", "Kennedy"],
@@ -875,6 +934,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#101B - 1732 31 ST SW",
+    leaseEnd: "2027-03-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Irene"],
@@ -890,6 +950,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#102 - 1732 31 ST SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Riann", "Anuneeta", "Mohammed"],
@@ -905,6 +966,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#102B - 1732 31 ST SW",
+    leaseEnd: "2027-02-28", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Matthew Anand"],
@@ -920,6 +982,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#103 - 1732 31 ST SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Jesse", "Danai"],
@@ -935,6 +998,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#103B - 1732 31 ST SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Nicolas Teng"],
@@ -950,6 +1014,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#104 - 1732 31 ST SW",
+    leaseEnd: "2027-09-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Alice", "John"],
@@ -965,6 +1030,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#104B - 1732 31 ST SW",
+    leaseEnd: "2027-09-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Elbert", "Peri"],
@@ -980,6 +1046,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#105 - 1732 31 ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Cameron", "Paola"],
@@ -995,6 +1062,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#105R - 1732 31 ST SW",
+    leaseEnd: "2027-10-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Kris", "Brian"],
@@ -1010,6 +1078,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#201 - 1732 31 ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Janderson", "Sheyla"],
@@ -1025,6 +1094,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#201B - 1732 31 ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Madison Nelson"],
@@ -1040,6 +1110,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#202 - 1732 31 ST SW",
+    leaseEnd: "2027-07-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Ulises", "Melisa"],
@@ -1055,6 +1126,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#202B - 1732 31 ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Jocelyn", "Devon"],
@@ -1070,6 +1142,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#203 - 1732 31 ST SW",
+    leaseEnd: "2027-09-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Paul", "Amanda"],
@@ -1085,6 +1158,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#203B - 1732 31 ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Liliya", "Danyil"],
@@ -1100,6 +1174,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#204 - 1732 31 ST SW",
+    leaseEnd: "2027-04-30", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Tristan Shultz"],
@@ -1115,6 +1190,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#204B - 1732 31 ST SW",
+    leaseEnd: "2027-05-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Kassandra Hordal"],
@@ -1130,6 +1206,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#205 - 1732 31 ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 3,
     isInternal: false,
     tenantNames: ["Heather Anaka"],
@@ -1145,6 +1222,7 @@ export const rentRollUnits: RentRollUnit[] = [
   {
     project: "Shaganappi31",
     unitNumber: "#205R - 1732 31 ST SW",
+    leaseEnd: "2027-08-31", // from the Nov 2026 lease-expiry tracker; null = no end date on file there
     bedrooms: 1,
     isInternal: false,
     tenantNames: ["Laura O'Donnell"],
