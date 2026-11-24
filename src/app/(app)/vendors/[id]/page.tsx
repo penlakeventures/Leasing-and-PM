@@ -2,9 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { VendorForm } from "@/components/vendor-form";
-import { MessagePanel } from "@/components/message-panel";
 import { updateVendor } from "@/lib/actions/vendors";
-import { sendVendorText } from "@/lib/actions/sms";
 
 export default async function VendorDetailPage({
   params,
@@ -15,26 +13,15 @@ export default async function VendorDetailPage({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
-  const vendor = await prisma.vendor.findUnique({
-    where: { id },
-    include: {
-      communications: { where: { channel: "TEXT" }, orderBy: { timestamp: "asc" } },
-    },
-  });
+  const vendor = await prisma.vendor.findUnique({ where: { id } });
   if (!vendor) notFound();
 
   const updateWithId = updateVendor.bind(null, id);
-  const sendTextWithId = sendVendorText.bind(null, id);
 
   return (
     <div className="space-y-8">
       <PageHeader title={vendor.name} />
       <VendorForm action={updateWithId} defaultValues={vendor} error={error} />
-      <MessagePanel
-        messages={vendor.communications}
-        phone={vendor.contactPhone}
-        sendAction={sendTextWithId}
-      />
     </div>
   );
 }

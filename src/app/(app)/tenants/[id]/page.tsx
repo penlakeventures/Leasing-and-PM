@@ -2,15 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { PageHeader, Table, Th, Td } from "@/components/ui";
 import { TenantForm } from "@/components/tenant-form";
-import { MessagePanel } from "@/components/message-panel";
-import { TicketDraftPanel } from "@/components/ticket-draft-panel";
-import {
-  updateTenant,
-  generateTicketDraft,
-  createTicketFromDraft,
-  generateTenantReplyDraft,
-} from "@/lib/actions/tenants";
-import { sendTenantText } from "@/lib/actions/sms";
+import { updateTenant } from "@/lib/actions/tenants";
 import Link from "next/link";
 
 export default async function TenantDetailPage({
@@ -26,41 +18,16 @@ export default async function TenantDetailPage({
     where: { id },
     include: {
       leases: { include: { lease: { include: { unit: { include: { projectEntity: true } } } } } },
-      communications: {
-        where: { channel: "TEXT" },
-        orderBy: { timestamp: "asc" },
-      },
     },
   });
   if (!tenant) notFound();
 
   const updateWithId = updateTenant.bind(null, id);
-  const sendTextWithId = sendTenantText.bind(null, id);
-  const draftTicketWithId = generateTicketDraft.bind(null, id);
-  const createTicketWithId = createTicketFromDraft.bind(null, id);
-  const draftReplyWithId = generateTenantReplyDraft.bind(null, id);
 
   return (
     <div className="space-y-8">
       <PageHeader title={tenant.name} />
       <TenantForm action={updateWithId} defaultValues={tenant} error={error} />
-
-      <MessagePanel
-        messages={tenant.communications}
-        phone={tenant.phone}
-        sendAction={sendTextWithId}
-        draftReply={tenant.draftReply}
-        draftAction={draftReplyWithId}
-      />
-
-      <TicketDraftPanel
-        draft={{
-          description: tenant.draftTicketDescription,
-          priority: tenant.draftTicketPriority,
-        }}
-        draftAction={draftTicketWithId}
-        createAction={createTicketWithId}
-      />
 
       <div>
         <h2 className="mb-3 text-sm font-semibold text-neutral-900">Leases</h2>

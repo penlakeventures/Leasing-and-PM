@@ -8,23 +8,6 @@ export default auth((req) => {
   // /api/seed is deliberately public — it's the bootstrap step run before
   // any users exist, guarded by its own SEED_TOKEN check instead of login.
   const isSeedApi = req.nextUrl.pathname === "/api/seed";
-  // Same idea: a one-time, temporary export of the Leads/Communications
-  // data about to be dropped, guarded by its own EXPORT_TOKEN. Public so
-  // it can be hit directly from a browser without first logging in.
-  const isExportApi = req.nextUrl.pathname === "/api/export-legacy-data";
-  // Likewise for the RentFaster inbound-email webhook: it's called by a
-  // third-party email service, not a signed-in person, and is guarded by
-  // its own RENTFASTER_INBOUND_TOKEN check instead.
-  const isRentFasterInboundApi =
-    req.nextUrl.pathname === "/api/leads/rentfaster-inbound";
-  // Same idea for the Facebook Messenger webhook: called by Meta, not a
-  // signed-in person, guarded by the verify-token handshake (GET) and
-  // signature verification (POST) instead.
-  const isMessengerWebhook =
-    req.nextUrl.pathname === "/api/leads/facebook-messenger-webhook";
-  // Same idea for the Twilio SMS webhook: called by Twilio, not a signed-in
-  // person, guarded by its own request-signature verification instead.
-  const isTwilioWebhook = req.nextUrl.pathname === "/api/sms/twilio-webhook";
   // Same idea for the rent-reminders cron endpoint: called by a scheduled
   // GitHub Actions workflow, not a signed-in person, guarded by its own
   // CRON_TOKEN check instead.
@@ -37,10 +20,6 @@ export default auth((req) => {
   if (
     isAuthApi ||
     isSeedApi ||
-    isExportApi ||
-    isRentFasterInboundApi ||
-    isMessengerWebhook ||
-    isTwilioWebhook ||
     isCronApi ||
     isDropboxSignWebhook
   )

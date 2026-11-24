@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { PageHeader, Button, Card } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { TicketForm } from "@/components/ticket-form";
-import { updateTicket, notifyVendor } from "@/lib/actions/tickets";
-import Link from "next/link";
+import { updateTicket } from "@/lib/actions/tickets";
 
 export default async function TicketDetailPage({
   params,
@@ -26,7 +25,6 @@ export default async function TicketDetailPage({
   if (!ticket) notFound();
 
   const updateWithId = updateTicket.bind(null, id);
-  const notifyVendorWithId = notifyVendor.bind(null, id);
 
   return (
     <div className="space-y-8">
@@ -39,30 +37,6 @@ export default async function TicketDetailPage({
         defaultValues={ticket}
         error={error}
       />
-
-      {ticket.vendor && (
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-neutral-900">Vendor notification</h2>
-          {ticket.vendorNotifiedAt ? (
-            <p className="text-sm text-neutral-700">
-              Notified{" "}
-              <Link href={`/vendors/${ticket.vendor.id}`} className="underline">
-                {ticket.vendor.name}
-              </Link>{" "}
-              by text on {ticket.vendorNotifiedAt.toLocaleString()}.
-            </p>
-          ) : (
-            <p className="mb-3 text-sm text-neutral-700">
-              {ticket.vendor.name} hasn&apos;t been texted about this ticket yet.
-            </p>
-          )}
-          <form action={notifyVendorWithId}>
-            <Button type="submit" variant="secondary">
-              {ticket.vendorNotifiedAt ? "Notify again" : "Notify vendor"}
-            </Button>
-          </form>
-        </Card>
-      )}
     </div>
   );
 }

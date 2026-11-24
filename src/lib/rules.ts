@@ -338,32 +338,6 @@ export function isDepositInterestStale({
   return interestRateYear === null || interestRateYear < asOf.getFullYear();
 }
 
-/**
- * Rent is assumed due on the 1st of each month (this app has no per-lease
- * due-day field, so `period` itself — always the 1st — doubles as the due
- * date). A reminder is due once inside a window starting `daysBefore` the
- * due date, and never again once one's actually been sent for that period
- * — checked separately from "already paid" so a same-day payment and a
- * same-day reminder can't race each other into double-texting.
- */
-export function isRentReminderDue({
-  period,
-  paidDate,
-  reminderSentAt,
-  daysBefore = 3,
-  asOf = new Date(),
-}: {
-  period: Date;
-  paidDate: Date | null;
-  reminderSentAt: Date | null;
-  daysBefore?: number;
-  asOf?: Date;
-}): boolean {
-  if (paidDate || reminderSentAt) return false;
-  const windowStart = new Date(period.getTime() - daysBefore * MS_PER_DAY);
-  return asOf >= windowStart;
-}
-
 // Calgary — the only timezone this business operates in (same reasoning as
 // tour scheduling's and rent reminders' own timezone handling).
 const RENT_TIMEZONE = "America/Edmonton";
@@ -391,26 +365,6 @@ function mountainDateKey(d: Date): string {
  * dates instead means a charge stays "unpaid" (not overdue) for all of
  * its due date and only flips to overdue starting the next day.
  */
-/**
- * Orchestrator inbox: a contact (tenant/lead/vendor) needs attention when
- * their most recent text is inbound and hasn't been handled yet — either a
- * real reply went out (attentionClearedAt gets set whenever one does, see
- * sendText() in actions/sms.ts) or staff dismissed it by hand. A contact
- * whose last text was outbound (staff already had the last word) never
- * needs attention, regardless of attentionClearedAt.
- */
-export function threadNeedsAttention({
-  lastMessage,
-  attentionClearedAt,
-}: {
-  lastMessage: { direction: "INBOUND" | "OUTBOUND"; timestamp: Date } | null;
-  attentionClearedAt: Date | null;
-}): boolean {
-  if (!lastMessage || lastMessage.direction !== "INBOUND") return false;
-  if (attentionClearedAt && attentionClearedAt >= lastMessage.timestamp) return false;
-  return true;
-}
-
 export function isRentOverdue({
   period,
   paidDate,

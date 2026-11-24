@@ -41,9 +41,6 @@ model User {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  handledCommunications         CommunicationLog[]
-  decidedScreenings             TenantScreening[]
-  assignedTours                 Lead[]
   proposedRentRecommendations   RentRecommendation[] @relation("ProposedRentRecommendations")
   decidedRentRecommendations    RentRecommendation[] @relation("DecidedRentRecommendations")
 
@@ -110,7 +107,6 @@ model Unit {
   updatedAt       DateTime        @updatedAt
 
   leases              Lease[]
-  leads               Lead[]
   tickets             MaintenanceTicket[]
   rentRecommendations RentRecommendation[]
 
@@ -131,25 +127,8 @@ model Tenant {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  // AI-drafted maintenance ticket, generated on demand from this tenant's
-  // recent texts (never automatically) — sits here for a human to review
-  // and turn into a real MaintenanceTicket, or discard, same pattern as
-  // Lead.draftReply. Cleared once a ticket is actually created from it.
-  draftTicketDescription String?
-  draftTicketPriority    TicketPriority?
-
-  // AI-drafted reply to this tenant's most recent text, generated on demand
-  // (Phase 3 tenant Q&A) — same pattern as Lead.draftReply and the ticket
-  // draft above: a human reviews/edits it in the Texts panel and only an
-  // explicit Send commits it. Cleared once sent.
-  draftReply String?
-
-  // Orchestrator inbox — same meaning as Lead.attentionClearedAt above.
-  attentionClearedAt DateTime?
-
   leases          LeaseTenant[]
   tickets         MaintenanceTicket[]
-  communications  CommunicationLog[]
 
   @@map("tenants")
 }
@@ -236,10 +215,7 @@ enum RentRecommendationDecision {
 // Staff-recommends / owner-approves rent changes (the "Yellow" decision
 // level in the leasing training manual — staff researches comparables and
 // recommends a rent, but an owner must approve it before it's communicated
-// or advertised). Same shape as TenantScreening's decidedBy/decidedAt
-// pattern, plus proposedBy since who recommended it matters here (it
-// doesn't for screening, which is always reviewed by whoever requested it).
-// Approving one writes currentRent on the linked Unit — see
+// or advertised). Approving one writes currentRent on the linked Unit — see
 // decideRentRecommendation() in lib/actions/rent-recommendations.ts.
 model RentRecommendation {
   id           String                     @id @default(cuid())
@@ -251,8 +227,8 @@ model RentRecommendation {
   currentRent  Decimal                    @db.Decimal(10, 2)
   proposedRent Decimal                    @db.Decimal(10, 2)
   // The market evidence behind the number — comparables, how quickly they
-  // leased, season, etc. Free text, same reasoning as TenantScreening's
-  // summary field: staff writes the actual case, not a rigid field set.
+  // leased, season, etc. Free text — staff writes the actual case, not a
+  // rigid field set.
   reasoning    String
   decision     RentRecommendationDecision @default(PENDING)
   decisionNote String?
@@ -332,9 +308,6 @@ model RentPayment {
   period   DateTime // first of the month this charge is for, e.g. 2026-10-01
   amountDue Decimal  @db.Decimal(10, 2) // snapshot of the lease's rent at the time this period was created — a later rent change doesn't rewrite past periods
   paidDate DateTime? // null = unpaid
-  // Set once a reminder text has actually gone out for this period, so
-  // the daily check never double-texts the same unpaid month.
-  reminderSentAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -362,23 +335,9 @@ model CpiRate {
   @@map("cpi_rates")
 }
 
-// One connected Google account whose calendar tour events are created on
-// — reconnecting overwrites the stored refresh token rather than keeping
-// old ones around, since only one connection is ever active at a time.
-// GOOGLE_CLIENT_ID/SECRET (the app's own OAuth credentials, not this
-// token) live in the environment, not here.
-model CalendarConnection {
-  id           String   @id @default(cuid())
-  googleEmail  String   @unique
-  refreshToken String
-  connectedAt  DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@map("calendar_connections")
-}
-
 // One connected Dropbox account used for automatic lease-document filing —
-// same one-active-connection-at-a-time shape as CalendarConnection.
+// only one connection is ever active at a time; reconnecting overwrites
+// the stored refresh token rather than keeping old ones around.
 // basePath is the root folder everything else is built under (e.g.
 // "/Pen Lake Ventures/Leases"), set once from Settings; project folders
 // underneath it are expected to be named to match ProjectEntity.internalName
@@ -468,121 +427,7 @@ model FinancialSettings {
 }
 
 // ---------------------------------------------------------------------------
-// 6. Lead
-// ---------------------------------------------------------------------------
-enum LeadSource {
-  RENTFASTER
-  FACEBOOK_MARKETPLACE
-  OTHER
-}
-
-enum LeadStatus {
-  NEW
-  CONTACTED
-  TOURING
-  APPLIED
-  SCREENED
-  LEASED
-  LOST
-}
-
-model Lead {
-  id           String     @id @default(cuid())
-  source       LeadSource
-  unitId       String? // null = general interest, not tied to a specific unit
-  unit         Unit?      @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  contactName  String?
-  contactPhone String?
-  contactEmail String?
-  status       LeadStatus @default(NEW)
-  requestedMoveInDate DateTime?
-  message      String? // free-text inquiry from the lead, plus listing details for auto-captured leads that couldn't be matched to a specific unit
-
-  // Phone-screening answers (leasing training manual, Section 2 Step 4 —
-  // "Understand their needs"), captured as real fields instead of more
-  // free text piled into `message` so they're visible at a glance and
-  // don't get mixed in with the auto-captured listing details above.
-  // Null just means "not asked yet," not "no occupants/pets/etc."
-  occupantCount    Int?
-  pets             String? // free text, e.g. "dog, cat" — same convention as Lease.pets
-  reasonForMoving  String?
-  moveInFlexible   Boolean?
-  // Free text, not a strict employer/income field — the manual itself
-  // flags that the actual employment-screening policy (how to treat
-  // other income, retirement income, savings, a guarantor) is still
-  // being finalized with Alina, so this just records what was said.
-  employmentNotes  String?
-
-  // Dedupe key for auto-captured leads (e.g. RentFaster's per-lead reply
-  // token) so the same inbound email can't create the lead twice if it's
-  // ever delivered/retried more than once. Null for manually-entered leads.
-  externalRef  String?    @unique
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  // Tour scheduling. tourEventId is Google Calendar's own event ID for
-  // the booked tour — kept so a later cancel/reschedule can find and
-  // remove the exact event rather than guessing, and so re-rendering
-  // this lead doesn't need to re-derive whether a tour is booked from
-  // anything fuzzier than "does this still point at a real event".
-  tourAt        DateTime?
-  tourStaffId   String?
-  tourStaff     User?     @relation(fields: [tourStaffId], references: [id], onDelete: SetNull)
-  tourEventId   String?
-
-  // AI-drafted reply text, generated on demand (never automatically) from
-  // this lead's info and text conversation so far — always sits here for a
-  // human to review/edit before sending, never sent on its own. Cleared
-  // once an actual reply goes out, successful or not tied to this draft.
-  draftReply String?
-
-  // Orchestrator inbox: set to "now" whenever this lead's latest inbound
-  // text has been handled (a real reply went out, or staff dismissed it
-  // manually) — a lead shows up in the Inbox whenever its most recent
-  // text is INBOUND and newer than this. Null means never cleared, so a
-  // lead with any inbound text and no reply yet always shows up.
-  attentionClearedAt DateTime?
-
-  communications CommunicationLog[]
-  screening      TenantScreening?
-
-  @@index([unitId])
-  @@map("leads")
-}
-
-// SingleKey (or similar) is a web portal, not something this app has API
-// access to — staff request the report on SingleKey's own site, then
-// record the outcome here. This is deliberately a *record*, not a
-// decision-maker: the actual accept/decline call is always a person's,
-// tracked in decidedBy/decidedAt, never derived automatically from the
-// report itself.
-enum ScreeningDecision {
-  PENDING
-  APPROVED
-  DECLINED
-}
-
-model TenantScreening {
-  id            String            @id @default(cuid())
-  leadId        String            @unique
-  lead          Lead              @relation(fields: [leadId], references: [id], onDelete: Restrict)
-  requestedDate DateTime?
-  completedDate DateTime?
-  reportUrl     String? // link to the report on SingleKey's site, or wherever it's filed
-  summary       String? // free text — SingleKey's own score/recommendation, copied over by staff rather than a rigid field set this app can't verify matches their report format
-  decision      ScreeningDecision @default(PENDING)
-  decisionNotes String?
-  decidedById   String?
-  decidedBy     User?             @relation(fields: [decidedById], references: [id], onDelete: SetNull)
-  decidedAt     DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-
-  @@map("tenant_screenings")
-}
-
-// ---------------------------------------------------------------------------
-// 7. Maintenance ticket
+// 6. Maintenance ticket
 // ---------------------------------------------------------------------------
 enum TicketPriority {
   LOW
@@ -615,10 +460,6 @@ model MaintenanceTicket {
   cost        Decimal?       @db.Decimal(10, 2)
   createdAt   DateTime       @default(now())
   resolvedAt  DateTime?
-  // Set when the "Notify vendor" text actually goes out — lets the ticket
-  // show whether/when the vendor was told, distinct from just having one
-  // assigned (assigning and notifying are two separate, deliberate steps).
-  vendorNotifiedAt DateTime?
 
   @@index([unitId])
   @@index([status])
@@ -626,7 +467,7 @@ model MaintenanceTicket {
 }
 
 // ---------------------------------------------------------------------------
-// 8. Vendor
+// 7. Vendor
 // ---------------------------------------------------------------------------
 model Vendor {
   id          String   @id @default(cuid())
@@ -637,59 +478,13 @@ model Vendor {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Orchestrator inbox — same meaning as Lead.attentionClearedAt. Vendors
-  // never get an AI-drafted reply (see triageInboundMessage) — just
-  // flagged for a human to read and dismiss or reply to by hand.
-  attentionClearedAt DateTime?
-
   tickets        MaintenanceTicket[]
-  communications CommunicationLog[]
 
   @@map("vendors")
 }
 
 // ---------------------------------------------------------------------------
-// 9. Communication log
-// ---------------------------------------------------------------------------
-enum CommChannel {
-  TEXT
-  EMAIL
-  CALL
-  MESSENGER
-}
-
-enum CommDirection {
-  INBOUND
-  OUTBOUND
-}
-
-model CommunicationLog {
-  id          String        @id @default(cuid())
-  tenantId    String?
-  tenant      Tenant?       @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  leadId      String?
-  lead        Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  vendorId    String?
-  vendor      Vendor?       @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  channel     CommChannel
-  direction   CommDirection
-  timestamp   DateTime      @default(now())
-  summary     String
-  handledById String? // null = handled by an automated agent/integration
-  handledBy   User?         @relation(fields: [handledById], references: [id], onDelete: SetNull)
-  // Dedupe key for auto-captured entries (e.g. a Messenger message ID) so
-  // a webhook retry logs the same message once, not twice. Null for
-  // manually-entered communications.
-  externalRef String?       @unique
-
-  @@index([tenantId])
-  @@index([leadId])
-  @@index([vendorId])
-  @@map("communication_logs")
-}
-
-// ---------------------------------------------------------------------------
-// 10. Compliance record (CMHC annual reporting)
+// 8. Compliance record (CMHC annual reporting)
 // ---------------------------------------------------------------------------
 model ComplianceRecord {
   id                          String        @id @default(cuid())

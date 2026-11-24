@@ -22,9 +22,9 @@ function authHeader(): string {
 
 const API_BASE = "https://api.hellosign.com/v3";
 
-// Same reasoning as getSmsWebhookUrl()/getDropboxCallbackUrl(): built from
-// NEXTAUTH_URL rather than the incoming request, which isn't reliable
-// behind Railway's proxy layer.
+// Same reasoning as getDropboxCallbackUrl(): built from NEXTAUTH_URL
+// rather than the incoming request, which isn't reliable behind
+// Railway's proxy layer.
 export function getSigningWebhookUrl(): string {
   const base = process.env.NEXTAUTH_URL;
   if (!base) {

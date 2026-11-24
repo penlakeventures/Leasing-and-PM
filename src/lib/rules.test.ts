@@ -9,8 +9,6 @@ import {
   isRentIncreaseNoticeDeadlineNear,
   depositReturnDeadline,
   isDepositOverdue,
-  isRentReminderDue,
-  threadNeedsAttention,
   isRentOverdue,
   unitNeedsRenewalAttention,
   isDepositInterestStale,
@@ -380,79 +378,6 @@ describe("isDepositInterestStale", () => {
 
   it("is false for an interest year ahead of the current year", () => {
     expect(isDepositInterestStale({ interestRateYear: 2027, asOf: d(2026, 6, 1) })).toBe(false);
-  });
-});
-
-describe("isRentReminderDue", () => {
-  const period = d(2026, 11, 1);
-
-  it("is false once paid", () => {
-    expect(
-      isRentReminderDue({ period, paidDate: d(2026, 10, 25), reminderSentAt: null, asOf: period }),
-    ).toBe(false);
-  });
-
-  it("is false once a reminder has already been sent for this period", () => {
-    expect(
-      isRentReminderDue({ period, paidDate: null, reminderSentAt: d(2026, 10, 29), asOf: period }),
-    ).toBe(false);
-  });
-
-  it("respects the default 3-day-before window", () => {
-    const tooEarly = new Date(period.getTime() - 4 * MS_PER_DAY);
-    const justInside = new Date(period.getTime() - 3 * MS_PER_DAY);
-    expect(isRentReminderDue({ period, paidDate: null, reminderSentAt: null, asOf: tooEarly })).toBe(false);
-    expect(isRentReminderDue({ period, paidDate: null, reminderSentAt: null, asOf: justInside })).toBe(true);
-  });
-
-  it("with daysBefore: 0 (how the live app actually calls this today), is only due on or after the due date itself", () => {
-    const dayBefore = new Date(period.getTime() - 1 * MS_PER_DAY);
-    expect(
-      isRentReminderDue({ period, paidDate: null, reminderSentAt: null, daysBefore: 0, asOf: dayBefore }),
-    ).toBe(false);
-    expect(
-      isRentReminderDue({ period, paidDate: null, reminderSentAt: null, daysBefore: 0, asOf: period }),
-    ).toBe(true);
-  });
-});
-
-describe("threadNeedsAttention", () => {
-  it("is false when there's no message at all", () => {
-    expect(threadNeedsAttention({ lastMessage: null, attentionClearedAt: null })).toBe(false);
-  });
-
-  it("is false when staff had the last word", () => {
-    expect(
-      threadNeedsAttention({
-        lastMessage: { direction: "OUTBOUND", timestamp: d(2026, 1, 1) },
-        attentionClearedAt: null,
-      }),
-    ).toBe(false);
-  });
-
-  it("is true for an unanswered inbound message", () => {
-    expect(
-      threadNeedsAttention({
-        lastMessage: { direction: "INBOUND", timestamp: d(2026, 1, 1) },
-        attentionClearedAt: null,
-      }),
-    ).toBe(true);
-  });
-
-  it("is false once cleared at or after the inbound message's time", () => {
-    const timestamp = d(2026, 1, 1);
-    expect(
-      threadNeedsAttention({ lastMessage: { direction: "INBOUND", timestamp }, attentionClearedAt: timestamp }),
-    ).toBe(false);
-  });
-
-  it("is true again if a new inbound message arrives after the last clear", () => {
-    expect(
-      threadNeedsAttention({
-        lastMessage: { direction: "INBOUND", timestamp: d(2026, 1, 10) },
-        attentionClearedAt: d(2026, 1, 1),
-      }),
-    ).toBe(true);
   });
 });
 

@@ -9,10 +9,8 @@ import { SettingsMenu } from "@/components/settings-menu";
 // plain flag, not a count) so countKey below can stay typed to just
 // these and not need a runtime check for a field that isn't a number.
 type NumericNavCounts = {
-  inbox: number;
   renewals: number;
   maintenance: number;
-  leads: number;
 };
 
 export type NavCounts = NumericNavCounts & {
@@ -21,9 +19,7 @@ export type NavCounts = NumericNavCounts & {
 
 // Grouped for display only — every tab keeps its existing path and label,
 // just clustered under a header so these tabs read as a handful of
-// related groups instead of one long flat row. Inbox stays outside any
-// group since it isn't leasing/PM/compliance-specific — it's the one
-// "what needs a reply right now" landing page. The five rarely-used
+// related groups instead of one long flat row. The five rarely-used
 // Settings tabs live in SettingsMenu, pushed to the far right of this
 // same row rather than grouped with the rest.
 //
@@ -35,10 +31,6 @@ const groups: {
   links: { href: string; label: string; countKey?: keyof NumericNavCounts }[];
 }[] = [
   {
-    label: null,
-    links: [{ href: "/inbox", label: "Inbox", countKey: "inbox" }],
-  },
-  {
     label: "Portfolio",
     links: [
       { href: "/projects", label: "Projects" },
@@ -48,7 +40,6 @@ const groups: {
   {
     label: "Leasing",
     links: [
-      { href: "/leads", label: "Leads", countKey: "leads" },
       { href: "/leases", label: "Leases" },
       { href: "/renewals", label: "Renewals", countKey: "renewals" },
     ],
@@ -60,7 +51,6 @@ const groups: {
       { href: "/tickets", label: "Maintenance", countKey: "maintenance" },
       { href: "/vendors", label: "Vendors" },
       { href: "/rent", label: "Rent" },
-      { href: "/communications", label: "Communications" },
     ],
   },
   {
@@ -125,9 +115,6 @@ export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }
         >
         {groups.map((group, i) => (
           <div key={i} className="flex shrink-0 flex-col gap-1">
-            {/* Always reserve the label row's height, even for the unlabeled
-              Inbox group — otherwise its tab sits a full line higher
-              than every other group's tabs instead of lining up with them. */}
             <span
               aria-hidden={!group.label}
               className={`px-3 text-[11px] font-semibold uppercase tracking-wide text-brand ${
