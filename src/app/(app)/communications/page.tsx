@@ -3,16 +3,33 @@ import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
 import { deleteCommunication } from "@/lib/actions/communications";
 import Link from "next/link";
 
-export default async function CommunicationsPage() {
-  const logs = await prisma.communicationLog.findMany({
-    orderBy: { timestamp: "desc" },
-    include: { tenant: true, lead: true, vendor: true, handledBy: true },
-    take: 100,
-  });
+const PAGE_SIZE = 100;
+
+export default async function CommunicationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ limit?: string }>;
+}) {
+  const { limit: limitRaw } = await searchParams;
+  // Rounded up to a whole page so a stray query param can't ask for an
+  // oddly small or negative slice.
+  const limit = Math.max(PAGE_SIZE, Math.ceil((Number(limitRaw) || PAGE_SIZE) / PAGE_SIZE) * PAGE_SIZE);
+
+  const [logs, total] = await Promise.all([
+    prisma.communicationLog.findMany({
+      orderBy: { timestamp: "desc" },
+      include: { tenant: true, lead: true, vendor: true, handledBy: true },
+      take: limit,
+    }),
+    prisma.communicationLog.count(),
+  ]);
 
   return (
     <div>
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex items-center justify-between">
+        <p className="text-sm text-neutral-500">
+          Showing {logs.length} of {total}
+        </p>
         <LinkButton href="/communications/new">+ Log communication</LinkButton>
       </div>
       <Table>
@@ -67,6 +84,16 @@ export default async function CommunicationsPage() {
         </tbody>
       </Table>
       {logs.length === 0 && <EmptyState>No communications logged yet.</EmptyState>}
+      {total > logs.length && (
+        <div className="mt-4 flex justify-center">
+          <Link
+            href={`/communications?limit=${limit + PAGE_SIZE}`}
+            className="text-sm text-neutral-600 underline"
+          >
+            Load {Math.min(PAGE_SIZE, total - logs.length)} more
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
