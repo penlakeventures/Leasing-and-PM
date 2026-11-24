@@ -232,7 +232,8 @@ export default async function FinancialsPage({
         <h2 className="mb-1 text-sm font-semibold text-neutral-900">Portfolio snapshot</h2>
         <p className="mb-3 text-sm text-neutral-500">
           Changes rarely — update by hand when a value changes, not part of the monthly routine.
-          One snapshot per project, not one combined portfolio-wide figure.
+          One snapshot per project, not one combined portfolio-wide figure. Assumed equity isn&apos;t
+          entered directly — it&apos;s Market value minus Loan value, calculated automatically.
         </p>
         <Table>
           <thead>
@@ -240,23 +241,27 @@ export default async function FinancialsPage({
               <Th>Project</Th>
               <Th>City assessment</Th>
               <Th>Market value</Th>
+              <Th>Loan value</Th>
               <Th>Assumed equity</Th>
               <Th>Loan rate</Th>
-              <Th>IROR</Th>
               <Th></Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {projects.map((project) => {
               const s = settingsByProject.get(project.id);
+              const assumedEquity =
+                s?.estimatedMarketValue != null && s?.loanBalance != null
+                  ? Number(s.estimatedMarketValue) - Number(s.loanBalance)
+                  : null;
               return (
                 <tr key={project.id} className="hover:bg-neutral-50">
                   <Td>{project.internalName}</Td>
                   <Td>{s?.totalCityAssessment ? money(Number(s.totalCityAssessment)) : "—"}</Td>
                   <Td>{s?.estimatedMarketValue ? money(Number(s.estimatedMarketValue)) : "—"}</Td>
-                  <Td>{s?.totalAssumedEquity ? money(Number(s.totalAssumedEquity)) : "—"}</Td>
+                  <Td>{s?.loanBalance ? money(Number(s.loanBalance)) : "—"}</Td>
+                  <Td>{assumedEquity != null ? money(assumedEquity) : "—"}</Td>
                   <Td>{s?.avgLoanInterestRate ? `${s.avgLoanInterestRate}%` : "—"}</Td>
-                  <Td>{s?.iror ? `${s.iror}%` : "—"}</Td>
                   <Td>
                     <Link
                       href={`/financials?month=${monthIso}&snapshotEdit=${project.id}`}
@@ -304,14 +309,14 @@ export default async function FinancialsPage({
                   }
                 />
               </Field>
-              <Field label="Total assumed equity" htmlFor="totalAssumedEquity">
+              <Field label="Loan value" htmlFor="loanBalance" hint="Current loan balance">
                 <Input
-                  id="totalAssumedEquity"
-                  name="totalAssumedEquity"
+                  id="loanBalance"
+                  name="loanBalance"
                   type="number"
                   step="0.01"
                   defaultValue={
-                    editingSettings?.totalAssumedEquity ? String(editingSettings.totalAssumedEquity) : ""
+                    editingSettings?.loanBalance ? String(editingSettings.loanBalance) : ""
                   }
                 />
               </Field>
@@ -324,15 +329,6 @@ export default async function FinancialsPage({
                   defaultValue={
                     editingSettings?.avgLoanInterestRate ? String(editingSettings.avgLoanInterestRate) : ""
                   }
-                />
-              </Field>
-              <Field label="IROR (%)" htmlFor="iror">
-                <Input
-                  id="iror"
-                  name="iror"
-                  type="number"
-                  step="0.0001"
-                  defaultValue={editingSettings?.iror ? String(editingSettings.iror) : ""}
                 />
               </Field>
               <div className="flex gap-2 pt-2 sm:col-span-3">

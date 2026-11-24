@@ -39,12 +39,15 @@ export async function upsertFinancialSettings(projectEntityId: string, formData:
     return raw?.trim() ? Number(raw) : null;
   };
 
+  // iror is deliberately left out here — it's not on this form anymore
+  // (no agreed formula yet; see schema.prisma), and leaving it out of this
+  // payload entirely means an existing value on file is never silently
+  // cleared just because a save didn't include it.
   const data = {
     totalCityAssessment: numberOrNull("totalCityAssessment"),
     estimatedMarketValue: numberOrNull("estimatedMarketValue"),
-    totalAssumedEquity: numberOrNull("totalAssumedEquity"),
+    loanBalance: numberOrNull("loanBalance"),
     avgLoanInterestRate: numberOrNull("avgLoanInterestRate"),
-    iror: numberOrNull("iror"),
   };
 
   await prisma.financialSettings.upsert({

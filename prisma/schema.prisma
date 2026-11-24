@@ -424,8 +424,15 @@ model FinancialSettings {
   projectEntity        ProjectEntity @relation(fields: [projectEntityId], references: [id], onDelete: Cascade)
   totalCityAssessment  Decimal?      @db.Decimal(14, 2)
   estimatedMarketValue Decimal?      @db.Decimal(14, 2)
-  totalAssumedEquity   Decimal?      @db.Decimal(14, 2)
+  // Current loan balance — Assumed equity is derived from this and
+  // estimatedMarketValue (market value minus loan balance) rather than
+  // stored separately, so the two can never drift out of sync with each
+  // other the way a hand-entered "assumed equity" number could.
+  loanBalance          Decimal?      @db.Decimal(14, 2)
   avgLoanInterestRate  Decimal?      @db.Decimal(6, 4)
+  // IROR removed from the Financials page for now (no agreed formula yet)
+  // — left here, untouched and unused, rather than dropped, so the owner
+  // can pick this up again once the rest of the app is further along.
   iror                 Decimal?      @db.Decimal(6, 4)
   updatedAt            DateTime      @updatedAt
 

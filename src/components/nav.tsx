@@ -154,36 +154,39 @@ export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }
         )}
       </div>
       {/* Same top-aligned label-row + content-row shape as every group
-          above — Financials sits on the label row (in line with
-          Portfolio/Leasing/etc.) rather than as its own wide button,
-          keeping this trailing block no wider than Settings itself. Kept
-          outside the scrolling wrapper above so it (and its dropdown)
-          stay visible regardless of how far the tabs are scrolled. */}
+          above, purely to keep this trailing block's tab row lined up
+          with the others' — there's no label of its own here, so that
+          row stays an invisible placeholder for every account. Financials
+          is now a regular tab, same size/style as Projects/Leases/etc.,
+          sitting directly left of Settings. Kept outside the scrolling
+          wrapper above so it (and Settings' dropdown) stay visible
+          regardless of how far the tabs are scrolled. */}
       <div className="ml-auto flex shrink-0 flex-col gap-1">
-        {isOwner ? (
-          <Link
-            href="/financials"
-            className={`px-3 text-[11px] font-semibold uppercase tracking-wide hover:underline ${
-              pathname.startsWith("/financials")
-                ? "text-neutral-900"
-                : "text-brand"
-            }`}
-          >
-            Financials
-          </Link>
-        ) : (
-          <span
-            aria-hidden
-            className="invisible px-3 text-[11px] font-semibold uppercase tracking-wide"
-          >
-            {/* Same reasoning as the group-label placeholder above: a
-                non-breaking space, not a plain one, or this collapses to
-                zero height and misaligns Settings for any non-owner
-                account (staff like Cindy, not just Ryan/Alina). */}
-            {" "}
-          </span>
-        )}
-        <SettingsMenu missingCpiRate={counts.missingCpiRate} />
+        <span
+          aria-hidden
+          className="invisible px-3 text-[11px] font-semibold uppercase tracking-wide"
+        >
+          {/* Same reasoning as the group-label placeholder above: a
+              non-breaking space, not a plain one, or this collapses to
+              zero height and misaligns this row with every other
+              group's tab row. */}
+          {" "}
+        </span>
+        <div className="flex flex-nowrap items-start gap-1">
+          {isOwner && (
+            <Link
+              href="/financials"
+              className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-medium ${
+                pathname.startsWith("/financials")
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-600 hover:bg-neutral-100"
+              }`}
+            >
+              Financials
+            </Link>
+          )}
+          <SettingsMenu missingCpiRate={counts.missingCpiRate} />
+        </div>
       </div>
     </nav>
   );
