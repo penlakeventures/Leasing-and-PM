@@ -118,7 +118,9 @@ export default async function FinancialsPage({
         </Card>
         <Card className="border-t-4 border-t-brand">
           <p className="text-2xl font-semibold text-neutral-900">{money(trailingNet)}</p>
-          <p className="mt-1 text-sm text-neutral-500">Net income — trailing 12 mo.</p>
+          <p className="mt-1 text-sm text-neutral-500">
+            Net income — trailing 12 mo. ending {formatMonth(month)}
+          </p>
         </Card>
       </div>
 
