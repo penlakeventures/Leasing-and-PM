@@ -1,4 +1,4 @@
-import { Card, Field, Input, Select, Button, LinkButton } from "@/components/ui";
+import { Card, Field, Input, Select, Textarea, Button, LinkButton } from "@/components/ui";
 
 export function LeaseForm({
   action,
@@ -26,6 +26,7 @@ export function LeaseForm({
     pets: string | null;
     signedDate: Date | null;
     documentLink: string | null;
+    notes: string | null;
   };
   defaultUnitId?: string;
   // Same lightweight prefill as defaultUnitId — used when arriving fresh
@@ -171,6 +172,14 @@ export function LeaseForm({
             />
           </Field>
         </div>
+
+        <Field label="Notes" htmlFor="notes" hint="Also editable inline from the Leases list">
+          <Textarea
+            id="notes"
+            name="notes"
+            defaultValue={defaultValues?.notes ?? ""}
+          />
+        </Field>
 
         <label className="flex items-center gap-2 text-sm text-neutral-700">
           <input

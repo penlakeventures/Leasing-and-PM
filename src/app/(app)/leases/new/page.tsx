@@ -56,6 +56,7 @@ export default async function NewLeasePage({
         pets: predecessor.pets,
         signedDate: null,
         documentLink: null,
+        notes: null,
       };
       renewalOf = {
         leaseId: predecessor.id,

@@ -25,6 +25,7 @@ function parseLeaseForm(formData: FormData) {
     signedDate: signedDateRaw ? new Date(signedDateRaw) : null,
     documentLink: (formData.get("documentLink") as string)?.trim() || null,
     renewedFromLeaseId: (formData.get("renewedFromLeaseId") as string)?.trim() || null,
+    notes: (formData.get("notes") as string)?.trim() || null,
   };
 }
 
@@ -118,6 +119,7 @@ export async function createLease(formData: FormData) {
       documentLink: carriedOverFolder?.documentLink ?? data.documentLink,
       documentsFolderPath: carriedOverFolder?.documentsFolderPath ?? null,
       renewedFromLeaseId: data.renewedFromLeaseId,
+      notes: data.notes,
       tenants: {
         create: data.tenantIds.map((tenantId) => ({ tenantId })),
       },
@@ -211,6 +213,7 @@ export async function updateLease(id: string, formData: FormData) {
         pets: data.pets,
         signedDate: data.signedDate,
         documentLink: data.documentLink,
+        notes: data.notes,
         tenants: {
           create: data.tenantIds.map((tenantId) => ({ tenantId })),
         },
@@ -230,6 +233,17 @@ export async function updateLease(id: string, formData: FormData) {
   revalidatePath(`/leases/${id}`);
   revalidatePath(`/units/${data.unitId}`);
   redirect(`/leases/${id}`);
+}
+
+// Quick inline edit from the Leases list grid — same field as the Notes
+// textarea on the lease's own page, just without round-tripping the rest
+// of that form for what's usually a one-line note.
+export async function updateLeaseNotes(leaseId: string, notes: string) {
+  await prisma.lease.update({
+    where: { id: leaseId },
+    data: { notes: notes.trim() || null },
+  });
+  revalidatePath("/leases");
 }
 
 // Uploads a document (a SingleKey report once an applicant's approved, or

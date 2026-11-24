@@ -184,6 +184,12 @@ model Lease {
   // addendum, if anything — kept for the record, not just the live draft.
   additionalTermsText String?
 
+  // Free-text staff notes — the Leases page's equivalent of the
+  // "Leasing notes"/"Other" columns on Alina's lease-expiry spreadsheet,
+  // combined into one field rather than two (the owner's call). Editable
+  // inline from that page's grid, not just from this lease's own page.
+  notes String?
+
   // Set when this lease was created via the Renewals page's "Create
   // renewal" shortcut for the same tenant(s) continuing in the same unit
   // — as opposed to a genuinely new tenancy. Distinguishing the two
