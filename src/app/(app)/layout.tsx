@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { unitNeedsRenewalAttention } from "@/lib/rules";
 import { Nav } from "@/components/nav";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Logo } from "@/components/logo";
@@ -10,8 +9,7 @@ import Link from "next/link";
 // is what used to be the Dashboard's stat-tile row. No separate landing
 // page for them now: they're visible from every page instead of only one.
 async function getNavCounts() {
-  const [unitsWithLeases, openTickets, currentYearCpiRate] = await Promise.all([
-    prisma.unit.findMany({ include: { leases: true } }),
+  const [openTickets, currentYearCpiRate] = await Promise.all([
     prisma.maintenanceTicket.count({ where: { status: { not: "RESOLVED" } } }),
     // checkRentEscalation blocks any affordable-unit rent increase outright
     // once the calendar rolls into a year with no CPI rate on file yet —
@@ -20,10 +18,7 @@ async function getNavCounts() {
     prisma.cpiRate.findUnique({ where: { year: new Date().getFullYear() } }),
   ]);
 
-  const renewals = unitsWithLeases.filter((u) => unitNeedsRenewalAttention(u)).length;
-
   return {
-    renewals,
     maintenance: openTickets,
     missingCpiRate: !currentYearCpiRate,
   };

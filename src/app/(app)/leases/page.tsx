@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { LinkButton, EmptyState } from "@/components/ui";
-import { LeasesGrid, type LeaseRow } from "@/components/leases-grid";
-import { unitTypeFromAddress } from "@/lib/unit-type";
+import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
 import Link from "next/link";
 
 export default async function LeasesPage({
@@ -18,13 +16,13 @@ export default async function LeasesPage({
     // default to what's actually live today; "Show all" opts back into
     // the full record.
     where: showAll ? undefined : { OR: [{ endDate: null }, { endDate: { gt: now } }] },
-    // The grid itself always re-sorts client-side (defaulting to Lease
-    // end, same as this), but a defined base order still matters for
-    // anything that reads this list without JS, and for a stable first
-    // paint before the client takes over.
+    // Same project order as the Projects/Units pages, then unit number
+    // within a project, then most-recent-first for a unit's own lease
+    // history (multiple leases per unit over time).
     orderBy: [
       { unit: { projectEntity: { displayOrder: "asc" } } },
       { unit: { unitNumber: "asc" } },
+      { startDate: "desc" },
     ],
     include: {
       unit: { include: { projectEntity: true } },
@@ -32,18 +30,7 @@ export default async function LeasesPage({
     },
   });
 
-  const rows: LeaseRow[] = leases.map((l) => ({
-    id: l.id,
-    address: l.unit.unitNumber,
-    community: l.unit.projectEntity.internalName,
-    type: unitTypeFromAddress(l.unit.unitNumber),
-    tenants: l.tenants.map((t) => t.tenant.name).join(", ") || "—",
-    rent: Number(l.rentAmount),
-    leaseEnd: l.endDate ? l.endDate.toISOString() : null,
-    periodic: l.periodic,
-    status: !l.endDate || l.endDate > now ? (l.signedDate ? "Active" : "Unsigned") : "Ended",
-    notes: l.notes ?? "",
-  }));
+  const isActive = (endDate: Date | null) => !endDate || endDate > now;
 
   return (
     <div>
@@ -56,9 +43,43 @@ export default async function LeasesPage({
         </Link>
         <LinkButton href="/leases/new">+ New lease</LinkButton>
       </div>
-      {rows.length > 0 ? (
-        <LeasesGrid rows={rows} />
-      ) : (
+      <Table>
+        <thead>
+          <tr>
+            <Th>Project</Th>
+            <Th>Unit</Th>
+            <Th>Tenant(s)</Th>
+            <Th>Rent</Th>
+            <Th>Start</Th>
+            <Th>Status</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-neutral-100">
+          {leases.map((l) => (
+            <tr key={l.id} className="hover:bg-neutral-50">
+              <Td>{l.unit.projectEntity.internalName}</Td>
+              <Td>
+                <Link href={`/leases/${l.id}`} className="underline">
+                  {l.unit.unitNumber}
+                </Link>
+              </Td>
+              <Td>{l.tenants.map((t) => t.tenant.name).join(", ") || "—"}</Td>
+              <Td>${l.rentAmount.toString()}</Td>
+              <Td>{l.startDate.toLocaleDateString()}</Td>
+              <Td>
+                {!isActive(l.endDate) ? (
+                  <Badge tone="neutral">Ended</Badge>
+                ) : l.signedDate ? (
+                  <Badge tone="green">Active</Badge>
+                ) : (
+                  <Badge tone="amber">Unsigned</Badge>
+                )}
+              </Td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      {leases.length === 0 && (
         <EmptyState>{showAll ? "No leases yet." : "No active leases right now."}</EmptyState>
       )}
     </div>

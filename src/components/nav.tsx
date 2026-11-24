@@ -9,7 +9,6 @@ import { SettingsMenu } from "@/components/settings-menu";
 // plain flag, not a count) so countKey below can stay typed to just
 // these and not need a runtime check for a field that isn't a number.
 type NumericNavCounts = {
-  renewals: number;
   maintenance: number;
 };
 
@@ -35,7 +34,7 @@ const groups: {
     links: [
       { href: "/projects", label: "Projects" },
       { href: "/leases", label: "Leases" },
-      { href: "/renewals", label: "Renewals", countKey: "renewals" },
+      { href: "/renewals", label: "Renewals" },
     ],
   },
   {
