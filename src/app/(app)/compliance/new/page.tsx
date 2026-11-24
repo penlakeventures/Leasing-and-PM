@@ -52,6 +52,13 @@ export default async function NewComplianceRecordPage({
             <Field label="Submitted date" htmlFor="submittedDate" hint="Optional — set once filed">
               <Input id="submittedDate" name="submittedDate" type="date" />
             </Field>
+            <Field
+              label="Reporting deadline"
+              htmlFor="reportingDeadline"
+              hint="Optional — set by the lender, if you know it yet"
+            >
+              <Input id="reportingDeadline" name="reportingDeadline" type="date" />
+            </Field>
           </div>
           <div className="flex gap-2 pt-2">
             <Button type="submit">Create snapshot</Button>

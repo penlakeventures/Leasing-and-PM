@@ -10,6 +10,7 @@ export async function createComplianceRecord(formData: FormData) {
   const projectEntityId = formData.get("projectEntityId") as string;
   const year = Number(formData.get("year"));
   const submittedDateRaw = formData.get("submittedDate") as string;
+  const reportingDeadlineRaw = formData.get("reportingDeadline") as string;
 
   const affordableUnits = await prisma.unit.findMany({
     where: { projectEntityId, cmhcDesignation: "AFFORDABLE" },
@@ -39,6 +40,7 @@ export async function createComplianceRecord(formData: FormData) {
         year,
         affordableUnitRentsReported: snapshot,
         submittedDate: submittedDateRaw ? new Date(submittedDateRaw) : null,
+        reportingDeadline: reportingDeadlineRaw ? new Date(reportingDeadlineRaw) : null,
       },
     });
   } catch {
@@ -56,6 +58,19 @@ export async function markSubmitted(id: string, formData: FormData) {
   await prisma.complianceRecord.update({
     where: { id },
     data: { submittedDate: submittedDateRaw ? new Date(submittedDateRaw) : new Date() },
+  });
+  revalidatePath("/compliance");
+  redirect("/compliance");
+}
+
+// The deadline is learned from the lender, often well after the record
+// itself was created (or needs correcting once a lender revises it) — so
+// this is editable independently of markSubmitted, any time.
+export async function setReportingDeadline(id: string, formData: FormData) {
+  const reportingDeadlineRaw = formData.get("reportingDeadline") as string;
+  await prisma.complianceRecord.update({
+    where: { id },
+    data: { reportingDeadline: reportingDeadlineRaw ? new Date(reportingDeadlineRaw) : null },
   });
   revalidatePath("/compliance");
   redirect("/compliance");

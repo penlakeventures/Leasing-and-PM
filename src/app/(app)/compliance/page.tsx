@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Table, Th, Td, LinkButton, Badge, EmptyState, Input, Button } from "@/components/ui";
-import { markSubmitted, deleteComplianceRecord } from "@/lib/actions/compliance";
+import { markSubmitted, setReportingDeadline, deleteComplianceRecord } from "@/lib/actions/compliance";
+
+const fmtDateInput = (d: Date) => d.toISOString().slice(0, 10);
 
 export default async function CompliancePage() {
   const records = await prisma.complianceRecord.findMany({
@@ -19,6 +21,7 @@ export default async function CompliancePage() {
             <Th>Project</Th>
             <Th>Year</Th>
             <Th>Affordable units snapshotted</Th>
+            <Th>Reporting deadline</Th>
             <Th>Status</Th>
             <Th>Mark submitted</Th>
             <Th></Th>
@@ -34,6 +37,22 @@ export default async function CompliancePage() {
                 <Td>{r.projectEntity.internalName}</Td>
                 <Td>{r.year}</Td>
                 <Td>{snapshot.length} units</Td>
+                <Td>
+                  <form
+                    action={setReportingDeadline.bind(null, r.id)}
+                    className="flex items-center gap-2"
+                  >
+                    <Input
+                      type="date"
+                      name="reportingDeadline"
+                      className="w-36"
+                      defaultValue={r.reportingDeadline ? fmtDateInput(r.reportingDeadline) : ""}
+                    />
+                    <Button type="submit" variant="secondary">
+                      Save
+                    </Button>
+                  </form>
+                </Td>
                 <Td>
                   {r.submittedDate ? (
                     <Badge tone="green">Submitted {r.submittedDate.toLocaleDateString()}</Badge>

@@ -693,6 +693,12 @@ model ComplianceRecord {
   year                        Int
   affordableUnitRentsReported Json // snapshot of rents for affordable units that year
   submittedDate               DateTime?
+  // Set by the project's lender, annually — varies lender to lender and
+  // year to year, so there's no fixed rule to compute this from (unlike
+  // the rent/deposit deadlines elsewhere). Purely a place to record it
+  // once known; nothing flags an approaching or missed one yet — that
+  // needs a real pattern of dates on file first.
+  reportingDeadline           DateTime?
   createdAt                   DateTime      @default(now())
 
   @@unique([projectEntityId, year])
