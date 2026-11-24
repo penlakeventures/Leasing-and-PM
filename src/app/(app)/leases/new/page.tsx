@@ -52,6 +52,7 @@ export default async function NewLeasePage({
         rentAmount: predecessor.rentAmount,
         lastRentIncreaseDate: null,
         rentIncreaseNoticeGivenDate: null,
+        firstMonthRentPrepaid: null,
         lastMonthRentPrepaid: null,
         pets: predecessor.pets,
         signedDate: null,

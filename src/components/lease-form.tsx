@@ -22,6 +22,7 @@ export function LeaseForm({
     rentAmount: unknown;
     lastRentIncreaseDate: Date | null;
     rentIncreaseNoticeGivenDate: Date | null;
+    firstMonthRentPrepaid: unknown;
     lastMonthRentPrepaid: unknown;
     pets: string | null;
     signedDate: Date | null;
@@ -144,6 +145,24 @@ export function LeaseForm({
               id="documentLink"
               name="documentLink"
               defaultValue={defaultValues?.documentLink ?? ""}
+            />
+          </Field>
+          <Field
+            label="First month's rent collected"
+            htmlFor="firstMonthRentPrepaid"
+            hint="Optional"
+          >
+            <Input
+              id="firstMonthRentPrepaid"
+              name="firstMonthRentPrepaid"
+              type="number"
+              step="0.01"
+              min={0}
+              defaultValue={
+                defaultValues?.firstMonthRentPrepaid
+                  ? String(defaultValues.firstMonthRentPrepaid)
+                  : ""
+              }
             />
           </Field>
           <Field

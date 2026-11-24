@@ -18,11 +18,9 @@ export default async function TrustLedgerPage({
     include: {
       lease: {
         include: {
-          unit: { include: { projectEntity: true } },
           tenants: { include: { tenant: true } },
         },
       },
-      deductions: true,
     },
     // Same project order as the Projects/Units/Leases pages, then unit
     // number within a project, then most-recent-first for a unit's own
@@ -149,22 +147,16 @@ export default async function TrustLedgerPage({
         <Table>
           <thead>
             <tr>
-              <Th>Project / Unit</Th>
               <Th>Tenant(s)</Th>
-              <Th>Trust account</Th>
-              <Th>Amount</Th>
               <Th>Date received</Th>
-              <Th>Refundable</Th>
+              <Th>Security deposit</Th>
+              <Th>First month rent collected</Th>
+              <Th>Last month rent collected</Th>
               <Th>Status</Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {deposits.map((d) => {
-              const totalDeductions = d.deductions.reduce(
-                (sum, x) => sum + Number(x.amount),
-                0,
-              );
-              const refundable = Number(d.amount) - totalDeductions;
               const tenantNames =
                 d.lease.tenants.map((t) => t.tenant.name).join(", ") || "—";
               const isOverdue = isDepositOverdue({
@@ -175,15 +167,21 @@ export default async function TrustLedgerPage({
                 <tr key={d.id} className="hover:bg-neutral-50">
                   <Td>
                     <Link href={`/leases/${d.leaseId}`} className="underline">
-                      {d.lease.unit.projectEntity.internalName} — Unit{" "}
-                      {d.lease.unit.unitNumber}
+                      {tenantNames}
                     </Link>
                   </Td>
-                  <Td>{tenantNames}</Td>
-                  <Td>{d.trustAccountRef || "—"}</Td>
-                  <Td>{money(Number(d.amount))}</Td>
                   <Td>{d.dateReceived.toLocaleDateString()}</Td>
-                  <Td>{money(refundable)}</Td>
+                  <Td>{money(Number(d.amount))}</Td>
+                  <Td>
+                    {d.lease.firstMonthRentPrepaid
+                      ? money(Number(d.lease.firstMonthRentPrepaid))
+                      : "—"}
+                  </Td>
+                  <Td>
+                    {d.lease.lastMonthRentPrepaid
+                      ? money(Number(d.lease.lastMonthRentPrepaid))
+                      : "—"}
+                  </Td>
                   <Td>
                     <div className="flex flex-wrap gap-1">
                       {d.dateReturned ? (

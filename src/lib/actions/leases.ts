@@ -10,6 +10,7 @@ import { sendForSignature } from "@/lib/dropbox-sign";
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
   const signedDateRaw = formData.get("signedDate") as string;
+  const firstPrepaidRaw = formData.get("firstMonthRentPrepaid") as string;
   const prepaidRaw = formData.get("lastMonthRentPrepaid") as string;
   const noticeGivenRaw = formData.get("rentIncreaseNoticeGivenDate") as string;
   return {
@@ -20,6 +21,7 @@ function parseLeaseForm(formData: FormData) {
     periodic: formData.get("periodic") === "on",
     rentAmount: Number(formData.get("rentAmount")),
     noticeGivenDate: noticeGivenRaw ? new Date(noticeGivenRaw) : null,
+    firstMonthRentPrepaid: firstPrepaidRaw ? Number(firstPrepaidRaw) : null,
     lastMonthRentPrepaid: prepaidRaw ? Number(prepaidRaw) : null,
     pets: (formData.get("pets") as string)?.trim() || null,
     signedDate: signedDateRaw ? new Date(signedDateRaw) : null,
@@ -113,6 +115,7 @@ export async function createLease(formData: FormData) {
       endDate: data.endDate,
       periodic: data.periodic,
       rentAmount: data.rentAmount,
+      firstMonthRentPrepaid: data.firstMonthRentPrepaid,
       lastMonthRentPrepaid: data.lastMonthRentPrepaid,
       pets: data.pets,
       signedDate: data.signedDate,
@@ -209,6 +212,7 @@ export async function updateLease(id: string, formData: FormData) {
               rentIncreaseNoticeGivenDate: data.noticeGivenDate,
             }
           : {}),
+        firstMonthRentPrepaid: data.firstMonthRentPrepaid,
         lastMonthRentPrepaid: data.lastMonthRentPrepaid,
         pets: data.pets,
         signedDate: data.signedDate,

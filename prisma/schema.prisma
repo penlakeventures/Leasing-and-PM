@@ -146,6 +146,7 @@ model Lease {
   rentAmount           Decimal   @db.Decimal(10, 2)
   lastRentIncreaseDate DateTime? // anchor for the 365-day-between-increases rule; null = never increased since this app tracked it
   rentIncreaseNoticeGivenDate DateTime? // when written notice was given for the current rentAmount, if it was an increase
+  firstMonthRentPrepaid Decimal? @db.Decimal(10, 2)
   lastMonthRentPrepaid Decimal?  @db.Decimal(10, 2)
   pets                 String? // free text, e.g. "dog, cat"
   signedDate           DateTime?
