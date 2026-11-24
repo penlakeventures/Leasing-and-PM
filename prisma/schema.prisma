@@ -66,6 +66,7 @@ model ProjectEntity {
   units             Unit[]
   complianceRecords ComplianceRecord[]
   monthlyExpenses   MonthlyExpense[]
+  financialSettings FinancialSettings?
 
   @@map("project_entities")
 }
@@ -442,14 +443,21 @@ model MonthlyExpense {
 // rate, equity) — a handful of fields updated by hand occasionally, not
 // part of the monthly routine the way MonthlyExpense is. Singleton, same
 // pattern as SigningSettings above.
+// One row per project — was a single portfolio-wide singleton until the
+// owner asked for these broken out like everything else on the
+// Financials page. See the 20261124_financial_settings_per_project
+// migration for how any existing singleton row's values were carried
+// forward instead of silently dropped.
 model FinancialSettings {
-  id                   String   @id @default("singleton")
-  totalCityAssessment  Decimal? @db.Decimal(14, 2)
-  estimatedMarketValue Decimal? @db.Decimal(14, 2)
-  totalAssumedEquity   Decimal? @db.Decimal(14, 2)
-  avgLoanInterestRate  Decimal? @db.Decimal(6, 4)
-  iror                 Decimal? @db.Decimal(6, 4)
-  updatedAt            DateTime @updatedAt
+  id                   String        @id @default(cuid())
+  projectEntityId      String        @unique
+  projectEntity        ProjectEntity @relation(fields: [projectEntityId], references: [id], onDelete: Cascade)
+  totalCityAssessment  Decimal?      @db.Decimal(14, 2)
+  estimatedMarketValue Decimal?      @db.Decimal(14, 2)
+  totalAssumedEquity   Decimal?      @db.Decimal(14, 2)
+  avgLoanInterestRate  Decimal?      @db.Decimal(6, 4)
+  iror                 Decimal?      @db.Decimal(6, 4)
+  updatedAt            DateTime      @updatedAt
 
   @@map("financial_settings")
 }

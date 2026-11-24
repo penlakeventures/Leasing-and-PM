@@ -31,7 +31,7 @@ export async function upsertMonthlyExpense(
   redirect(`/financials?month=${monthIso}`);
 }
 
-export async function upsertFinancialSettings(formData: FormData) {
+export async function upsertFinancialSettings(projectEntityId: string, formData: FormData) {
   await requireOwnerAction();
 
   const numberOrNull = (name: string) => {
@@ -48,8 +48,8 @@ export async function upsertFinancialSettings(formData: FormData) {
   };
 
   await prisma.financialSettings.upsert({
-    where: { id: "singleton" },
-    create: { id: "singleton", ...data },
+    where: { projectEntityId },
+    create: { projectEntityId, ...data },
     update: data,
   });
 

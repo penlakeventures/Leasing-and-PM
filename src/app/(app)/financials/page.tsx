@@ -11,11 +11,11 @@ const money = (n: number) =>
 export default async function FinancialsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; edit?: string }>;
+  searchParams: Promise<{ month?: string; edit?: string; snapshotEdit?: string }>;
 }) {
   await requireOwnerPage();
 
-  const { month: monthParam, edit } = await searchParams;
+  const { month: monthParam, edit, snapshotEdit } = await searchParams;
   const month = monthParam ? monthStart(new Date(monthParam)) : monthStart();
   const monthIso = month.toISOString();
   const prevMonthIso = shiftMonth(month, -1).toISOString();
@@ -23,7 +23,7 @@ export default async function FinancialsPage({
 
   const trailingStart = shiftMonth(month, -11);
 
-  const [projects, paymentsThisMonth, expensesThisMonth, trailingPayments, trailingExpenses, settings] =
+  const [projects, paymentsThisMonth, expensesThisMonth, trailingPayments, trailingExpenses, allSettings] =
     await Promise.all([
       prisma.projectEntity.findMany({ orderBy: { displayOrder: "asc" } }),
       prisma.rentPayment.findMany({
@@ -35,8 +35,10 @@ export default async function FinancialsPage({
         where: { period: { gte: trailingStart, lte: month }, paidDate: { not: null } },
       }),
       prisma.monthlyExpense.findMany({ where: { month: { gte: trailingStart, lte: month } } }),
-      prisma.financialSettings.findUnique({ where: { id: "singleton" } }),
+      prisma.financialSettings.findMany(),
     ]);
+
+  const settingsByProject = new Map(allSettings.map((s) => [s.projectEntityId, s]));
 
   const incomeByProject = new Map<string, number>();
   for (const p of paymentsThisMonth) {
@@ -64,6 +66,11 @@ export default async function FinancialsPage({
 
   const editingProject = edit ? projects.find((p) => p.id === edit) : undefined;
   const editingExpense = editingProject ? expenseByProject.get(editingProject.id) : undefined;
+
+  const editingSnapshotProject = snapshotEdit ? projects.find((p) => p.id === snapshotEdit) : undefined;
+  const editingSettings = editingSnapshotProject
+    ? settingsByProject.get(editingSnapshotProject.id)
+    : undefined;
 
   // A starting number for Maintenance, pulled from this project's own
   // resolved ticket costs for the month — still just a suggestion the
@@ -225,60 +232,119 @@ export default async function FinancialsPage({
         <h2 className="mb-1 text-sm font-semibold text-neutral-900">Portfolio snapshot</h2>
         <p className="mb-3 text-sm text-neutral-500">
           Changes rarely — update by hand when a value changes, not part of the monthly routine.
+          One snapshot per project, not one combined portfolio-wide figure.
         </p>
-        <Card>
-          <form action={upsertFinancialSettings} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="Total city assessment" htmlFor="totalCityAssessment">
-              <Input
-                id="totalCityAssessment"
-                name="totalCityAssessment"
-                type="number"
-                step="0.01"
-                defaultValue={settings?.totalCityAssessment ? String(settings.totalCityAssessment) : ""}
-              />
-            </Field>
-            <Field label="Estimated market value" htmlFor="estimatedMarketValue">
-              <Input
-                id="estimatedMarketValue"
-                name="estimatedMarketValue"
-                type="number"
-                step="0.01"
-                defaultValue={settings?.estimatedMarketValue ? String(settings.estimatedMarketValue) : ""}
-              />
-            </Field>
-            <Field label="Total assumed equity" htmlFor="totalAssumedEquity">
-              <Input
-                id="totalAssumedEquity"
-                name="totalAssumedEquity"
-                type="number"
-                step="0.01"
-                defaultValue={settings?.totalAssumedEquity ? String(settings.totalAssumedEquity) : ""}
-              />
-            </Field>
-            <Field label="Avg. loan interest rate (%)" htmlFor="avgLoanInterestRate">
-              <Input
-                id="avgLoanInterestRate"
-                name="avgLoanInterestRate"
-                type="number"
-                step="0.0001"
-                defaultValue={settings?.avgLoanInterestRate ? String(settings.avgLoanInterestRate) : ""}
-              />
-            </Field>
-            <Field label="IROR (%)" htmlFor="iror">
-              <Input
-                id="iror"
-                name="iror"
-                type="number"
-                step="0.0001"
-                defaultValue={settings?.iror ? String(settings.iror) : ""}
-              />
-            </Field>
-            <div className="flex items-end sm:col-span-1">
-              <Button type="submit">Save</Button>
-            </div>
-          </form>
-        </Card>
+        <Table>
+          <thead>
+            <tr>
+              <Th>Project</Th>
+              <Th>City assessment</Th>
+              <Th>Market value</Th>
+              <Th>Assumed equity</Th>
+              <Th>Loan rate</Th>
+              <Th>IROR</Th>
+              <Th></Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-neutral-100">
+            {projects.map((project) => {
+              const s = settingsByProject.get(project.id);
+              return (
+                <tr key={project.id} className="hover:bg-neutral-50">
+                  <Td>{project.internalName}</Td>
+                  <Td>{s?.totalCityAssessment ? money(Number(s.totalCityAssessment)) : "—"}</Td>
+                  <Td>{s?.estimatedMarketValue ? money(Number(s.estimatedMarketValue)) : "—"}</Td>
+                  <Td>{s?.totalAssumedEquity ? money(Number(s.totalAssumedEquity)) : "—"}</Td>
+                  <Td>{s?.avgLoanInterestRate ? `${s.avgLoanInterestRate}%` : "—"}</Td>
+                  <Td>{s?.iror ? `${s.iror}%` : "—"}</Td>
+                  <Td>
+                    <Link
+                      href={`/financials?month=${monthIso}&snapshotEdit=${project.id}`}
+                      className="text-sm text-neutral-600 underline"
+                    >
+                      Edit snapshot
+                    </Link>
+                  </Td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
       </div>
+
+      {editingSnapshotProject && (
+        <div>
+          <h2 className="mb-1 text-sm font-semibold text-neutral-900">
+            Edit portfolio snapshot — {editingSnapshotProject.internalName}
+          </h2>
+          <Card>
+            <form
+              action={upsertFinancialSettings.bind(null, editingSnapshotProject.id)}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+            >
+              <Field label="Total city assessment" htmlFor="totalCityAssessment">
+                <Input
+                  id="totalCityAssessment"
+                  name="totalCityAssessment"
+                  type="number"
+                  step="0.01"
+                  defaultValue={
+                    editingSettings?.totalCityAssessment ? String(editingSettings.totalCityAssessment) : ""
+                  }
+                />
+              </Field>
+              <Field label="Estimated market value" htmlFor="estimatedMarketValue">
+                <Input
+                  id="estimatedMarketValue"
+                  name="estimatedMarketValue"
+                  type="number"
+                  step="0.01"
+                  defaultValue={
+                    editingSettings?.estimatedMarketValue ? String(editingSettings.estimatedMarketValue) : ""
+                  }
+                />
+              </Field>
+              <Field label="Total assumed equity" htmlFor="totalAssumedEquity">
+                <Input
+                  id="totalAssumedEquity"
+                  name="totalAssumedEquity"
+                  type="number"
+                  step="0.01"
+                  defaultValue={
+                    editingSettings?.totalAssumedEquity ? String(editingSettings.totalAssumedEquity) : ""
+                  }
+                />
+              </Field>
+              <Field label="Avg. loan interest rate (%)" htmlFor="avgLoanInterestRate">
+                <Input
+                  id="avgLoanInterestRate"
+                  name="avgLoanInterestRate"
+                  type="number"
+                  step="0.0001"
+                  defaultValue={
+                    editingSettings?.avgLoanInterestRate ? String(editingSettings.avgLoanInterestRate) : ""
+                  }
+                />
+              </Field>
+              <Field label="IROR (%)" htmlFor="iror">
+                <Input
+                  id="iror"
+                  name="iror"
+                  type="number"
+                  step="0.0001"
+                  defaultValue={editingSettings?.iror ? String(editingSettings.iror) : ""}
+                />
+              </Field>
+              <div className="flex gap-2 pt-2 sm:col-span-3">
+                <Button type="submit">Save</Button>
+                <LinkButton href={`/financials?month=${monthIso}`} variant="secondary">
+                  Cancel
+                </LinkButton>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
