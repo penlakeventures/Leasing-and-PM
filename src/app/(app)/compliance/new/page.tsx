@@ -8,7 +8,11 @@ export default async function NewComplianceRecordPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
+  // Only projects with at least one AFFORDABLE unit have anything to
+  // report here — offering the rest just invites a pointless "0 units"
+  // snapshot that then sits on the Compliance list looking unsubmitted.
   const projects = await prisma.projectEntity.findMany({
+    where: { units: { some: { cmhcDesignation: "AFFORDABLE" } } },
     orderBy: { displayOrder: "asc" },
   });
 

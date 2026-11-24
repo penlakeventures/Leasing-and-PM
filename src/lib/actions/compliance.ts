@@ -16,6 +16,15 @@ export async function createComplianceRecord(formData: FormData) {
     select: { id: true, unitNumber: true, bedrooms: true, currentRent: true },
   });
 
+  // Nothing to report for a project with no affordable units — the New
+  // Compliance Record form already only offers projects that have some,
+  // but guard here too against hitting this directly.
+  if (affordableUnits.length === 0) {
+    redirect(
+      `/compliance/new?error=${encodeURIComponent("That project has no affordable units — nothing to report.")}`,
+    );
+  }
+
   const snapshot = affordableUnits.map((u) => ({
     unitId: u.id,
     unitNumber: u.unitNumber,
