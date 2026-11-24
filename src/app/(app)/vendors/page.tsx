@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Table, Th, Td, LinkButton, EmptyState } from "@/components/ui";
+import { EntitySearch } from "@/components/entity-search";
 import Link from "next/link";
 
 export default async function VendorsPage() {
@@ -10,6 +11,11 @@ export default async function VendorsPage() {
       <div className="mb-6 flex justify-end">
         <LinkButton href="/vendors/new">+ New vendor</LinkButton>
       </div>
+      <EntitySearch
+        items={vendors.map((v) => ({ id: v.id, label: v.name }))}
+        basePath="/vendors"
+        placeholder="Search vendors by name…"
+      />
       <Table>
         <thead>
           <tr>

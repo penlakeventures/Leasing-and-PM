@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
-import { TenantSearch } from "@/components/tenant-search";
+import { EntitySearch } from "@/components/entity-search";
 import { pickActiveLease } from "@/lib/rules";
 import Link from "next/link";
 
@@ -43,7 +43,11 @@ export default async function TenantsPage({
         </Link>
         <LinkButton href="/tenants/new">+ New tenant</LinkButton>
       </div>
-      <TenantSearch tenants={allTenants.map((t) => ({ id: t.id, name: t.name }))} />
+      <EntitySearch
+        items={allTenants.map((t) => ({ id: t.id, label: t.name }))}
+        basePath="/tenants"
+        placeholder="Search tenants by name…"
+      />
       <Table>
         <thead>
           <tr>
