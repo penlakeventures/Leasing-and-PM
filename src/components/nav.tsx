@@ -5,11 +5,18 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SettingsMenu } from "@/components/settings-menu";
 
-export type NavCounts = {
+// The numeric badge counts, kept separate from missingCpiRate below (a
+// plain flag, not a count) so countKey below can stay typed to just
+// these and not need a runtime check for a field that isn't a number.
+type NumericNavCounts = {
   inbox: number;
   renewals: number;
   maintenance: number;
   leads: number;
+};
+
+export type NavCounts = NumericNavCounts & {
+  missingCpiRate: boolean;
 };
 
 // Grouped for display only — every tab keeps its existing path and label,
@@ -25,7 +32,7 @@ export type NavCounts = {
 // of needing a separate page to go check them.
 const groups: {
   label: string | null;
-  links: { href: string; label: string; countKey?: keyof NavCounts }[];
+  links: { href: string; label: string; countKey?: keyof NumericNavCounts }[];
 }[] = [
   {
     label: null,
@@ -196,7 +203,7 @@ export function Nav({ isOwner, counts }: { isOwner: boolean; counts: NavCounts }
             {" "}
           </span>
         )}
-        <SettingsMenu />
+        <SettingsMenu missingCpiRate={counts.missingCpiRate} />
       </div>
     </nav>
   );

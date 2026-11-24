@@ -11,16 +11,27 @@ import Link from "next/link";
 // is what used to be the Dashboard's stat-tile row. No separate landing
 // page for them now: they're visible from every page instead of only one.
 async function getNavCounts() {
-  const [inboxRows, unitsWithLeases, openTickets, activeLeads] = await Promise.all([
+  const [inboxRows, unitsWithLeases, openTickets, activeLeads, currentYearCpiRate] = await Promise.all([
     getInboxRows(),
     prisma.unit.findMany({ include: { leases: true } }),
     prisma.maintenanceTicket.count({ where: { status: { not: "RESOLVED" } } }),
     prisma.lead.count({ where: { status: { notIn: ["LEASED", "LOST"] } } }),
+    // checkRentEscalation blocks any affordable-unit rent increase outright
+    // once the calendar rolls into a year with no CPI rate on file yet —
+    // surfaced here so that's noticed ahead of time, not when someone's
+    // rent recommendation mysteriously fails.
+    prisma.cpiRate.findUnique({ where: { year: new Date().getFullYear() } }),
   ]);
 
   const renewals = unitsWithLeases.filter((u) => unitNeedsRenewalAttention(u)).length;
 
-  return { inbox: inboxRows.length, renewals, maintenance: openTickets, leads: activeLeads };
+  return {
+    inbox: inboxRows.length,
+    renewals,
+    maintenance: openTickets,
+    leads: activeLeads,
+    missingCpiRate: !currentYearCpiRate,
+  };
 }
 
 export default async function AppLayout({
