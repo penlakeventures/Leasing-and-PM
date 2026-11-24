@@ -125,9 +125,3 @@ export async function notifyVendor(ticketId: string) {
   revalidatePath("/communications");
   redirect(`/tickets/${ticketId}`);
 }
-
-export async function deleteTicket(id: string) {
-  await prisma.maintenanceTicket.delete({ where: { id } });
-  revalidatePath("/tickets");
-  redirect("/tickets");
-}

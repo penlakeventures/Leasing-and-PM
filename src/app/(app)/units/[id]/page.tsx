@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PageHeader, Card, Button, Table, Th, Td, Badge } from "@/components/ui";
 import { UnitForm } from "@/components/unit-form";
 import { RentRecommendationForm } from "@/components/rent-recommendation-form";
-import { updateUnit, deleteUnit } from "@/lib/actions/units";
+import { updateUnit } from "@/lib/actions/units";
 import {
   createRentRecommendation,
   decideRentRecommendation,
@@ -48,7 +48,6 @@ export default async function UnitDetailPage({
   if (!unit) notFound();
 
   const updateWithId = updateUnit.bind(null, id);
-  const deleteWithId = deleteUnit.bind(null, id);
   const createRecommendationWithId = createRentRecommendation.bind(null, id);
 
   return (
@@ -179,12 +178,6 @@ export default async function UnitDetailPage({
           </tbody>
         </Table>
       </div>
-
-      <form action={deleteWithId}>
-        <Button type="submit" variant="danger">
-          Delete unit
-        </Button>
-      </form>
     </div>
   );
 }

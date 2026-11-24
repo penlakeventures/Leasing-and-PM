@@ -85,15 +85,3 @@ export async function generateLeadReplyDraft(leadId: string) {
   revalidatePath(`/leads/${leadId}`);
   redirect(`/leads/${leadId}`);
 }
-
-export async function deleteLead(id: string) {
-  try {
-    await prisma.lead.delete({ where: { id } });
-  } catch {
-    redirect(
-      `/leads/${id}?error=${encodeURIComponent("Can't delete a lead with a screening record on file — resolve that first.")}`,
-    );
-  }
-  revalidatePath("/leads");
-  redirect("/leads");
-}

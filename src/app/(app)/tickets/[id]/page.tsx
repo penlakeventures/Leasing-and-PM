@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { PageHeader, Button, Card } from "@/components/ui";
 import { TicketForm } from "@/components/ticket-form";
-import { updateTicket, deleteTicket, notifyVendor } from "@/lib/actions/tickets";
+import { updateTicket, notifyVendor } from "@/lib/actions/tickets";
 import Link from "next/link";
 
 export default async function TicketDetailPage({
@@ -26,7 +26,6 @@ export default async function TicketDetailPage({
   if (!ticket) notFound();
 
   const updateWithId = updateTicket.bind(null, id);
-  const deleteWithId = deleteTicket.bind(null, id);
   const notifyVendorWithId = notifyVendor.bind(null, id);
 
   return (
@@ -64,12 +63,6 @@ export default async function TicketDetailPage({
           </form>
         </Card>
       )}
-
-      <form action={deleteWithId}>
-        <Button type="submit" variant="danger">
-          Delete ticket
-        </Button>
-      </form>
     </div>
   );
 }

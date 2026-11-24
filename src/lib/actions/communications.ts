@@ -31,9 +31,3 @@ export async function createCommunication(formData: FormData) {
   revalidatePath("/communications");
   redirect("/communications");
 }
-
-export async function deleteCommunication(id: string) {
-  await prisma.communicationLog.delete({ where: { id } });
-  revalidatePath("/communications");
-  redirect("/communications");
-}

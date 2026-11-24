@@ -66,15 +66,3 @@ export async function updateProject(id: string, formData: FormData) {
   revalidatePath(`/projects/${id}`);
   redirect("/projects");
 }
-
-export async function deleteProject(id: string) {
-  try {
-    await prisma.projectEntity.delete({ where: { id } });
-  } catch {
-    redirect(
-      `/projects/${id}?error=${encodeURIComponent("Can't delete a project that still has units attached to it.")}`,
-    );
-  }
-  revalidatePath("/projects");
-  redirect("/projects");
-}

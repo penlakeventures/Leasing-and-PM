@@ -156,15 +156,3 @@ export async function createTicketFromDraft(tenantId: string, formData: FormData
   revalidatePath("/inbox");
   redirect(`/tickets/${ticket.id}`);
 }
-
-export async function deleteTenant(id: string) {
-  try {
-    await prisma.tenant.delete({ where: { id } });
-  } catch {
-    redirect(
-      `/tenants/${id}?error=${encodeURIComponent("Can't delete a tenant with lease or ticket history — remove those first.")}`,
-    );
-  }
-  revalidatePath("/tenants");
-  redirect("/tenants");
-}

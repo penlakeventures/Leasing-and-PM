@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { PageHeader, Button, Table, Th, Td } from "@/components/ui";
+import { PageHeader, Table, Th, Td } from "@/components/ui";
 import { TenantForm } from "@/components/tenant-form";
 import { MessagePanel } from "@/components/message-panel";
 import { TicketDraftPanel } from "@/components/ticket-draft-panel";
 import {
   updateTenant,
-  deleteTenant,
   generateTicketDraft,
   createTicketFromDraft,
   generateTenantReplyDraft,
@@ -36,7 +35,6 @@ export default async function TenantDetailPage({
   if (!tenant) notFound();
 
   const updateWithId = updateTenant.bind(null, id);
-  const deleteWithId = deleteTenant.bind(null, id);
   const sendTextWithId = sendTenantText.bind(null, id);
   const draftTicketWithId = generateTicketDraft.bind(null, id);
   const createTicketWithId = createTicketFromDraft.bind(null, id);
@@ -91,12 +89,6 @@ export default async function TenantDetailPage({
           </tbody>
         </Table>
       </div>
-
-      <form action={deleteWithId}>
-        <Button type="submit" variant="danger">
-          Delete tenant
-        </Button>
-      </form>
     </div>
   );
 }

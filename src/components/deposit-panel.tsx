@@ -3,7 +3,6 @@ import {
   upsertSecurityDeposit,
   returnDeposit,
   addDeduction,
-  deleteDeduction,
 } from "@/lib/actions/deposits";
 import { depositReturnDeadline, isDepositOverdue } from "@/lib/rules";
 
@@ -125,17 +124,7 @@ export function DepositPanel({
             {deposit.deductions.map((d) => (
               <li key={d.id} className="flex items-center justify-between">
                 <span>{d.description}</span>
-                <span className="flex items-center gap-3">
-                  ${Number(d.amount).toFixed(2)}
-                  <form action={deleteDeduction.bind(null, leaseId, d.id)}>
-                    <button
-                      type="submit"
-                      className="text-xs text-red-600 hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </form>
-                </span>
+                <span>${Number(d.amount).toFixed(2)}</span>
               </li>
             ))}
           </ul>

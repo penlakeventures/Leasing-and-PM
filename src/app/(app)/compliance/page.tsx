@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Table, Th, Td, LinkButton, Badge, EmptyState, Input, Button } from "@/components/ui";
-import { markSubmitted, setReportingDeadline, deleteComplianceRecord } from "@/lib/actions/compliance";
+import { markSubmitted, setReportingDeadline } from "@/lib/actions/compliance";
 
 const fmtDateInput = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -24,7 +24,6 @@ export default async function CompliancePage() {
             <Th>Reporting deadline</Th>
             <Th>Status</Th>
             <Th>Mark submitted</Th>
-            <Th></Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
@@ -69,13 +68,6 @@ export default async function CompliancePage() {
                       </Button>
                     </form>
                   )}
-                </Td>
-                <Td>
-                  <form action={deleteComplianceRecord.bind(null, r.id)}>
-                    <button type="submit" className="text-xs text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </form>
                 </Td>
               </tr>
             );

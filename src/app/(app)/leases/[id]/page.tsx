@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { PageHeader, Button, Card, Table, Th, Td, Badge } from "@/components/ui";
+import { PageHeader, Card, Table, Th, Td, Badge } from "@/components/ui";
 import { LeaseForm } from "@/components/lease-form";
 import { DepositPanel } from "@/components/deposit-panel";
 import { DocumentUploadPanel } from "@/components/document-upload-panel";
 import { LeaseSigningPanel } from "@/components/lease-signing-panel";
-import { updateLease, deleteLease, uploadLeaseDocument, sendLeaseForSignature } from "@/lib/actions/leases";
+import { updateLease, uploadLeaseDocument, sendLeaseForSignature } from "@/lib/actions/leases";
 import { buildLeaseMergeFields, projectLegalEntityName } from "@/lib/lease-document";
 
 export default async function LeaseDetailPage({
@@ -47,7 +47,6 @@ export default async function LeaseDetailPage({
   });
 
   const updateWithId = updateLease.bind(null, id);
-  const deleteWithId = deleteLease.bind(null, id);
   const uploadWithId = uploadLeaseDocument.bind(null, id);
   const sendForSignatureWithId = sendLeaseForSignature.bind(null, id);
 
@@ -160,12 +159,6 @@ export default async function LeaseDetailPage({
         monthlyRent={Number(lease.rentAmount)}
         tenancyEndDate={lease.endDate}
       />
-
-      <form action={deleteWithId}>
-        <Button type="submit" variant="danger">
-          Delete lease
-        </Button>
-      </form>
     </div>
   );
 }

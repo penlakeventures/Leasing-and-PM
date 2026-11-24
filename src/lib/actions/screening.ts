@@ -61,9 +61,3 @@ export async function upsertScreening(leadId: string, formData: FormData) {
   revalidatePath(`/leads/${leadId}`);
   redirect(`/leads/${leadId}`);
 }
-
-export async function deleteScreening(leadId: string) {
-  await prisma.tenantScreening.delete({ where: { leadId } });
-  revalidatePath(`/leads/${leadId}`);
-  redirect(`/leads/${leadId}`);
-}

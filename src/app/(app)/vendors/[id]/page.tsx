@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { PageHeader, Button } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { VendorForm } from "@/components/vendor-form";
 import { MessagePanel } from "@/components/message-panel";
-import { updateVendor, deleteVendor } from "@/lib/actions/vendors";
+import { updateVendor } from "@/lib/actions/vendors";
 import { sendVendorText } from "@/lib/actions/sms";
 
 export default async function VendorDetailPage({
@@ -24,7 +24,6 @@ export default async function VendorDetailPage({
   if (!vendor) notFound();
 
   const updateWithId = updateVendor.bind(null, id);
-  const deleteWithId = deleteVendor.bind(null, id);
   const sendTextWithId = sendVendorText.bind(null, id);
 
   return (
@@ -36,11 +35,6 @@ export default async function VendorDetailPage({
         phone={vendor.contactPhone}
         sendAction={sendTextWithId}
       />
-      <form action={deleteWithId}>
-        <Button type="submit" variant="danger">
-          Delete vendor
-        </Button>
-      </form>
     </div>
   );
 }

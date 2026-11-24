@@ -75,9 +75,3 @@ export async function setReportingDeadline(id: string, formData: FormData) {
   revalidatePath("/compliance");
   redirect("/compliance");
 }
-
-export async function deleteComplianceRecord(id: string) {
-  await prisma.complianceRecord.delete({ where: { id } });
-  revalidatePath("/compliance");
-  redirect("/compliance");
-}

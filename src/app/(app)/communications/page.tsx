@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
-import { deleteCommunication } from "@/lib/actions/communications";
 import Link from "next/link";
 
 const PAGE_SIZE = 100;
@@ -41,7 +40,6 @@ export default async function CommunicationsPage({
             <Th>Direction</Th>
             <Th>Summary</Th>
             <Th>Handled by</Th>
-            <Th></Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
@@ -71,13 +69,6 @@ export default async function CommunicationsPage({
                 <Td>{l.direction}</Td>
                 <Td>{l.summary}</Td>
                 <Td>{l.handledBy?.name ?? "Automated"}</Td>
-                <Td>
-                  <form action={deleteCommunication.bind(null, l.id)}>
-                    <button type="submit" className="text-xs text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </form>
-                </Td>
               </tr>
             );
           })}

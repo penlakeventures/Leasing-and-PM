@@ -94,11 +94,3 @@ export async function addDeduction(leaseId: string, formData: FormData) {
   revalidatePath(`/leases/${leaseId}`);
   redirect(`/leases/${leaseId}`);
 }
-
-export async function deleteDeduction(leaseId: string, deductionId: string) {
-  await prisma.securityDepositDeduction.delete({
-    where: { id: deductionId },
-  });
-  revalidatePath(`/leases/${leaseId}`);
-  redirect(`/leases/${leaseId}`);
-}

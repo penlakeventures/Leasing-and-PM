@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { PageHeader, Button, LinkButton } from "@/components/ui";
+import { PageHeader, LinkButton } from "@/components/ui";
 import { LeadForm } from "@/components/lead-form";
 import { ScreeningPanel } from "@/components/screening-panel";
 import { TourPanel } from "@/components/tour-panel";
 import { MessagePanel } from "@/components/message-panel";
-import { updateLead, deleteLead, generateLeadReplyDraft } from "@/lib/actions/leads";
+import { updateLead, generateLeadReplyDraft } from "@/lib/actions/leads";
 import { sendLeadText } from "@/lib/actions/sms";
 import { getActiveConnection } from "@/lib/google-calendar";
 
@@ -40,7 +40,6 @@ export default async function LeadDetailPage({
   if (!lead) notFound();
 
   const updateWithId = updateLead.bind(null, id);
-  const deleteWithId = deleteLead.bind(null, id);
   const sendTextWithId = sendLeadText.bind(null, id);
   const draftReplyWithId = generateLeadReplyDraft.bind(null, id);
 
@@ -72,11 +71,6 @@ export default async function LeadDetailPage({
         draftReply={lead.draftReply}
         draftAction={draftReplyWithId}
       />
-      <form action={deleteWithId}>
-        <Button type="submit" variant="danger">
-          Delete lead
-        </Button>
-      </form>
     </div>
   );
 }

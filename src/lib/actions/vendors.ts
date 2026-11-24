@@ -27,15 +27,3 @@ export async function updateVendor(id: string, formData: FormData) {
   revalidatePath(`/vendors/${id}`);
   redirect("/vendors");
 }
-
-export async function deleteVendor(id: string) {
-  try {
-    await prisma.vendor.delete({ where: { id } });
-  } catch {
-    redirect(
-      `/vendors/${id}?error=${encodeURIComponent("Can't delete a vendor with ticket history.")}`,
-    );
-  }
-  revalidatePath("/vendors");
-  redirect("/vendors");
-}

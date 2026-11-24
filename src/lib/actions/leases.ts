@@ -381,19 +381,3 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
   revalidatePath(`/leases/${leaseId}`);
   redirect(`/leases/${leaseId}`);
 }
-
-export async function deleteLease(id: string) {
-  const existing = await prisma.lease.findUnique({ where: { id } });
-  if (!existing) redirect("/leases");
-
-  try {
-    await prisma.lease.delete({ where: { id } });
-  } catch {
-    redirect(
-      `/leases/${id}?error=${encodeURIComponent("Can't delete a lease with a security deposit on file — resolve that first.")}`,
-    );
-  }
-  await syncUnitCurrentRent(existing.unitId);
-  revalidatePath("/leases");
-  redirect("/leases");
-}

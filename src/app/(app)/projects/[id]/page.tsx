@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { PageHeader, Button, Table, Th, Td } from "@/components/ui";
+import { PageHeader, Table, Th, Td } from "@/components/ui";
 import { ProjectForm } from "@/components/project-form";
-import { updateProject, deleteProject } from "@/lib/actions/projects";
+import { updateProject } from "@/lib/actions/projects";
 import Link from "next/link";
 
 export default async function ProjectDetailPage({
@@ -21,7 +21,6 @@ export default async function ProjectDetailPage({
   if (!project) notFound();
 
   const updateWithId = updateProject.bind(null, id);
-  const deleteWithId = deleteProject.bind(null, id);
 
   return (
     <div className="space-y-8">
@@ -65,12 +64,6 @@ export default async function ProjectDetailPage({
           </tbody>
         </Table>
       </div>
-
-      <form action={deleteWithId}>
-        <Button type="submit" variant="danger">
-          Delete project
-        </Button>
-      </form>
     </div>
   );
 }
