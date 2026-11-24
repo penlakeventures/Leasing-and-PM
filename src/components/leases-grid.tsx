@@ -72,10 +72,16 @@ function sortValue(row: LeaseRow, key: ColumnKey): string | number {
     case "rent":
       return row.rent;
     case "leaseEnd":
-      // Periodic/no-end-date leases sort after every dated one, in either
-      // direction — there's no real date to compare, and that's where
-      // Alina's own spreadsheet puts them too.
-      return row.leaseEnd ? new Date(row.leaseEnd).getTime() : Infinity;
+      // A periodic lease displays as "Periodic" regardless of whatever
+      // end date might still be on file for it (same precedence as every
+      // other Periodic-or-date display in this app) — sorting has to
+      // honour that same precedence, or a periodic lease with a leftover
+      // end date (e.g. from before "Periodic" was checked on it) would
+      // sort by that date while showing "Periodic", landing nowhere near
+      // where it displays. Periodic/no-end-date leases sort after every
+      // dated one, in either direction — there's no real date to compare,
+      // and that's where Alina's own spreadsheet puts them too.
+      return row.periodic || !row.leaseEnd ? Infinity : new Date(row.leaseEnd).getTime();
     default:
       return displayValue(row, key).toLowerCase();
   }
