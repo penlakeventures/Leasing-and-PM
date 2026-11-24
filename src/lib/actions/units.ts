@@ -32,17 +32,16 @@ async function currentCpiRate(): Promise<number | null> {
 export async function createUnit(formData: FormData) {
   const data = parseUnitForm(formData);
 
-  await prisma.unit.create({ data });
+  const unit = await prisma.unit.create({ data });
 
-  revalidatePath("/units");
   revalidatePath(`/projects/${data.projectEntityId}`);
-  redirect("/units");
+  redirect(`/units/${unit.id}`);
 }
 
 export async function updateUnit(id: string, formData: FormData) {
   const data = parseUnitForm(formData);
   const existing = await prisma.unit.findUnique({ where: { id } });
-  if (!existing) redirect("/units");
+  if (!existing) redirect("/projects");
 
   // Rent is a Red-level decision (owner-only) once a unit is live — staff
   // propose a change via RentRecommendation instead (see
@@ -79,8 +78,7 @@ export async function updateUnit(id: string, formData: FormData) {
 
   await prisma.unit.update({ where: { id }, data });
 
-  revalidatePath("/units");
   revalidatePath(`/units/${id}`);
   revalidatePath(`/projects/${data.projectEntityId}`);
-  redirect("/units");
+  redirect(`/units/${id}`);
 }

@@ -153,7 +153,14 @@ export function UnitForm({
         </label>
         <div className="flex gap-2 pt-2">
           <Button type="submit">Save</Button>
-          <LinkButton href="/units" variant="secondary">
+          <LinkButton
+            href={
+              defaultValues?.projectEntityId ?? defaultProjectId
+                ? `/projects/${defaultValues?.projectEntityId ?? defaultProjectId}`
+                : "/projects"
+            }
+            variant="secondary"
+          >
             Cancel
           </LinkButton>
         </div>

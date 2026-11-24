@@ -48,7 +48,7 @@ export default async function AppLayout({
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
         <div>
-          <Link href="/units" aria-label="Pen Lake Ventures — home">
+          <Link href="/projects" aria-label="Pen Lake Ventures — home">
             <Logo />
           </Link>
         </div>

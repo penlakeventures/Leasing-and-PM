@@ -20,7 +20,7 @@ export async function createRentRecommendation(
   if (!session?.user?.id) redirect("/login");
 
   const unit = await prisma.unit.findUnique({ where: { id: unitId } });
-  if (!unit) redirect("/units");
+  if (!unit) redirect("/projects");
 
   const proposedRent = Number(formData.get("proposedRent"));
   const reasoning = (formData.get("reasoning") as string)?.trim();
@@ -66,7 +66,7 @@ export async function decideRentRecommendation(
     where: { id },
     include: { unit: true },
   });
-  if (!rec || rec.decision !== "PENDING") redirect("/units");
+  if (!rec || rec.decision !== "PENDING") redirect("/projects");
 
   if (decision === "APPROVED") {
     // Same affordable-unit CPI cap applied to a direct edit in

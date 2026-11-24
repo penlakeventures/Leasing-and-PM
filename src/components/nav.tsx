@@ -31,15 +31,9 @@ const groups: {
   links: { href: string; label: string; countKey?: keyof NumericNavCounts }[];
 }[] = [
   {
-    label: "Portfolio",
-    links: [
-      { href: "/projects", label: "Projects" },
-      { href: "/units", label: "Units" },
-    ],
-  },
-  {
     label: "Leasing",
     links: [
+      { href: "/projects", label: "Projects" },
       { href: "/leases", label: "Leases" },
       { href: "/renewals", label: "Renewals", countKey: "renewals" },
     ],
