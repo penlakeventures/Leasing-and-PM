@@ -64,10 +64,7 @@ export default async function UnitDetailPage({
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title={`${unit.projectEntity.internalName} — Unit ${unit.unitNumber}`}
-        description={`${unit.bedrooms} bd`}
-      />
+      <PageHeader title={`${unit.projectEntity.internalName} — Unit ${unit.unitNumber}`} />
       <UnitForm
         action={updateWithId}
         projects={projects}
@@ -77,17 +74,9 @@ export default async function UnitDetailPage({
       />
 
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-900">
-            Lease history
-          </h2>
-          <Link
-            href={`/leases/new?unitId=${unit.id}`}
-            className="text-sm text-neutral-900 underline"
-          >
-            + New lease
-          </Link>
-        </div>
+        <h2 className="mb-3 text-sm font-semibold text-neutral-900">
+          Lease history
+        </h2>
         <Table>
           <thead>
             <tr>
@@ -117,17 +106,9 @@ export default async function UnitDetailPage({
       </div>
 
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-900">
-            Maintenance history
-          </h2>
-          <Link
-            href={`/tickets/new?unitId=${unit.id}`}
-            className="text-sm text-neutral-900 underline"
-          >
-            + New ticket
-          </Link>
-        </div>
+        <h2 className="mb-3 text-sm font-semibold text-neutral-900">
+          Maintenance history
+        </h2>
         {tickets.length > 0 ? (
           <Table>
             <thead>
