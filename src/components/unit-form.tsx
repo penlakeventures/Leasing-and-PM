@@ -16,17 +16,15 @@ export function UnitForm({
     bedrooms: number;
     sqft: number | null;
     cmhcDesignation: string;
-    baseRent: unknown;
     currentRent: unknown;
-    tenancyType: string;
-    utilitiesIncludedInRent: boolean;
   };
   defaultProjectId?: string;
   error?: string;
-  // True for a staff account editing an existing unit — rent changes go
-  // through a RentRecommendation instead (see the Rent recommendations
-  // section on the unit page), so the field is shown but not editable
-  // here rather than just left out, so staff can still see the number.
+  // True for a staff account editing an existing unit — a unit's current
+  // rent is an owner-only decision (rent changes themselves now happen
+  // outside the app, and land here automatically once a new lease is
+  // created for the unit), so the field is shown but not editable here
+  // rather than just left out, so staff can still see the number.
   lockCurrentRent?: boolean;
 }) {
   return (
@@ -94,35 +92,12 @@ export function UnitForm({
               <option value="AFFORDABLE">Affordable</option>
             </Select>
           </Field>
-          <Field label="Tenancy type" htmlFor="tenancyType" hint="Internal = Pen-to-Pen (e.g. the barn)">
-            <Select
-              id="tenancyType"
-              name="tenancyType"
-              defaultValue={defaultValues?.tenancyType ?? "EXTERNAL"}
-            >
-              <option value="EXTERNAL">External</option>
-              <option value="INTERNAL">Internal</option>
-            </Select>
-          </Field>
-          <Field label="Base rent" htmlFor="baseRent">
-            <Input
-              id="baseRent"
-              name="baseRent"
-              type="number"
-              step="0.01"
-              min={0}
-              required
-              defaultValue={
-                defaultValues?.baseRent ? String(defaultValues.baseRent) : ""
-              }
-            />
-          </Field>
           <Field
             label="Current rent"
             htmlFor="currentRent"
             hint={
               lockCurrentRent
-                ? "Only an owner can change this directly — submit a rent recommendation below instead"
+                ? "Only an owner can change this directly — ask an owner to update it, or it's set automatically from a new lease's rent"
                 : "Affordable-unit increases are capped at the year's CPI rate"
             }
           >
@@ -142,15 +117,6 @@ export function UnitForm({
             />
           </Field>
         </div>
-        <label className="flex items-center gap-2 text-sm text-neutral-700">
-          <input
-            type="checkbox"
-            name="utilitiesIncludedInRent"
-            defaultChecked={defaultValues?.utilitiesIncludedInRent}
-            className="rounded border-neutral-300"
-          />
-          Utilities included in rent (Suite lease template, not Townhome)
-        </label>
         <div className="flex gap-2 pt-2">
           <Button type="submit">Save</Button>
           <LinkButton
