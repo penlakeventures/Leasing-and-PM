@@ -51,8 +51,13 @@ export async function backfillDocumentFolders() {
     resolved = await resolveSharedLinkPaths(leases.map((l) => l.documentLink as string));
   } catch (e) {
     console.error("[backfillDocumentFolders] resolveSharedLinkPaths failed:", e);
+    // The underlying message (not just "couldn't reach Dropbox") is shown
+    // directly rather than logged-only — there's no one here who'd go
+    // looking at Railway's logs, so the error banner has to be the
+    // diagnostic.
+    const detail = e instanceof Error ? e.message : String(e);
     redirect(
-      `/settings/dropbox?error=${encodeURIComponent("Couldn't reach Dropbox — check the connection above and try again.")}`,
+      `/settings/dropbox?error=${encodeURIComponent(`Couldn't reach Dropbox: ${detail}`)}`,
     );
   }
 
