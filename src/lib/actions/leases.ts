@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { checkRentEscalation, checkRentIncreaseNotice, pickActiveLease } from "@/lib/rules";
+import { checkRentEscalation, checkRentIncreaseFrequency, pickActiveLease } from "@/lib/rules";
 import { prepareLeaseFolder, uploadFile } from "@/lib/dropbox";
 import { sendForSignature } from "@/lib/dropbox-sign";
 import { unitTypeFromAddress } from "@/lib/unit-type";
@@ -13,7 +13,6 @@ function parseLeaseForm(formData: FormData) {
   const signedDateRaw = formData.get("signedDate") as string;
   const firstPrepaidRaw = formData.get("firstMonthRentPrepaid") as string;
   const prepaidRaw = formData.get("lastMonthRentPrepaid") as string;
-  const noticeGivenRaw = formData.get("rentIncreaseNoticeGivenDate") as string;
   return {
     unitId: formData.get("unitId") as string,
     tenantIds: formData.getAll("tenantIds") as string[],
@@ -21,12 +20,10 @@ function parseLeaseForm(formData: FormData) {
     endDate: endDateRaw ? new Date(endDateRaw) : null,
     periodic: formData.get("periodic") === "on",
     rentAmount: Number(formData.get("rentAmount")),
-    noticeGivenDate: noticeGivenRaw ? new Date(noticeGivenRaw) : null,
     firstMonthRentPrepaid: firstPrepaidRaw ? Number(firstPrepaidRaw) : null,
     lastMonthRentPrepaid: prepaidRaw ? Number(prepaidRaw) : null,
     pets: (formData.get("pets") as string)?.trim() || null,
     signedDate: signedDateRaw ? new Date(signedDateRaw) : null,
-    documentLink: (formData.get("documentLink") as string)?.trim() || null,
     renewedFromLeaseId: (formData.get("renewedFromLeaseId") as string)?.trim() || null,
     notes: (formData.get("notes") as string)?.trim() || null,
   };
@@ -158,7 +155,11 @@ export async function createLease(formData: FormData) {
       lastMonthRentPrepaid: data.lastMonthRentPrepaid,
       pets: data.pets,
       signedDate: data.signedDate,
-      documentLink: carriedOverFolder?.documentLink ?? data.documentLink,
+      // No Document link field on the form any more — a brand-new lease
+      // relies entirely on the auto-file block below to set this (or a
+      // renewal's carried-over folder, above); there's no manual entry
+      // path left for staff to paste one in by hand instead.
+      documentLink: carriedOverFolder?.documentLink ?? null,
       documentsFolderPath: carriedOverFolder?.documentsFolderPath ?? null,
       renewedFromLeaseId: data.renewedFromLeaseId,
       notes: data.notes,
@@ -221,16 +222,18 @@ export async function updateLease(id: string, formData: FormData) {
   }
 
   const isIncrease = data.rentAmount > Number(existing.rentAmount);
-  const noticeCheck = checkRentIncreaseNotice({
+  // The 3-month written-notice side of this (giving it, and confirming it
+  // was given early enough) is handled outside the app entirely, per the
+  // owner — only the 365-day frequency cap is still enforced here.
+  const frequencyCheck = checkRentIncreaseFrequency({
     periodic: data.periodic,
     leaseStartDate: existing.startDate,
     lastRentIncreaseDate: existing.lastRentIncreaseDate,
     currentRent: Number(existing.rentAmount),
     proposedRent: data.rentAmount,
-    noticeGivenDate: data.noticeGivenDate,
   });
-  if (!noticeCheck.allowed) {
-    redirect(`/leases/${id}?error=${encodeURIComponent(noticeCheck.reason!)}`);
+  if (!frequencyCheck.allowed) {
+    redirect(`/leases/${id}?error=${encodeURIComponent(frequencyCheck.reason!)}`);
   }
 
   // Tenant(s) on an existing lease aren't editable from this form anymore
@@ -245,19 +248,13 @@ export async function updateLease(id: string, formData: FormData) {
       endDate: data.endDate,
       periodic: data.periodic,
       rentAmount: data.rentAmount,
-      // Only touch these when this save is actually a rent increase on a
+      // Only touch this when this save is actually a rent increase on a
       // periodic lease — otherwise leave whatever's on file untouched.
-      ...(isIncrease && data.periodic
-        ? {
-            lastRentIncreaseDate: new Date(),
-            rentIncreaseNoticeGivenDate: data.noticeGivenDate,
-          }
-        : {}),
+      ...(isIncrease && data.periodic ? { lastRentIncreaseDate: new Date() } : {}),
       firstMonthRentPrepaid: data.firstMonthRentPrepaid,
       lastMonthRentPrepaid: data.lastMonthRentPrepaid,
       pets: data.pets,
       signedDate: data.signedDate,
-      documentLink: data.documentLink,
       notes: data.notes,
     },
   });

@@ -47,12 +47,10 @@ export default async function NewLeasePage({
         periodic: false,
         rentAmount: predecessor.rentAmount,
         lastRentIncreaseDate: null,
-        rentIncreaseNoticeGivenDate: null,
         firstMonthRentPrepaid: null,
         lastMonthRentPrepaid: null,
         pets: predecessor.pets,
         signedDate: null,
-        documentLink: null,
         notes: null,
       };
       existingTenants = predecessor.tenants.map((lt) => ({ id: lt.tenant.id, name: lt.tenant.name }));

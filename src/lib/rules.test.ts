@@ -3,7 +3,7 @@ import {
   pickActiveLease,
   checkRentEscalation,
   checkSecurityDepositAmount,
-  checkRentIncreaseNotice,
+  checkRentIncreaseFrequency,
   needsRenewalDecision,
   rentIncreaseNoticeWindow,
   isRentIncreaseNoticeDeadlineNear,
@@ -141,30 +141,28 @@ describe("checkSecurityDepositAmount", () => {
   });
 });
 
-describe("checkRentIncreaseNotice", () => {
+describe("checkRentIncreaseFrequency", () => {
   const leaseStartDate = d(2024, 6, 15);
 
   it("always allows a change on a non-periodic (fixed-term) lease", () => {
-    const result = checkRentIncreaseNotice({
+    const result = checkRentIncreaseFrequency({
       periodic: false,
       leaseStartDate,
       lastRentIncreaseDate: null,
       currentRent: 1000,
       proposedRent: 2000,
-      noticeGivenDate: null,
       asOf: d(2024, 7, 1),
     });
     expect(result.allowed).toBe(true);
   });
 
-  it("always allows a decrease or no-change on a periodic lease, no notice required", () => {
-    const result = checkRentIncreaseNotice({
+  it("always allows a decrease or no-change on a periodic lease", () => {
+    const result = checkRentIncreaseFrequency({
       periodic: true,
       leaseStartDate,
       lastRentIncreaseDate: null,
       currentRent: 1000,
       proposedRent: 1000,
-      noticeGivenDate: null,
       asOf: d(2024, 7, 1),
     });
     expect(result.allowed).toBe(true);
@@ -172,62 +170,26 @@ describe("checkRentIncreaseNotice", () => {
 
   it("blocks an increase before 365 days since the anchor have elapsed", () => {
     const asOf = new Date(leaseStartDate.getTime() + 364 * MS_PER_DAY);
-    const result = checkRentIncreaseNotice({
+    const result = checkRentIncreaseFrequency({
       periodic: true,
       leaseStartDate,
       lastRentIncreaseDate: null,
       currentRent: 1000,
       proposedRent: 1100,
-      noticeGivenDate: null,
       asOf,
     });
     expect(result.allowed).toBe(false);
     expect(result.reason).toMatch(/every 365 days/);
   });
 
-  it("requires a notice date once 365 days have elapsed", () => {
+  it("allows an increase once 365 days have elapsed", () => {
     const asOf = new Date(leaseStartDate.getTime() + 365 * MS_PER_DAY);
-    const result = checkRentIncreaseNotice({
+    const result = checkRentIncreaseFrequency({
       periodic: true,
       leaseStartDate,
       lastRentIncreaseDate: null,
       currentRent: 1000,
       proposedRent: 1100,
-      noticeGivenDate: null,
-      asOf,
-    });
-    expect(result.allowed).toBe(false);
-    expect(result.reason).toMatch(/requires written notice/);
-  });
-
-  it("blocks when notice was given less than 3 months before asOf", () => {
-    const asOf = new Date(leaseStartDate.getTime() + 365 * MS_PER_DAY);
-    const noticeGivenDate = new Date(asOf);
-    noticeGivenDate.setMonth(noticeGivenDate.getMonth() - 2); // only 2 months' notice
-    const result = checkRentIncreaseNotice({
-      periodic: true,
-      leaseStartDate,
-      lastRentIncreaseDate: null,
-      currentRent: 1000,
-      proposedRent: 1100,
-      noticeGivenDate,
-      asOf,
-    });
-    expect(result.allowed).toBe(false);
-    expect(result.reason).toMatch(/at least 3 months/);
-  });
-
-  it("allows when notice was given exactly 3 months before asOf", () => {
-    const asOf = new Date(leaseStartDate.getTime() + 365 * MS_PER_DAY);
-    const noticeGivenDate = new Date(asOf);
-    noticeGivenDate.setMonth(noticeGivenDate.getMonth() - 3);
-    const result = checkRentIncreaseNotice({
-      periodic: true,
-      leaseStartDate,
-      lastRentIncreaseDate: null,
-      currentRent: 1000,
-      proposedRent: 1100,
-      noticeGivenDate,
       asOf,
     });
     expect(result.allowed).toBe(true);
@@ -238,13 +200,12 @@ describe("checkRentIncreaseNotice", () => {
     // Well past 365 days since the original lease start, but less than a
     // year since the last recorded increase — should still be blocked.
     const asOf = new Date(lastRentIncreaseDate.getTime() + 100 * MS_PER_DAY);
-    const result = checkRentIncreaseNotice({
+    const result = checkRentIncreaseFrequency({
       periodic: true,
       leaseStartDate: d(2020, 1, 1),
       lastRentIncreaseDate,
       currentRent: 1000,
       proposedRent: 1100,
-      noticeGivenDate: null,
       asOf,
     });
     expect(result.allowed).toBe(false);

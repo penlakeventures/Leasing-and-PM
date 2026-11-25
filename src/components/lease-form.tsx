@@ -27,12 +27,10 @@ export function LeaseForm({
     periodic: boolean;
     rentAmount: unknown;
     lastRentIncreaseDate: Date | null;
-    rentIncreaseNoticeGivenDate: Date | null;
     firstMonthRentPrepaid: unknown;
     lastMonthRentPrepaid: unknown;
     pets: string | null;
     signedDate: Date | null;
-    documentLink: string | null;
     notes: string | null;
   };
   defaultUnitId?: string;
@@ -105,18 +103,6 @@ export function LeaseForm({
               }
             />
           </Field>
-          <Field
-            label="Rent increase notice given"
-            htmlFor="rentIncreaseNoticeGivenDate"
-            hint="Only needed when raising rent on a periodic lease — must be ≥3 months before today"
-          >
-            <Input
-              id="rentIncreaseNoticeGivenDate"
-              name="rentIncreaseNoticeGivenDate"
-              type="date"
-              defaultValue={fmt(defaultValues?.rentIncreaseNoticeGivenDate ?? null)}
-            />
-          </Field>
           <Field label="Start date" htmlFor="startDate">
             <Input
               id="startDate"
@@ -140,13 +126,6 @@ export function LeaseForm({
               name="signedDate"
               type="date"
               defaultValue={fmt(defaultValues?.signedDate ?? null)}
-            />
-          </Field>
-          <Field label="Document link" htmlFor="documentLink" hint="Optional">
-            <Input
-              id="documentLink"
-              name="documentLink"
-              defaultValue={defaultValues?.documentLink ?? ""}
             />
           </Field>
           <Field
