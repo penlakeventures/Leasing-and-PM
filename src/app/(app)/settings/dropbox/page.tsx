@@ -4,6 +4,7 @@ import {
   disconnectDropbox,
   updateDropboxBasePath,
   backfillDocumentFolders,
+  resolveSharedLink,
 } from "@/lib/actions/dropbox";
 
 export default async function DropboxSettingsPage({
@@ -62,6 +63,28 @@ export default async function DropboxSettingsPage({
               <form action={backfillDocumentFolders}>
                 <Button type="submit" variant="secondary">
                   Find documents for existing leases
+                </Button>
+              </form>
+            </div>
+
+            <div className="space-y-2 border-t border-neutral-100 pt-4">
+              <p className="text-sm text-neutral-700">
+                Not sure the app is pointed at the right Dropbox folder? Paste
+                any shared link below (e.g. the leasing folder everyone
+                works out of) to see exactly what path it resolves to under
+                this connected account — compare it against the Base folder
+                path below.
+              </p>
+              <form action={resolveSharedLink} className="flex max-w-lg flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  name="sharedLinkUrl"
+                  placeholder="https://www.dropbox.com/scl/fo/..."
+                  required
+                  className="min-w-0 flex-1 rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+                />
+                <Button type="submit" variant="secondary">
+                  Check this link
                 </Button>
               </form>
             </div>

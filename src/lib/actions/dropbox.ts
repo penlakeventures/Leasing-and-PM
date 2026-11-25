@@ -102,3 +102,33 @@ export async function backfillDocumentFolders() {
   }
   redirect(`/settings/dropbox?message=${encodeURIComponent(message)}`);
 }
+
+// A one-off diagnostic: given any Dropbox shared link pasted in, resolves
+// it to the real internal path behind it using the app's own connected
+// account — the same lookup the backfill above runs in bulk, exposed here
+// for checking a single link by hand. Useful for confirming the app is
+// actually pointed at the right Dropbox folder (the one every lease
+// document really lives in, not a different one that happens to look
+// similar) before trusting a bulk run against it.
+export async function resolveSharedLink(formData: FormData) {
+  const url = (formData.get("sharedLinkUrl") as string)?.trim();
+  if (!url) redirect("/settings/dropbox");
+
+  // redirect() works by throwing internally — both outcomes below have to
+  // land outside this try block, or the success path's own redirect would
+  // get caught by the catch meant for a real Dropbox failure.
+  let message: string;
+  try {
+    const resolved = await resolveSharedLinkPaths([url]);
+    const r = resolved.get(url);
+    message = !r
+      ? "Got no result back for that link."
+      : r.ok
+        ? `Resolves to: ${r.path} (${r.isFolder ? "a folder" : "a single file"})`
+        : `Couldn't resolve that link: ${r.error}`;
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    redirect(`/settings/dropbox?error=${encodeURIComponent(`Couldn't reach Dropbox: ${detail}`)}`);
+  }
+  redirect(`/settings/dropbox?message=${encodeURIComponent(message)}`);
+}
