@@ -10,17 +10,13 @@ export default async function NewLeasePage({
     error?: string;
     unitId?: string;
     renewFromLeaseId?: string;
-    tenantId?: string;
   }>;
 }) {
-  const { error, unitId, renewFromLeaseId, tenantId } = await searchParams;
-  const [units, tenants] = await Promise.all([
-    prisma.unit.findMany({
-      orderBy: { projectEntity: { displayOrder: "asc" } },
-      include: { projectEntity: true },
-    }),
-    prisma.tenant.findMany({ orderBy: { name: "asc" } }),
-  ]);
+  const { error, unitId, renewFromLeaseId } = await searchParams;
+  const units = await prisma.unit.findMany({
+    orderBy: { projectEntity: { displayOrder: "asc" } },
+    include: { projectEntity: true },
+  });
 
   // Prefilled from the predecessor lease when opened via the Renewals
   // page's "Create renewal" shortcut: same unit and tenant(s), same rent
@@ -32,12 +28,13 @@ export default async function NewLeasePage({
   let defaultValues:
     | Parameters<typeof LeaseForm>[0]["defaultValues"]
     | undefined;
+  let existingTenants: { id: string; name: string }[] | undefined;
   let renewalOf: { leaseId: string; unitLabel: string } | undefined;
 
   if (renewFromLeaseId) {
     const predecessor = await prisma.lease.findUnique({
       where: { id: renewFromLeaseId },
-      include: { tenants: true, unit: { include: { projectEntity: true } } },
+      include: { tenants: { include: { tenant: true } }, unit: { include: { projectEntity: true } } },
     });
     if (predecessor && predecessor.endDate) {
       const termMs = predecessor.endDate.getTime() - predecessor.startDate.getTime();
@@ -45,7 +42,6 @@ export default async function NewLeasePage({
       const newEnd = new Date(newStart.getTime() + termMs);
       defaultValues = {
         unitId: predecessor.unitId,
-        tenantIds: predecessor.tenants.map((t) => t.tenantId),
         startDate: newStart,
         endDate: newEnd,
         periodic: false,
@@ -59,6 +55,7 @@ export default async function NewLeasePage({
         documentLink: null,
         notes: null,
       };
+      existingTenants = predecessor.tenants.map((lt) => ({ id: lt.tenant.id, name: lt.tenant.name }));
       renewalOf = {
         leaseId: predecessor.id,
         unitLabel: `${predecessor.unit.projectEntity.internalName} — Unit ${predecessor.unit.unitNumber}`,
@@ -72,10 +69,9 @@ export default async function NewLeasePage({
       <LeaseForm
         action={createLease}
         units={units}
-        tenants={tenants}
+        existingTenants={existingTenants}
         defaultValues={defaultValues}
         defaultUnitId={unitId}
-        defaultTenantIds={tenantId ? [tenantId] : undefined}
         renewalOf={renewalOf}
         error={error}
       />

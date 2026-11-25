@@ -19,7 +19,7 @@ export default async function LeaseDetailPage({
   const { id } = await params;
   const { error } = await searchParams;
 
-  const [lease, units, tenants] = await Promise.all([
+  const [lease, units] = await Promise.all([
     prisma.lease.findUnique({
       where: { id },
       include: {
@@ -32,7 +32,6 @@ export default async function LeaseDetailPage({
       orderBy: { projectEntity: { displayOrder: "asc" } },
       include: { projectEntity: true },
     }),
-    prisma.tenant.findMany({ orderBy: { name: "asc" } }),
   ]);
   if (!lease) notFound();
 
@@ -77,11 +76,8 @@ export default async function LeaseDetailPage({
       <LeaseForm
         action={updateWithId}
         units={units}
-        tenants={tenants}
-        defaultValues={{
-          ...lease,
-          tenantIds: lease.tenants.map((t) => t.tenantId),
-        }}
+        existingTenants={leaseTenants.map((t) => ({ id: t.id, name: t.name }))}
+        defaultValues={lease}
       />
 
       <LeaseSigningPanel

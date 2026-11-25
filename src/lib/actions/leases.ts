@@ -31,6 +31,27 @@ function parseLeaseForm(formData: FormData) {
   };
 }
 
+// A brand-new lease's tenant(s), typed in on the form itself rather than
+// picked from the existing roster — there's no separate CRM step
+// beforehand anymore that would already have created a Tenant record. All
+// three fields are repeated once per tenant block in DOM order, so the
+// i-th entry of each array belongs to the same tenant; a block with no
+// name typed in (an unused extra "+ Add another tenant" slot) is dropped.
+function parseNewTenants(
+  formData: FormData,
+): { name: string; phone: string | null; email: string | null }[] {
+  const names = formData.getAll("newTenantName") as string[];
+  const phones = formData.getAll("newTenantPhone") as string[];
+  const emails = formData.getAll("newTenantEmail") as string[];
+  return names
+    .map((name, i) => ({
+      name: name.trim(),
+      phone: phones[i]?.trim() || null,
+      email: emails[i]?.trim() || null,
+    }))
+    .filter((t) => t.name);
+}
+
 async function currentCpiRate(): Promise<number | null> {
   const rate = await prisma.cpiRate.findUnique({
     where: { year: new Date().getFullYear() },
@@ -82,6 +103,23 @@ export async function createLease(formData: FormData) {
     );
   }
 
+  // Brand-new lease, brand-new tenant(s): entered right here on the form
+  // instead of picked from the existing roster, since there's no CRM step
+  // beforehand anymore that would already have created a Tenant record.
+  // A renewal instead carries its tenantIds straight through as hidden
+  // fields (see lease-form.tsx), so tenantIds is already populated and
+  // nothing here runs for that case.
+  let tenantIds = data.tenantIds;
+  if (tenantIds.length === 0) {
+    const newTenants = parseNewTenants(formData);
+    const created = await Promise.all(
+      newTenants.map((t) =>
+        prisma.tenant.create({ data: { name: t.name, phone: t.phone, email: t.email } }),
+      ),
+    );
+    tenantIds = created.map((t) => t.id);
+  }
+
   // A renewal for the same tenant(s) carries the predecessor lease's own
   // Dropbox folder straight across instead of the normal new-tenancy
   // auto-filing below — that logic assumes a new lease means a new
@@ -98,8 +136,8 @@ export async function createLease(formData: FormData) {
     });
     const sameTenants =
       predecessor &&
-      predecessor.tenants.length === data.tenantIds.length &&
-      predecessor.tenants.every((lt) => data.tenantIds.includes(lt.tenantId));
+      predecessor.tenants.length === tenantIds.length &&
+      predecessor.tenants.every((lt) => tenantIds.includes(lt.tenantId));
     if (predecessor && sameTenants && predecessor.documentsFolderPath) {
       carriedOverFolder = {
         documentLink: predecessor.documentLink,
@@ -124,7 +162,7 @@ export async function createLease(formData: FormData) {
       renewedFromLeaseId: data.renewedFromLeaseId,
       notes: data.notes,
       tenants: {
-        create: data.tenantIds.map((tenantId) => ({ tenantId })),
+        create: tenantIds.map((tenantId) => ({ tenantId })),
       },
     },
   });
@@ -146,7 +184,7 @@ export async function createLease(formData: FormData) {
           where: { id: data.unitId },
           include: { projectEntity: true },
         }),
-        prisma.tenant.findMany({ where: { id: { in: data.tenantIds } } }),
+        prisma.tenant.findMany({ where: { id: { in: tenantIds } } }),
       ]);
       if (unit) {
         const { path, link } = await prepareLeaseFolder({
@@ -194,36 +232,34 @@ export async function updateLease(id: string, formData: FormData) {
     redirect(`/leases/${id}?error=${encodeURIComponent(noticeCheck.reason!)}`);
   }
 
-  await prisma.$transaction([
-    prisma.leaseTenant.deleteMany({ where: { leaseId: id } }),
-    prisma.lease.update({
-      where: { id },
-      data: {
-        unitId: data.unitId,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        periodic: data.periodic,
-        rentAmount: data.rentAmount,
-        // Only touch these when this save is actually a rent increase on a
-        // periodic lease — otherwise leave whatever's on file untouched.
-        ...(isIncrease && data.periodic
-          ? {
-              lastRentIncreaseDate: new Date(),
-              rentIncreaseNoticeGivenDate: data.noticeGivenDate,
-            }
-          : {}),
-        firstMonthRentPrepaid: data.firstMonthRentPrepaid,
-        lastMonthRentPrepaid: data.lastMonthRentPrepaid,
-        pets: data.pets,
-        signedDate: data.signedDate,
-        documentLink: data.documentLink,
-        notes: data.notes,
-        tenants: {
-          create: data.tenantIds.map((tenantId) => ({ tenantId })),
-        },
-      },
-    }),
-  ]);
+  // Tenant(s) on an existing lease aren't editable from this form anymore
+  // (see lease-form.tsx) — correcting a tenant's own contact info happens
+  // on their page instead, and who's on the lease essentially never
+  // changes once it's signed; a new tenant means a new lease.
+  await prisma.lease.update({
+    where: { id },
+    data: {
+      unitId: data.unitId,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      periodic: data.periodic,
+      rentAmount: data.rentAmount,
+      // Only touch these when this save is actually a rent increase on a
+      // periodic lease — otherwise leave whatever's on file untouched.
+      ...(isIncrease && data.periodic
+        ? {
+            lastRentIncreaseDate: new Date(),
+            rentIncreaseNoticeGivenDate: data.noticeGivenDate,
+          }
+        : {}),
+      firstMonthRentPrepaid: data.firstMonthRentPrepaid,
+      lastMonthRentPrepaid: data.lastMonthRentPrepaid,
+      pets: data.pets,
+      signedDate: data.signedDate,
+      documentLink: data.documentLink,
+      notes: data.notes,
+    },
+  });
 
   // If this save moved the lease to a different unit, the unit it left
   // behind may no longer have this as its active lease either — resync

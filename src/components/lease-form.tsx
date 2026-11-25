@@ -1,21 +1,27 @@
+import Link from "next/link";
 import { Card, Field, Input, Select, Textarea, Button, LinkButton } from "@/components/ui";
+import { NewTenantFields } from "@/components/new-tenant-fields";
 
 export function LeaseForm({
   action,
   units,
-  tenants,
+  existingTenants,
   defaultValues,
   defaultUnitId,
-  defaultTenantIds,
   renewalOf,
   error,
 }: {
   action: (formData: FormData) => void;
   units: { id: string; unitNumber: string; projectEntity: { internalName: string } }[];
-  tenants: { id: string; name: string }[];
+  // The lease's already-fixed tenant(s) — an existing lease being edited,
+  // or a renewal carrying the same tenant(s) forward. Shown read-only,
+  // never re-entered here. Omitted entirely for a genuinely new lease,
+  // which instead gets NewTenantFields below to enter a brand-new
+  // tenant's info directly (there's no separate CRM step anymore that
+  // would already have created a Tenant record to pick from).
+  existingTenants?: { id: string; name: string }[];
   defaultValues?: {
     unitId: string;
-    tenantIds: string[];
     startDate: Date;
     endDate: Date | null;
     periodic: boolean;
@@ -30,10 +36,6 @@ export function LeaseForm({
     notes: string | null;
   };
   defaultUnitId?: string;
-  // Same lightweight prefill as defaultUnitId — used when arriving fresh
-  // from "Create lease from this lead" (a brand-new tenant, not a full
-  // renewal's worth of defaults) rather than carried via defaultValues.
-  defaultTenantIds?: string[];
   // Present only when this form was opened via the Renewals page's
   // "Create renewal" shortcut — carried through as a hidden field so
   // createLease() can tell this is the same tenant continuing, not a new
@@ -210,22 +212,35 @@ export function LeaseForm({
           Periodic (month-to-month, no fixed end date)
         </label>
 
-        <Field label="Tenants" htmlFor="tenantIds" hint="Select one or more — couples/roommates supported">
-          <select
-            id="tenantIds"
-            name="tenantIds"
-            multiple
-            size={Math.min(6, Math.max(3, tenants.length))}
-            defaultValue={defaultValues?.tenantIds ?? defaultTenantIds}
-            className="block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-500 focus:outline-none"
-          >
-            {tenants.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
+        {existingTenants ? (
+          <Field label="Tenant(s)" htmlFor="_existing-tenants">
+            <div
+              id="_existing-tenants"
+              className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700"
+            >
+              {existingTenants.length > 0
+                ? existingTenants.map((t, i) => (
+                    <span key={t.id}>
+                      {i > 0 && ", "}
+                      <Link href={`/tenants/${t.id}`} className="underline">
+                        {t.name}
+                      </Link>
+                    </span>
+                  ))
+                : "—"}
+            </div>
+            {existingTenants.map((t) => (
+              <input key={t.id} type="hidden" name="tenantIds" value={t.id} />
             ))}
-          </select>
-        </Field>
+          </Field>
+        ) : (
+          <div>
+            <p className="mb-1 block text-sm font-medium text-neutral-700">
+              Tenant(s)
+            </p>
+            <NewTenantFields />
+          </div>
+        )}
 
         <div className="flex gap-2 pt-2">
           <Button type="submit">Save</Button>
