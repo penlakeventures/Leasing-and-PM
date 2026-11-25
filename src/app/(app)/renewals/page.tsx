@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { LinkButton, EmptyState } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { LeasesGrid, type LeaseRow } from "@/components/leases-grid";
 import { unitTypeFromAddress } from "@/lib/unit-type";
 import Link from "next/link";
@@ -52,14 +52,13 @@ export default async function RenewalsPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <Link
           href={showAll ? "/renewals" : "/renewals?all=1"}
           className="text-sm text-neutral-600 underline"
         >
           {showAll ? "Show active only" : "Show all leases (including ended)"}
         </Link>
-        <LinkButton href="/leases/new">+ New lease</LinkButton>
       </div>
       {rows.length > 0 ? (
         <LeasesGrid rows={rows} />

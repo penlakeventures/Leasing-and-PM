@@ -241,6 +241,7 @@ export function LeasesGrid({ rows }: { rows: LeaseRow[] }) {
             <th className="whitespace-nowrap px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-neutral-500">
               Notes
             </th>
+            <th className="whitespace-nowrap px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-neutral-500" />
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
@@ -271,6 +272,18 @@ export function LeasesGrid({ rows }: { rows: LeaseRow[] }) {
               </td>
               <td className="px-2 py-1 text-neutral-700">
                 <NotesCell leaseId={row.id} initialNotes={row.notes} />
+              </td>
+              <td className="whitespace-nowrap px-4 py-2 text-neutral-700">
+                {/* A periodic lease has no fixed end date to renew from —
+                    renewing is only meaningful for a fixed-term one. */}
+                {!row.periodic && (
+                  <Link
+                    href={`/leases/new?renewFromLeaseId=${row.id}`}
+                    className="text-sm underline"
+                  >
+                    Create renewal
+                  </Link>
+                )}
               </td>
             </tr>
             );
