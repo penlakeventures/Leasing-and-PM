@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getActiveConnection, resolveSharedLinkPaths } from "@/lib/dropbox";
+import { getActiveConnection, resolveSharedLinkPaths, type ResolvedSharedLink } from "@/lib/dropbox";
 
 export async function disconnectDropbox() {
   await prisma.dropboxConnection.deleteMany({});
@@ -35,18 +35,28 @@ export async function updateDropboxBasePath(formData: FormData) {
 // to run more than once — only ever touches leases where
 // documentsFolderPath is still null.
 export async function backfillDocumentFolders() {
-  const leases = await prisma.lease.findMany({
-    where: { documentLink: { not: null }, documentsFolderPath: null },
-    select: { id: true, documentLink: true },
-  });
+  // Reported alongside the backfill result below — context for "only N
+  // needed backfilling" that isn't obvious from that number alone: most
+  // leases may simply never have had a Document link saved at all, which
+  // this action can't do anything about (there's no link to resolve).
+  const [totalLeases, withLink, leases] = await Promise.all([
+    prisma.lease.count(),
+    prisma.lease.count({ where: { documentLink: { not: null } } }),
+    prisma.lease.findMany({
+      where: { documentLink: { not: null }, documentsFolderPath: null },
+      select: { id: true, documentLink: true },
+    }),
+  ]);
 
   if (leases.length === 0) {
-    redirect(
-      `/settings/dropbox?message=${encodeURIComponent("Nothing to backfill — every lease with a Document link already has a folder on file.")}`,
-    );
+    const message =
+      withLink === 0
+        ? `None of the ${totalLeases} lease(s) on file have a Document link saved — there's nothing for this to resolve. A Document link has to be added to a lease (its own page, or pasted in by hand) before its documents can show up here.`
+        : `Nothing to backfill — every lease with a Document link (${withLink} of ${totalLeases}) already has a folder on file.`;
+    redirect(`/settings/dropbox?message=${encodeURIComponent(message)}`);
   }
 
-  let resolved: Map<string, { path: string; isFolder: boolean } | null>;
+  let resolved: Map<string, ResolvedSharedLink>;
   try {
     resolved = await resolveSharedLinkPaths(leases.map((l) => l.documentLink as string));
   } catch (e) {
@@ -63,11 +73,13 @@ export async function backfillDocumentFolders() {
 
   let updated = 0;
   let notFolder = 0;
-  let failed = 0;
+  const failures: string[] = [];
   for (const lease of leases) {
     const r = resolved.get(lease.documentLink as string);
     if (!r) {
-      failed++;
+      failures.push("no result returned");
+    } else if (!r.ok) {
+      failures.push(r.error);
     } else if (!r.isFolder) {
       // A link to a single file rather than a folder — nothing to list,
       // so leave it as a plain Document link instead of pointing
@@ -84,6 +96,9 @@ export async function backfillDocumentFolders() {
 
   revalidatePath("/settings/dropbox");
   revalidatePath("/leases");
-  const message = `Checked ${leases.length} lease(s) with a Document link but no folder on file: ${updated} now show their documents in the app${notFolder ? `, ${notFolder} link to a single file rather than a folder (left as-is)` : ""}${failed ? `, ${failed} couldn't be resolved` : ""}.`;
+  let message = `Checked ${leases.length} lease(s) with a Document link but no folder on file (out of ${withLink} with a link, ${totalLeases} total): ${updated} now show their documents in the app${notFolder ? `, ${notFolder} link to a single file rather than a folder (left as-is)` : ""}${failures.length ? `, ${failures.length} couldn't be resolved` : ""}.`;
+  if (failures.length > 0) {
+    message += ` First reason: ${failures[0]}`;
+  }
   redirect(`/settings/dropbox?message=${encodeURIComponent(message)}`);
 }

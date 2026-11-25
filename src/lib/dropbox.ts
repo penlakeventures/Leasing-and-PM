@@ -267,7 +267,9 @@ export async function prepareLeaseFolder({
   return { path: newFolderPath, link };
 }
 
-export type ResolvedSharedLink = { path: string; isFolder: boolean };
+export type ResolvedSharedLink =
+  | { ok: true; path: string; isFolder: boolean }
+  | { ok: false; error: string };
 
 // The reverse of getOrCreateSharedLink() above: given a shared link
 // someone already has (e.g. a lease's documentLink, however it got
@@ -280,12 +282,15 @@ export type ResolvedSharedLink = { path: string; isFolder: boolean };
 // in-app Documents list can work for them too, not just leases created
 // after the folder-path field existed. One access token is fetched and
 // reused for the whole batch rather than per link, since this is meant
-// to run over every lease that needs it in one pass.
+// to run over every lease that needs it in one pass. Keeps Dropbox's own
+// error text on a failed lookup (rather than collapsing it to a bare
+// null) — the backfill action surfaces it directly, since there's no one
+// positioned to go digging through server logs for it.
 export async function resolveSharedLinkPaths(
   urls: string[],
-): Promise<Map<string, ResolvedSharedLink | null>> {
+): Promise<Map<string, ResolvedSharedLink>> {
   const accessToken = await getFreshAccessToken();
-  const results = new Map<string, ResolvedSharedLink | null>();
+  const results = new Map<string, ResolvedSharedLink>();
   for (const url of urls) {
     if (results.has(url)) continue; // duplicate links on file resolve once
     const result = await dropboxApiCall<{ ".tag": string; path_lower?: string }>(
@@ -293,12 +298,13 @@ export async function resolveSharedLinkPaths(
       accessToken,
       { url },
     );
-    results.set(
-      url,
-      result.ok && result.data.path_lower
-        ? { path: result.data.path_lower, isFolder: result.data[".tag"] === "folder" }
-        : null,
-    );
+    if (result.ok && result.data.path_lower) {
+      results.set(url, { ok: true, path: result.data.path_lower, isFolder: result.data[".tag"] === "folder" });
+    } else if (result.ok) {
+      results.set(url, { ok: false, error: "Dropbox didn't return a path for this link." });
+    } else {
+      results.set(url, { ok: false, error: `${result.status}: ${result.error}` });
+    }
   }
   return results;
 }
