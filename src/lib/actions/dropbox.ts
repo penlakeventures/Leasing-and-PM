@@ -139,6 +139,7 @@ export async function backfillActiveLeaseFoldersFromStructure() {
           projectEntity: { select: { displayOrder: true, internalName: true } },
         },
       },
+      tenants: { select: { tenant: { select: { name: true } } } },
     },
   });
 
@@ -156,6 +157,7 @@ export async function backfillActiveLeaseFoldersFromStructure() {
         projectDisplayOrder: l.unit.projectEntity.displayOrder,
         projectName: l.unit.projectEntity.internalName,
         unitNumber: l.unit.unitNumber,
+        tenantNames: l.tenants.map((lt) => lt.tenant.name),
       })),
     );
   } catch (e) {

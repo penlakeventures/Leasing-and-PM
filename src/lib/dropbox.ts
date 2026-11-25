@@ -304,7 +304,16 @@ export type UnitFolderMatch =
 // each project's folder listing is fetched once and reused across every
 // unit in it, rather than once per lease.
 export async function findUnitFolders(
-  requests: { key: string; projectDisplayOrder: number; projectName: string; unitNumber: string }[],
+  requests: {
+    key: string;
+    projectDisplayOrder: number;
+    projectName: string;
+    unitNumber: string;
+    // The active lease's tenant name(s), if known — used only to break a
+    // tie when more than one folder matches the unit number alone (see
+    // below), never to find a match on their own.
+    tenantNames?: string[];
+  }[],
 ): Promise<Map<string, UnitFolderMatch>> {
   const connection = await getActiveConnection();
   if (!connection?.basePath) {
@@ -325,7 +334,22 @@ export async function findUnitFolders(
       projectFolders.set(projectPath, folders);
     }
 
-    const matches = folders.filter((f) => matchesUnitFolder(f.name, r.unitNumber));
+    let matches = folders.filter((f) => matchesUnitFolder(f.name, r.unitNumber));
+    if (matches.length > 1 && r.tenantNames?.length) {
+      // The known real-world cause of more than one folder matching one
+      // unit number: an outgoing tenant's folder sitting un-archived in
+      // the project's live area alongside the current tenant's new one —
+      // prepareLeaseFolder() normally moves it into "Past tenants" on the
+      // next lease, but a folder created or renamed by hand before that
+      // can still be sitting there. Narrowing to whichever of the matches
+      // also names the *current* tenant resolves that specific case
+      // safely; if that still doesn't land on exactly one, this falls
+      // through to reporting the ambiguity rather than guessing further.
+      const byTenant = matches.filter((f) =>
+        r.tenantNames!.some((name) => matchesUnitFolder(f.name, name)),
+      );
+      if (byTenant.length === 1) matches = byTenant;
+    }
     if (matches.length === 0) {
       results.set(r.key, { ok: false, reason: `No folder in "${r.projectDisplayOrder}. ${r.projectName}" matched unit "${r.unitNumber}".` });
     } else if (matches.length > 1) {
