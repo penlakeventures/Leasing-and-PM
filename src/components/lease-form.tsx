@@ -120,16 +120,18 @@ export function LeaseForm({
               defaultValue={fmt(defaultValues?.endDate ?? null)}
             />
           </Field>
-          <div className="sm:col-span-2">
-            <Field label="Signed date" htmlFor="signedDate">
-              <Input
-                id="signedDate"
-                name="signedDate"
-                type="date"
-                defaultValue={fmt(defaultValues?.signedDate ?? null)}
-              />
-            </Field>
-          </div>
+          <Field label="Signed date" htmlFor="signedDate">
+            <Input
+              id="signedDate"
+              name="signedDate"
+              type="date"
+              defaultValue={fmt(defaultValues?.signedDate ?? null)}
+            />
+          </Field>
+          {/* Empty on purpose — keeps First month's rent collected from
+              sliding up next to Signed date, so it still starts its own
+              row below. */}
+          <div aria-hidden="true" className="hidden sm:block" />
           <Field
             label="First month's rent collected"
             htmlFor="firstMonthRentPrepaid"
