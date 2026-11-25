@@ -1,13 +1,17 @@
 import { Card, Button, LinkButton, Field, Input } from "@/components/ui";
 import { getActiveConnection } from "@/lib/dropbox";
-import { disconnectDropbox, updateDropboxBasePath } from "@/lib/actions/dropbox";
+import {
+  disconnectDropbox,
+  updateDropboxBasePath,
+  backfillDocumentFolders,
+} from "@/lib/actions/dropbox";
 
 export default async function DropboxSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; message?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, message } = await searchParams;
   const connection = await getActiveConnection();
 
   return (
@@ -16,6 +20,11 @@ export default async function DropboxSettingsPage({
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
+          </p>
+        )}
+        {message && (
+          <p className="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+            {message}
           </p>
         )}
         {connection ? (
@@ -40,6 +49,21 @@ export default async function DropboxSettingsPage({
                   </Button>
                 </form>
               </div>
+            </div>
+
+            <div className="space-y-2 border-t border-neutral-100 pt-4">
+              <p className="text-sm text-neutral-700">
+                A lease created before the in-app Documents list existed (or
+                with a Document link pasted in by hand) only shows &quot;No
+                Dropbox folder linked yet&quot; there until it&apos;s resolved once.
+                This checks every lease with a Document link but no folder on
+                file yet and fills that in — safe to run more than once.
+              </p>
+              <form action={backfillDocumentFolders}>
+                <Button type="submit" variant="secondary">
+                  Find documents for existing leases
+                </Button>
+              </form>
             </div>
 
             <form action={updateDropboxBasePath} className="max-w-lg space-y-4">

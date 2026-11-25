@@ -267,6 +267,42 @@ export async function prepareLeaseFolder({
   return { path: newFolderPath, link };
 }
 
+export type ResolvedSharedLink = { path: string; isFolder: boolean };
+
+// The reverse of getOrCreateSharedLink() above: given a shared link
+// someone already has (e.g. a lease's documentLink, however it got
+// there — pasted in by hand, or from before this app ever auto-created a
+// folder), resolves it back to the real internal Dropbox path behind it.
+// That path is what every other Dropbox call in this file needs
+// (files/list_folder, files/download, files/upload all take a path, not
+// a shared link) — used to backfill documentsFolderPath on leases that
+// already have a Document link but no folder path on file yet, so the
+// in-app Documents list can work for them too, not just leases created
+// after the folder-path field existed. One access token is fetched and
+// reused for the whole batch rather than per link, since this is meant
+// to run over every lease that needs it in one pass.
+export async function resolveSharedLinkPaths(
+  urls: string[],
+): Promise<Map<string, ResolvedSharedLink | null>> {
+  const accessToken = await getFreshAccessToken();
+  const results = new Map<string, ResolvedSharedLink | null>();
+  for (const url of urls) {
+    if (results.has(url)) continue; // duplicate links on file resolve once
+    const result = await dropboxApiCall<{ ".tag": string; path_lower?: string }>(
+      "sharing/get_shared_link_metadata",
+      accessToken,
+      { url },
+    );
+    results.set(
+      url,
+      result.ok && result.data.path_lower
+        ? { path: result.data.path_lower, isFolder: result.data[".tag"] === "folder" }
+        : null,
+    );
+  }
+  return results;
+}
+
 export type DropboxFileEntry = {
   name: string;
   path: string;
