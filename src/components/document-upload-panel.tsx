@@ -1,10 +1,13 @@
 import { Card, Button } from "@/components/ui";
+import { LeaseDocumentsFull } from "@/components/lease-documents";
 
 export function DocumentUploadPanel({
+  leaseId,
   documentLink,
   canUpload,
   uploadAction,
 }: {
+  leaseId: string;
   documentLink: string | null;
   canUpload: boolean;
   uploadAction: (formData: FormData) => Promise<void>;
@@ -12,15 +15,20 @@ export function DocumentUploadPanel({
   return (
     <Card>
       <h2 className="mb-3 text-sm font-semibold text-neutral-900">Documents</h2>
-      {documentLink ? (
-        <p className="mb-3 text-sm">
-          <a href={documentLink} target="_blank" rel="noopener noreferrer" className="underline">
-            Open this lease&apos;s Dropbox folder →
-          </a>
-        </p>
+      {canUpload ? (
+        <div className="mb-3">
+          <LeaseDocumentsFull leaseId={leaseId} hasFolder={canUpload} />
+        </div>
       ) : (
         <p className="mb-3 text-sm text-neutral-500">
           No Dropbox folder linked yet — add a document link above once one exists.
+        </p>
+      )}
+      {documentLink && (
+        <p className="mb-3 text-xs">
+          <a href={documentLink} target="_blank" rel="noopener noreferrer" className="text-neutral-500 underline">
+            Open this lease&apos;s Dropbox folder in Dropbox →
+          </a>
         </p>
       )}
       {canUpload ? (

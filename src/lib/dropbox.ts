@@ -267,6 +267,63 @@ export async function prepareLeaseFolder({
   return { path: newFolderPath, link };
 }
 
+export type DropboxFileEntry = {
+  name: string;
+  path: string;
+  size: number;
+  serverModified: string;
+};
+
+// Lists the files (not subfolders) directly inside path — e.g. a lease's
+// documentsFolderPath — so the app can show and serve them itself instead
+// of only linking out to the shared folder.
+export async function listFiles(path: string): Promise<DropboxFileEntry[]> {
+  const accessToken = await getFreshAccessToken();
+  const result = await dropboxApiCall<{
+    entries: {
+      ".tag": string;
+      name: string;
+      path_display?: string;
+      size?: number;
+      server_modified?: string;
+    }[];
+  }>("files/list_folder", accessToken, { path });
+  if (!result.ok) {
+    // The folder not existing (yet, or anymore) isn't a real error here —
+    // just nothing to show.
+    if (result.error.includes("path/not_found")) return [];
+    throw new Error(`Failed to list Dropbox folder ${path}: ${result.status} ${result.error}`);
+  }
+  return result.data.entries
+    .filter((e) => e[".tag"] === "file")
+    .map((e) => ({
+      name: e.name,
+      path: e.path_display ?? `${path}/${e.name}`,
+      size: e.size ?? 0,
+      serverModified: e.server_modified ?? "",
+    }));
+}
+
+// Downloads one file's raw bytes straight from Dropbox, server-side — the
+// read counterpart to uploadFile() below, used to let staff view or
+// download a lease's actual documents from inside the app instead of
+// opening Dropbox itself.
+export async function downloadFile(path: string): Promise<ArrayBuffer> {
+  const accessToken = await getFreshAccessToken();
+  const res = await fetch("https://content.dropboxapi.com/2/files/download", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Dropbox-API-Arg": JSON.stringify({ path }),
+    },
+  });
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Failed to download ${path} from Dropbox: ${res.status} ${error}`);
+  }
+  return res.arrayBuffer();
+}
+
 // Uploads a file straight into an already-created lease folder (e.g. a
 // SingleKey report once an applicant's approved and has a tenant file) —
 // the one place this app writes file *content* to Dropbox rather than

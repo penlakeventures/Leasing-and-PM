@@ -92,6 +92,7 @@ export default async function LeaseDetailPage({
       />
 
       <DocumentUploadPanel
+        leaseId={lease.id}
         documentLink={lease.documentLink}
         canUpload={Boolean(lease.documentsFolderPath)}
         uploadAction={uploadWithId}

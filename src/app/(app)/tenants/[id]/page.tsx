@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeader, Table, Th, Td } from "@/components/ui";
 import { TenantForm } from "@/components/tenant-form";
 import { updateTenant } from "@/lib/actions/tenants";
+import { LeaseDocumentsCompact } from "@/components/lease-documents";
 import Link from "next/link";
 
 export default async function TenantDetailPage({
@@ -38,6 +39,7 @@ export default async function TenantDetailPage({
               <Th>Unit</Th>
               <Th>Start</Th>
               <Th>Rent</Th>
+              <Th>Documents</Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
@@ -51,6 +53,9 @@ export default async function TenantDetailPage({
                 </Td>
                 <Td>{lease.startDate.toLocaleDateString()}</Td>
                 <Td>${lease.rentAmount.toString()}</Td>
+                <Td>
+                  <LeaseDocumentsCompact leaseId={lease.id} hasFolder={Boolean(lease.documentsFolderPath)} />
+                </Td>
               </tr>
             ))}
           </tbody>
