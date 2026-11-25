@@ -3,7 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getActiveConnection, resolveSharedLinkPaths, type ResolvedSharedLink } from "@/lib/dropbox";
+import {
+  getActiveConnection,
+  resolveSharedLinkPaths,
+  findUnitFolders,
+  type ResolvedSharedLink,
+  type UnitFolderMatch,
+} from "@/lib/dropbox";
 
 export async function disconnectDropbox() {
   await prisma.dropboxConnection.deleteMany({});
@@ -97,6 +103,86 @@ export async function backfillDocumentFolders() {
   revalidatePath("/settings/dropbox");
   revalidatePath("/leases");
   let message = `Checked ${leases.length} lease(s) with a Document link but no folder on file (out of ${withLink} with a link, ${totalLeases} total): ${updated} now show their documents in the app${notFolder ? `, ${notFolder} link to a single file rather than a folder (left as-is)` : ""}${failures.length ? `, ${failures.length} couldn't be resolved` : ""}.`;
+  if (failures.length > 0) {
+    message += ` First reason: ${failures[0]}`;
+  }
+  redirect(`/settings/dropbox?message=${encodeURIComponent(message)}`);
+}
+
+// A second pass for leases that never had a Document link saved at all
+// (most of the real leases on file predate this app entirely, so there
+// was never a link in documentLink for backfillDocumentFolders above to
+// resolve from) — matches each currently-active lease straight to its
+// unit's real Dropbox folder, using the same folder-name matching rule
+// prepareLeaseFolder() already trusts when archiving a previous tenant's
+// folder. Deliberately scoped to active leases (started, and periodic or
+// not yet ended) rather than every lease ever — an ended lease's
+// documents, if still on file at all, usually moved into that project's
+// "Past tenants" folder under the outgoing tenant's own name, which needs
+// matching by tenant name as well as unit number to avoid guessing wrong
+// when a unit has had several past tenancies; that's a separate, later
+// pass if it's wanted. Safe to run more than once.
+export async function backfillActiveLeaseFoldersFromStructure() {
+  const now = new Date();
+  const leases = await prisma.lease.findMany({
+    where: {
+      documentsFolderPath: null,
+      startDate: { lte: now },
+      OR: [{ periodic: true }, { endDate: null }, { endDate: { gte: now } }],
+    },
+    select: {
+      id: true,
+      unit: {
+        select: {
+          unitNumber: true,
+          projectEntity: { select: { displayOrder: true, internalName: true } },
+        },
+      },
+    },
+  });
+
+  if (leases.length === 0) {
+    redirect(
+      `/settings/dropbox?message=${encodeURIComponent("Nothing to backfill — every currently-active lease already has a folder on file.")}`,
+    );
+  }
+
+  let resolved: Map<string, UnitFolderMatch>;
+  try {
+    resolved = await findUnitFolders(
+      leases.map((l) => ({
+        key: l.id,
+        projectDisplayOrder: l.unit.projectEntity.displayOrder,
+        projectName: l.unit.projectEntity.internalName,
+        unitNumber: l.unit.unitNumber,
+      })),
+    );
+  } catch (e) {
+    console.error("[backfillActiveLeaseFoldersFromStructure] findUnitFolders failed:", e);
+    const detail = e instanceof Error ? e.message : String(e);
+    redirect(`/settings/dropbox?error=${encodeURIComponent(`Couldn't reach Dropbox: ${detail}`)}`);
+  }
+
+  let updated = 0;
+  const failures: string[] = [];
+  for (const lease of leases) {
+    const r = resolved.get(lease.id);
+    if (!r) {
+      failures.push("no result returned");
+    } else if (!r.ok) {
+      failures.push(r.reason);
+    } else {
+      await prisma.lease.update({
+        where: { id: lease.id },
+        data: { documentsFolderPath: r.path, documentLink: r.link },
+      });
+      updated++;
+    }
+  }
+
+  revalidatePath("/settings/dropbox");
+  revalidatePath("/leases");
+  let message = `Checked ${leases.length} active lease(s) with no folder on file: ${updated} matched to a Dropbox folder by unit number and now show their documents in the app${failures.length ? `, ${failures.length} couldn't be matched` : ""}.`;
   if (failures.length > 0) {
     message += ` First reason: ${failures[0]}`;
   }

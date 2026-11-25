@@ -4,6 +4,7 @@ import {
   disconnectDropbox,
   updateDropboxBasePath,
   backfillDocumentFolders,
+  backfillActiveLeaseFoldersFromStructure,
   resolveSharedLink,
 } from "@/lib/actions/dropbox";
 
@@ -63,6 +64,23 @@ export default async function DropboxSettingsPage({
               <form action={backfillDocumentFolders}>
                 <Button type="submit" variant="secondary">
                   Find documents for existing leases
+                </Button>
+              </form>
+            </div>
+
+            <div className="space-y-2 border-t border-neutral-100 pt-4">
+              <p className="text-sm text-neutral-700">
+                A lease that never had a Document link saved at all (most real
+                leases predate this app) has nothing for the button above to
+                resolve from. This instead matches every currently-active
+                lease straight to its unit&apos;s real Dropbox folder, by unit
+                number, the same way a brand-new lease&apos;s folder is found —
+                also safe to run more than once. Leases that have already
+                ended aren&apos;t covered by this yet.
+              </p>
+              <form action={backfillActiveLeaseFoldersFromStructure}>
+                <Button type="submit" variant="secondary">
+                  Match active leases to their Dropbox folders
                 </Button>
               </form>
             </div>

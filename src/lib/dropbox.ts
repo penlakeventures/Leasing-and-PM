@@ -267,6 +267,62 @@ export async function prepareLeaseFolder({
   return { path: newFolderPath, link };
 }
 
+export type UnitFolderMatch =
+  | { ok: true; path: string; link: string }
+  | { ok: false; reason: string };
+
+// Finds each unit's current Dropbox folder directly from the real folder
+// structure — the same matching rule prepareLeaseFolder() already uses to
+// find the previous tenant's folder when archiving it — instead of
+// resolving a saved Document link, for a lease that never had one saved
+// to begin with (most of the leases on file predate this app entirely,
+// so there's nothing in documentLink to resolve from). Only looks in each
+// project's live area (not Past tenants), since this is meant for a
+// currently-active lease's current folder, where exactly one match is
+// expected; zero or more than one match is reported rather than guessed
+// at. One access token is fetched and reused for the whole batch, and
+// each project's folder listing is fetched once and reused across every
+// unit in it, rather than once per lease.
+export async function findUnitFolders(
+  requests: { key: string; projectDisplayOrder: number; projectName: string; unitNumber: string }[],
+): Promise<Map<string, UnitFolderMatch>> {
+  const connection = await getActiveConnection();
+  if (!connection?.basePath) {
+    throw new Error("Dropbox base folder path isn't set in Settings yet.");
+  }
+  const accessToken = await getFreshAccessToken();
+  const base = connection.basePath.replace(/\/$/, "");
+  const results = new Map<string, UnitFolderMatch>();
+  const projectFolders = new Map<string, { name: string }[]>();
+
+  for (const r of requests) {
+    const projectPath = `${base}/${r.projectDisplayOrder}. ${r.projectName}`;
+    let folders = projectFolders.get(projectPath);
+    if (!folders) {
+      folders = (await listSubfolders(accessToken, projectPath)).filter(
+        (f) => f.name.toLowerCase() !== "past tenants",
+      );
+      projectFolders.set(projectPath, folders);
+    }
+
+    const matches = folders.filter((f) => matchesUnitFolder(f.name, r.unitNumber));
+    if (matches.length === 0) {
+      results.set(r.key, { ok: false, reason: `No folder in "${r.projectDisplayOrder}. ${r.projectName}" matched unit "${r.unitNumber}".` });
+    } else if (matches.length > 1) {
+      results.set(r.key, {
+        ok: false,
+        reason: `${matches.length} folders in "${r.projectDisplayOrder}. ${r.projectName}" matched unit "${r.unitNumber}" — ambiguous.`,
+      });
+    } else {
+      const path = `${projectPath}/${matches[0].name}`;
+      const link = await getOrCreateSharedLink(accessToken, path);
+      results.set(r.key, { ok: true, path, link });
+    }
+  }
+
+  return results;
+}
+
 export type ResolvedSharedLink =
   | { ok: true; path: string; isFolder: boolean }
   | { ok: false; error: string };
