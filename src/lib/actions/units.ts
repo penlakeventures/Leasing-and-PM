@@ -11,11 +11,8 @@ import { checkRentEscalation } from "@/lib/rules";
 // day; the Dropbox Sign Suite/Townhome template choice that
 // utilitiesIncludedInRent used to drive is now derived from the unit's
 // own address instead, see sendLeaseForSignature in actions/leases.ts).
-// Deliberately not parsed here any more, so neither create nor update
-// below touches them — an update leaves whatever's already on file
-// untouched, and a brand-new unit just gets the schema's own defaults
-// (tenancyType/utilitiesIncludedInRent) or a sensible one computed here
-// (baseRent, which has no column default).
+// Deliberately not parsed here any more, so updateUnit below leaves
+// whatever's already on file for them untouched.
 function parseUnitForm(formData: FormData) {
   return {
     projectEntityId: formData.get("projectEntityId") as string,
@@ -36,22 +33,6 @@ async function currentCpiRate(): Promise<number | null> {
   return rate ? Number(rate.ratePercent) : null;
 }
 
-export async function createUnit(formData: FormData) {
-  const data = parseUnitForm(formData);
-
-  // baseRent has no column default (unlike tenancyType/
-  // utilitiesIncludedInRent, which fall back to the schema's own
-  // defaults by being left out of `data` entirely) — defaulting it to
-  // the rent actually being set now is the closest sensible value with
-  // no form field left to type one in directly.
-  const unit = await prisma.unit.create({
-    data: { ...data, baseRent: data.currentRent },
-  });
-
-  revalidatePath(`/projects/${data.projectEntityId}`);
-  redirect(`/units/${unit.id}`);
-}
-
 export async function updateUnit(id: string, formData: FormData) {
   const data = parseUnitForm(formData);
   const existing = await prisma.unit.findUnique({ where: { id } });
@@ -69,7 +50,7 @@ export async function updateUnit(id: string, formData: FormData) {
     const role = (session?.user as { role?: string } | undefined)?.role;
     if (role !== "owner") {
       redirect(
-        `/units/${id}?error=${encodeURIComponent("Only an owner can change current rent directly — submit a rent recommendation instead.")}`,
+        `/units/${id}?error=${encodeURIComponent("Only an owner can change current rent directly.")}`,
       );
     }
   }

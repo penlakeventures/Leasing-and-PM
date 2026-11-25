@@ -5,6 +5,11 @@ import { ProjectForm } from "@/components/project-form";
 import { updateProject } from "@/lib/actions/projects";
 import Link from "next/link";
 
+// This app's seven real projects are fully built out and the owner's
+// decision is that the unit mix within each never changes — so there's
+// deliberately no "+ Add unit" entry point here (or anywhere else; see
+// createUnit's removal in lib/actions/units.ts) to add one by accident.
+
 export default async function ProjectDetailPage({
   params,
   searchParams,
@@ -28,17 +33,9 @@ export default async function ProjectDetailPage({
       <ProjectForm action={updateWithId} defaultValues={project} error={error} />
 
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-900">
-            Units ({project.units.length})
-          </h2>
-          <Link
-            href={`/units/new?projectEntityId=${project.id}`}
-            className="text-sm text-neutral-900 underline"
-          >
-            + Add unit
-          </Link>
-        </div>
+        <h2 className="mb-3 text-sm font-semibold text-neutral-900">
+          Units ({project.units.length})
+        </h2>
         <Table>
           <thead>
             <tr>
