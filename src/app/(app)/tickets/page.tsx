@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
+import { Table, Th, Td, LinkButton, Button, Badge, EmptyState } from "@/components/ui";
+import { resolveTicket } from "@/lib/actions/tickets";
 import Link from "next/link";
 
 const statusTone: Record<string, "neutral" | "green" | "amber" | "red" | "blue"> = {
@@ -55,6 +56,7 @@ export default async function TicketsPage({
             <Th>Priority</Th>
             <Th>Status</Th>
             <Th>Vendor</Th>
+            <Th />
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
@@ -75,6 +77,15 @@ export default async function TicketsPage({
                 <Badge tone={statusTone[t.status]}>{t.status.replace("_", " ")}</Badge>
               </Td>
               <Td>{t.vendor?.name ?? "—"}</Td>
+              <Td>
+                {t.status !== "RESOLVED" && (
+                  <form action={resolveTicket.bind(null, t.id)}>
+                    <Button type="submit" variant="secondary">
+                      Mark complete
+                    </Button>
+                  </form>
+                )}
+              </Td>
             </tr>
           ))}
         </tbody>

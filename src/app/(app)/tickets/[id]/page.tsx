@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, Button } from "@/components/ui";
 import { TicketForm } from "@/components/ticket-form";
-import { updateTicket } from "@/lib/actions/tickets";
+import { updateTicket, resolveTicket } from "@/lib/actions/tickets";
 
 export default async function TicketDetailPage({
   params,
@@ -28,7 +28,16 @@ export default async function TicketDetailPage({
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Maintenance ticket" />
+      <PageHeader
+        title="Maintenance ticket"
+        action={
+          ticket.status !== "RESOLVED" && (
+            <form action={resolveTicket.bind(null, id)}>
+              <Button type="submit">Mark complete</Button>
+            </form>
+          )
+        }
+      />
       <TicketForm
         action={updateWithId}
         units={units}
