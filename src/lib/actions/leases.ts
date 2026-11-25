@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { checkRentEscalation, checkRentIncreaseNotice, pickActiveLease } from "@/lib/rules";
 import { prepareLeaseFolder, uploadFile } from "@/lib/dropbox";
 import { sendForSignature } from "@/lib/dropbox-sign";
+import { unitTypeFromAddress } from "@/lib/unit-type";
 
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
@@ -361,7 +362,13 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
   }
 
   const settings = await prisma.signingSettings.findUnique({ where: { id: "singleton" } });
-  const leaseTemplateId = lease.unit.utilitiesIncludedInRent
+  // Suite vs. Townhome used to come from a unit's own "Utilities included
+  // in rent" checkbox, but that field was never actually set on any real
+  // unit — deriving it from the unit's address instead (the same rule
+  // already trusted for the Renewals grid's Type column) means every
+  // lease sent for signature actually picks the right template, not
+  // silently Townhome every time.
+  const leaseTemplateId = unitTypeFromAddress(lease.unit.unitNumber) === "Suite"
     ? settings?.leaseSuiteTemplateId
     : settings?.leaseTownhomeTemplateId;
   if (!settings?.landlordSignerName || !settings.landlordSignerEmail || !leaseTemplateId || !settings.smokingAddendumTemplateId) {
