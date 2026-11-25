@@ -104,7 +104,8 @@ export async function backfillDocumentFolders() {
   revalidatePath("/leases");
   let message = `Checked ${leases.length} lease(s) with a Document link but no folder on file (out of ${withLink} with a link, ${totalLeases} total): ${updated} now show their documents in the app${notFolder ? `, ${notFolder} link to a single file rather than a folder (left as-is)` : ""}${failures.length ? `, ${failures.length} couldn't be resolved` : ""}.`;
   if (failures.length > 0) {
-    message += ` First reason: ${failures[0]}`;
+    const shown = failures.slice(0, 10);
+    message += ` Reasons: ${shown.join(" | ")}${failures.length > shown.length ? ` | …and ${failures.length - shown.length} more` : ""}`;
   }
   redirect(`/settings/dropbox?message=${encodeURIComponent(message)}`);
 }
@@ -184,7 +185,12 @@ export async function backfillActiveLeaseFoldersFromStructure() {
   revalidatePath("/leases");
   let message = `Checked ${leases.length} active lease(s) with no folder on file: ${updated} matched to a Dropbox folder by unit number and now show their documents in the app${failures.length ? `, ${failures.length} couldn't be matched` : ""}.`;
   if (failures.length > 0) {
-    message += ` First reason: ${failures[0]}`;
+    // All of them once the count's small enough to actually read, rather
+    // than only the first — after the first run or two, what's left is
+    // usually a short list of genuinely odd cases worth seeing all at once
+    // instead of fixing and re-clicking one at a time.
+    const shown = failures.slice(0, 10);
+    message += ` Reasons: ${shown.join(" | ")}${failures.length > shown.length ? ` | …and ${failures.length - shown.length} more` : ""}`;
   }
   redirect(`/settings/dropbox?message=${encodeURIComponent(message)}`);
 }
