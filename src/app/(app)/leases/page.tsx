@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
 import { EntitySearch } from "@/components/entity-search";
-import { LeaseDocumentsCompact } from "@/components/lease-documents";
 import Link from "next/link";
 
 export default async function LeasesPage({
@@ -78,7 +77,6 @@ export default async function LeasesPage({
             <Th>Rent</Th>
             <Th>Start</Th>
             <Th>Status</Th>
-            <Th>Documents</Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-100">
@@ -101,9 +99,6 @@ export default async function LeasesPage({
                 ) : (
                   <Badge tone="amber">Unsigned</Badge>
                 )}
-              </Td>
-              <Td>
-                <LeaseDocumentsCompact leaseId={l.id} hasFolder={Boolean(l.documentsFolderPath)} />
               </Td>
             </tr>
           ))}
