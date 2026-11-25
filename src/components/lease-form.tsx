@@ -120,14 +120,16 @@ export function LeaseForm({
               defaultValue={fmt(defaultValues?.endDate ?? null)}
             />
           </Field>
-          <Field label="Signed date" htmlFor="signedDate">
-            <Input
-              id="signedDate"
-              name="signedDate"
-              type="date"
-              defaultValue={fmt(defaultValues?.signedDate ?? null)}
-            />
-          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Signed date" htmlFor="signedDate">
+              <Input
+                id="signedDate"
+                name="signedDate"
+                type="date"
+                defaultValue={fmt(defaultValues?.signedDate ?? null)}
+              />
+            </Field>
+          </div>
           <Field
             label="First month's rent collected"
             htmlFor="firstMonthRentPrepaid"
@@ -164,13 +166,15 @@ export function LeaseForm({
               }
             />
           </Field>
-          <Field label="Pets" htmlFor="pets" hint='Optional, e.g. "dog, cat"'>
-            <Input
-              id="pets"
-              name="pets"
-              defaultValue={defaultValues?.pets ?? ""}
-            />
-          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Pets" htmlFor="pets" hint='Optional, e.g. "dog, cat"'>
+              <Input
+                id="pets"
+                name="pets"
+                defaultValue={defaultValues?.pets ?? ""}
+              />
+            </Field>
+          </div>
         </div>
 
         <Field label="Notes" htmlFor="notes" hint="Also editable inline from the Leases list">
