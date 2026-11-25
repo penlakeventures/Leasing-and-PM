@@ -148,21 +148,41 @@ async function listSubfolders(
   return result.data.entries.filter((e) => e[".tag"] === "folder");
 }
 
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Splits into lowercase word-ish tokens, first stripping an ordinal
+// suffix directly after a number ("37th" → "37", "23rd" → "23") — a unit's
+// stored civic address (typed by hand, e.g. "2240B 37th ST SW") commonly
+// spells the street number as an ordinal, while the real Dropbox folder
+// it needs to match almost always uses the plain postal style instead
+// ("2240B 37 ST SW"); without normalizing that away, a unit number with
+// any ordinal in it would never match its own folder at all.
+function addressTokens(s: string): string[] {
+  return s
+    .toLowerCase()
+    .replace(/\b(\d+)(st|nd|rd|th)\b/g, "$1")
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
 }
 
 // True if folderName is this unit's folder. Staff-named folders don't
 // follow one consistent pattern across projects — some put the unit
 // number right at the start ("3220B Taylor"), others lead with a list
 // number and the street name instead ("1. 810 14 ST SE - Pen Lake
-// Ventures Inc") — so this looks for the unit number as its own
-// self-contained token anywhere in the name, using word boundaries so
-// e.g. unit "802" can't match inside "802R 14 ST SE - ..." (a different,
-// separate unit) and vice versa.
+// Ventures Inc") — so this checks that every token of the unit's own
+// address (its street number + suite letter as one token, e.g. "3220b",
+// plus every word of the street name) shows up as its own token
+// somewhere in the folder name, tolerating punctuation/spacing
+// differences and the ordinal-suffix difference above. Matching whole
+// tokens rather than a substring also keeps a close-but-different
+// address from matching by accident — "2240b" is never satisfied by a
+// folder that only has "2240" (a different, un-suited unit), and a unit
+// number with a different street name than the folder's won't match
+// just because the house number happens to coincide with another street
+// in the same project.
 export function matchesUnitFolder(folderName: string, unitNumber: string): boolean {
-  const pattern = new RegExp(`\\b${escapeRegExp(unitNumber)}\\b`, "i");
-  return pattern.test(folderName);
+  const unitTokens = addressTokens(unitNumber);
+  if (unitTokens.length === 0) return false;
+  const folderTokens = new Set(addressTokens(folderName));
+  return unitTokens.every((t) => folderTokens.has(t));
 }
 
 // Moves fromPath to toPath, auto-renaming (Dropbox appends " (1)", " (2)",
