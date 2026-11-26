@@ -12,11 +12,20 @@ describe("unitPremises", () => {
 });
 
 describe("splitLongDate", () => {
-  it("splits a formatLongDate()-shaped string into day/month/2-digit-year", () => {
+  it("splits a formatLongDate()-shaped string into day/month/2-digit-year, dropping the ordinal suffix", () => {
+    // The suffix is dropped (not just the formatting) because Dropbox
+    // Sign enforces a max text length per field based on its physical
+    // box size, and the "Day" box sized to the original tiny blank has
+    // no room for "26th" — confirmed against a real rejection.
     expect(splitLongDate("26th day of November, 2026")).toEqual({
-      day: "26th",
+      day: "26",
       month: "November",
       year: "26",
+    });
+    expect(splitLongDate("1st day of March, 2027")).toEqual({
+      day: "1",
+      month: "March",
+      year: "27",
     });
   });
 

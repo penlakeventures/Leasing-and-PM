@@ -36,15 +36,22 @@ export function formatLongDate(d: Date): string {
 // the final signed document — confirmed against a real signed lease,
 // where the printed words showed through underneath the merged text).
 // Three small fields sized to the three actual blanks avoids covering
-// any printed text at all. Splits apart whatever ended up in the
-// corresponding formatLongDate()-shaped field (the default, or staff's
-// own edit to it before sending) rather than re-deriving from the
-// original Date, so an edit to that field is still respected. Falls
-// back to putting the whole string in `day` if it doesn't match that
-// shape — better to show something than silently drop an edit staff
-// made into a format this doesn't recognize.
+// any printed text at all — and Dropbox Sign separately enforces a max
+// text length per field based on its physical box size, so `day` drops
+// formatLongDate()'s ordinal suffix ("26th" → "26"): the box matching
+// the original blank's width has no room for it, confirmed against a
+// real "Value for editable custom field 'Day' is too long" rejection.
+// Dropping the suffix here (not in formatLongDate() itself) reads
+// perfectly normally for this phrasing — "made this 26 day of November,
+// 2026" is a standard way contracts write this exact blank. Splits
+// apart whatever ended up in the corresponding formatLongDate()-shaped
+// field (the default, or staff's own edit to it before sending) rather
+// than re-deriving from the original Date, so an edit is still
+// respected. Falls back to putting the whole string in `day` if it
+// doesn't match that shape — better to show something than silently
+// drop an edit staff made into a format this doesn't recognize.
 export function splitLongDate(formatted: string): { day: string; month: string; year: string } {
-  const match = formatted.match(/^(.+) day of (\w+), (\d{4})$/);
+  const match = formatted.match(/^(\d+)(?:st|nd|rd|th) day of (\w+), (\d{4})$/);
   if (!match) return { day: formatted, month: "", year: "" };
   const [, day, month, year] = match;
   return { day, month, year: year.slice(-2) };
