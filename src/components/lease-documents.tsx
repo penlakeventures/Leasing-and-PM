@@ -15,6 +15,18 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+// Matches exactly the file types /api/dropbox/file gives a real,
+// browser-renderable Content-Type for (see contentTypeFor there) —
+// anything else, a Word document above all, downloads no matter what the
+// response headers say, since browsers have no built-in way to display
+// it inline. A "View" link for one of those would just be a second
+// Download link in disguise, so it's left out entirely rather than
+// offered and then not actually doing what it says.
+export function isViewableInBrowser(filename: string): boolean {
+  const ext = filename.toLowerCase().split(".").pop();
+  return ext === "pdf" || ext === "png" || ext === "jpg" || ext === "jpeg";
+}
+
 function FileRow({ leaseId, file }: { leaseId: string; file: DropboxFileEntry }) {
   const base = `/api/dropbox/file?leaseId=${leaseId}&path=${encodeURIComponent(file.path)}`;
   return (
@@ -24,9 +36,11 @@ function FileRow({ leaseId, file }: { leaseId: string; file: DropboxFileEntry })
       </span>
       <span className="flex shrink-0 items-center gap-3 text-xs">
         <span className="text-neutral-400">{formatSize(file.size)}</span>
-        <a href={`${base}&mode=view`} target="_blank" rel="noopener noreferrer" className="underline">
-          View
-        </a>
+        {isViewableInBrowser(file.name) && (
+          <a href={`${base}&mode=view`} target="_blank" rel="noopener noreferrer" className="underline">
+            View
+          </a>
+        )}
         <a href={`${base}&mode=download`} className="underline">
           Download
         </a>
