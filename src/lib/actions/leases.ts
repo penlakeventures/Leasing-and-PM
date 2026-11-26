@@ -299,9 +299,11 @@ export async function createLeaseRenewalAndSend(formData: FormData) {
       predecessor.unit.projectEntity.address,
       predecessor.unit.projectEntity.neighbourhood,
     ),
+    originalLeaseDate: predecessor.signedDate ?? predecessor.startDate,
     renewalStart: startDate,
     renewalEnd: endDate!,
-    rentAmount,
+    rentChanged: rentAmount !== Number(predecessor.rentAmount),
+    newRentAmount: rentAmount,
     newPets: pets,
     newLeaseTerms: notes,
   });

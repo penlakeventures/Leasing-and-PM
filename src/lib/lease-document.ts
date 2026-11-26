@@ -96,44 +96,63 @@ export function buildLeaseMergeFields({
 }
 
 // Merge fields for the one-click "Send renewal for signature" flow on the
-// Renewals tab — deliberately a smaller set than buildLeaseMergeFields()
-// above: a renewal only needs to state the new term and rent (and
-// whatever's actually changing — pets, extra terms), not restate the
-// whole lease from scratch. Rent/first/last-month figures that aren't
-// changing carry straight over from the predecessor lease in the create
-// action itself, never re-entered here.
+// Renewals tab — mapped onto the owner's own existing "Lease Amendment and
+// Term Modification Agreement" document (the real form Alina/Cindy already
+// use for renewals and other mid-lease changes), not a document invented
+// for this feature. That document's "Extension of current fixed term"
+// checkbox and its "Shortening of current fixed term" section are
+// permanent marks on the template itself, not merge fields — this flow
+// only ever produces an extension, never a shortening, so there's nothing
+// to toggle there. The rent section's two checkboxes do need to react to
+// whether this renewal actually changes the rent, so both are sent as
+// real Dropbox Sign checkbox fields ("true"/"false"), with the $ amount
+// and effective date left blank whenever rent isn't changing.
 export function buildLeaseRenewalMergeFields({
-  asOf = new Date(),
   landlordName,
   tenantNames,
   premises,
+  originalLeaseDate,
   renewalStart,
   renewalEnd,
-  rentAmount,
+  rentChanged,
+  newRentAmount,
   newPets,
   newLeaseTerms,
 }: {
-  asOf?: Date;
   landlordName: string;
   tenantNames: string[];
   premises: string;
+  // The date on the original Residential Tenancy Agreement this renewal
+  // amends — the document's own opening line ("...Agreement DATED ___")
+  // asks for that lease's date, not today's date.
+  originalLeaseDate: Date;
   renewalStart: Date;
   renewalEnd: Date;
-  rentAmount: number;
+  rentChanged: boolean;
+  newRentAmount: number;
   newPets?: string | null;
   newLeaseTerms?: string | null;
 }): LeaseMergeFields {
+  const petsNote = newPets?.trim() ? `Pets for this renewal: ${newPets.trim()}.` : "";
+  const additionalConditions =
+    [petsNote, newLeaseTerms?.trim()].filter(Boolean).join(" ") || "None.";
   return {
-    agreement_date: formatLongDate(asOf),
+    original_lease_date: formatLongDate(originalLeaseDate),
+    premises,
     landlord_name: landlordName,
+    // The document's "BETWEEN... - and -" line has one blank for every
+    // tenant's name together, not one blank per tenant — tenant_name_1/2
+    // below are for the separate per-tenant signature lines further down.
+    tenant_names: tenantNames.length > 1 ? tenantNames.join(" and ") : (tenantNames[0] ?? ""),
     tenant_name_1: tenantNames[0] ?? "",
     tenant_name_2: tenantNames[1] ?? "",
-    premises,
     renewal_term_start: formatLongDate(renewalStart),
     renewal_term_end: formatLongDate(renewalEnd),
-    rent_amount: formatMoney(rentAmount),
-    new_pets: newPets?.trim() || "None",
-    new_lease_terms: newLeaseTerms?.trim() || "None",
+    rent_unchanged: rentChanged ? "false" : "true",
+    rent_amended: rentChanged ? "true" : "false",
+    new_rent_amount: rentChanged ? formatMoney(newRentAmount) : "",
+    rent_effective_date: rentChanged ? formatLongDate(renewalStart) : "",
+    additional_conditions: additionalConditions,
   };
 }
 

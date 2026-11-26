@@ -33,38 +33,51 @@ describe("unitPremises", () => {
 });
 
 describe("buildLeaseRenewalMergeFields", () => {
-  it("fills in the renewal-specific fields, defaulting unspecified pets/terms to None", () => {
+  it("checks 'rent unchanged' and leaves the amount/effective-date blanks empty when rent isn't changing", () => {
     const fields = buildLeaseRenewalMergeFields({
-      asOf: new Date(2026, 10, 1),
       landlordName: "Killarney23 Inc.",
       tenantNames: ["Lauren Munroe"],
       premises: "Unit 2746B 23 AVE SW, Killarney, Calgary, AB",
+      originalLeaseDate: new Date(2025, 0, 1),
       renewalStart: new Date(2026, 11, 1),
       renewalEnd: new Date(2027, 11, 30),
-      rentAmount: 1700,
+      rentChanged: false,
+      newRentAmount: 1700,
     });
+    expect(fields.original_lease_date).toBe("1st day of January, 2025");
+    expect(fields.tenant_names).toBe("Lauren Munroe");
     expect(fields.tenant_name_1).toBe("Lauren Munroe");
     expect(fields.tenant_name_2).toBe("");
     expect(fields.renewal_term_start).toBe("1st day of December, 2026");
     expect(fields.renewal_term_end).toBe("30th day of December, 2027");
-    expect(fields.rent_amount).toBe("$1,700.00");
-    expect(fields.new_pets).toBe("None");
-    expect(fields.new_lease_terms).toBe("None");
+    expect(fields.rent_unchanged).toBe("true");
+    expect(fields.rent_amended).toBe("false");
+    expect(fields.new_rent_amount).toBe("");
+    expect(fields.rent_effective_date).toBe("");
+    expect(fields.additional_conditions).toBe("None.");
   });
 
-  it("carries through actual new pets and new terms when given", () => {
+  it("checks 'rent amended' and fills the amount/effective date when rent is changing", () => {
     const fields = buildLeaseRenewalMergeFields({
       landlordName: "Killarney23 Inc.",
       tenantNames: ["Lauren Munroe", "Sam Munroe"],
       premises: "Unit 2746B 23 AVE SW, Killarney, Calgary, AB",
+      originalLeaseDate: new Date(2025, 0, 1),
       renewalStart: new Date(2026, 11, 1),
       renewalEnd: new Date(2027, 11, 30),
-      rentAmount: 1750,
+      rentChanged: true,
+      newRentAmount: 1750,
       newPets: "cat",
       newLeaseTerms: "Tenant to repaint the hallway by spring.",
     });
+    expect(fields.tenant_names).toBe("Lauren Munroe and Sam Munroe");
     expect(fields.tenant_name_2).toBe("Sam Munroe");
-    expect(fields.new_pets).toBe("cat");
-    expect(fields.new_lease_terms).toBe("Tenant to repaint the hallway by spring.");
+    expect(fields.rent_unchanged).toBe("false");
+    expect(fields.rent_amended).toBe("true");
+    expect(fields.new_rent_amount).toBe("$1,750.00");
+    expect(fields.rent_effective_date).toBe("1st day of December, 2026");
+    expect(fields.additional_conditions).toBe(
+      "Pets for this renewal: cat. Tenant to repaint the hallway by spring.",
+    );
   });
 });
