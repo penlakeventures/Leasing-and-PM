@@ -17,6 +17,7 @@ export async function upsertSigningSettings(formData: FormData) {
     leaseSuiteTemplateId: trimOrNull("leaseSuiteTemplateId"),
     smokingAddendumTemplateId: trimOrNull("smokingAddendumTemplateId"),
     additionalTermsTemplateId: trimOrNull("additionalTermsTemplateId"),
+    leaseRenewalTemplateId: trimOrNull("leaseRenewalTemplateId"),
   };
   await prisma.signingSettings.upsert({
     where: { id: "singleton" },

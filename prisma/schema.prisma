@@ -376,6 +376,7 @@ model SigningSettings {
   leaseSuiteTemplateId     String?
   smokingAddendumTemplateId String?
   additionalTermsTemplateId String?
+  leaseRenewalTemplateId   String?
   updatedAt                DateTime @updatedAt
 
   @@map("signing_settings")

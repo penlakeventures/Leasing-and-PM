@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui";
 import { LeaseForm } from "@/components/lease-form";
-import { createLease } from "@/lib/actions/leases";
+import { createLease, createLeaseRenewalAndSend } from "@/lib/actions/leases";
 
 export default async function NewLeasePage({
   searchParams,
@@ -65,7 +65,7 @@ export default async function NewLeasePage({
     <div>
       <PageHeader title={renewalOf ? "Renew lease" : "New lease"} />
       <LeaseForm
-        action={createLease}
+        action={renewalOf ? createLeaseRenewalAndSend : createLease}
         units={units}
         existingTenants={existingTenants}
         defaultValues={defaultValues}

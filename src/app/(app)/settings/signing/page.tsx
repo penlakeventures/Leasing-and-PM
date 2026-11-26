@@ -46,7 +46,7 @@ export default async function SigningSettingsPage() {
           Templates &amp; landlord signer
         </h2>
         <p className="mb-4 text-xs text-neutral-500">
-          Create these four templates once in the Dropbox Sign dashboard (see the setup guide for
+          Create these five templates once in the Dropbox Sign dashboard (see the setup guide for
           the exact fields each one needs), then paste their template IDs here.
         </p>
         <form action={upsertSigningSettings} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -103,6 +103,17 @@ export default async function SigningSettingsPage() {
               id="additionalTermsTemplateId"
               name="additionalTermsTemplateId"
               defaultValue={settings?.additionalTermsTemplateId ?? ""}
+            />
+          </Field>
+          <Field
+            label="Lease renewal template ID"
+            htmlFor="leaseRenewalTemplateId"
+            hint="Used by the Renewals tab's Send renewal for signature button"
+          >
+            <Input
+              id="leaseRenewalTemplateId"
+              name="leaseRenewalTemplateId"
+              defaultValue={settings?.leaseRenewalTemplateId ?? ""}
             />
           </Field>
           <div className="sm:col-span-2">

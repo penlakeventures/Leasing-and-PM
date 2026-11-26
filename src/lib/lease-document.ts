@@ -28,7 +28,7 @@ export function formatLongDate(d: Date): string {
   return `${ordinal(d.getDate())} day of ${MONTHS[d.getMonth()]}, ${d.getFullYear()}`;
 }
 
-function formatMoney(amount: number): string {
+export function formatMoney(amount: number): string {
   return `$${amount.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -93,6 +93,48 @@ export function buildLeaseMergeFields({
   };
   if (additionalTermsText) fields.custom_terms_text = additionalTermsText;
   return fields;
+}
+
+// Merge fields for the one-click "Send renewal for signature" flow on the
+// Renewals tab — deliberately a smaller set than buildLeaseMergeFields()
+// above: a renewal only needs to state the new term and rent (and
+// whatever's actually changing — pets, extra terms), not restate the
+// whole lease from scratch. Rent/first/last-month figures that aren't
+// changing carry straight over from the predecessor lease in the create
+// action itself, never re-entered here.
+export function buildLeaseRenewalMergeFields({
+  asOf = new Date(),
+  landlordName,
+  tenantNames,
+  premises,
+  renewalStart,
+  renewalEnd,
+  rentAmount,
+  newPets,
+  newLeaseTerms,
+}: {
+  asOf?: Date;
+  landlordName: string;
+  tenantNames: string[];
+  premises: string;
+  renewalStart: Date;
+  renewalEnd: Date;
+  rentAmount: number;
+  newPets?: string | null;
+  newLeaseTerms?: string | null;
+}): LeaseMergeFields {
+  return {
+    agreement_date: formatLongDate(asOf),
+    landlord_name: landlordName,
+    tenant_name_1: tenantNames[0] ?? "",
+    tenant_name_2: tenantNames[1] ?? "",
+    premises,
+    renewal_term_start: formatLongDate(renewalStart),
+    renewal_term_end: formatLongDate(renewalEnd),
+    rent_amount: formatMoney(rentAmount),
+    new_pets: newPets?.trim() || "None",
+    new_lease_terms: newLeaseTerms?.trim() || "None",
+  };
 }
 
 // Legal entity name is a simple, confirmed rule across all seven current

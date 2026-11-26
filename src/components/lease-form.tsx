@@ -58,8 +58,9 @@ export function LeaseForm({
       )}
       {renewalOf && (
         <p className="mb-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">
-          Renewing the current lease for {renewalOf.unitLabel} — the existing
-          Dropbox folder carries over automatically; nothing new is archived.
+          Renewing the current lease for {renewalOf.unitLabel} — the existing Dropbox folder
+          carries over automatically, and rent already prepaid carries forward unchanged.
+          Sending this renewal emails it to the tenant(s) for signature right away.
         </p>
       )}
       <form action={action} className="space-y-4">
@@ -103,7 +104,7 @@ export function LeaseForm({
               }
             />
           </Field>
-          <Field label="Start date" htmlFor="startDate">
+          <Field label={renewalOf ? "Renewal start date" : "Start date"} htmlFor="startDate">
             <Input
               id="startDate"
               name="startDate"
@@ -112,7 +113,11 @@ export function LeaseForm({
               defaultValue={fmt(defaultValues?.startDate ?? null)}
             />
           </Field>
-          <Field label="End date" htmlFor="endDate" hint="Leave blank if periodic">
+          <Field
+            label={renewalOf ? "Renewal end date" : "End date"}
+            htmlFor="endDate"
+            hint="Leave blank if periodic"
+          >
             <Input
               id="endDate"
               name="endDate"
@@ -120,56 +125,64 @@ export function LeaseForm({
               defaultValue={fmt(defaultValues?.endDate ?? null)}
             />
           </Field>
-          <Field label="Signed date" htmlFor="signedDate">
-            <Input
-              id="signedDate"
-              name="signedDate"
-              type="date"
-              defaultValue={fmt(defaultValues?.signedDate ?? null)}
-            />
-          </Field>
-          {/* Empty on purpose — keeps First month's rent collected from
-              sliding up next to Signed date, so it still starts its own
-              row below. */}
-          <div aria-hidden="true" className="hidden sm:block" />
-          <Field
-            label="First month's rent collected"
-            htmlFor="firstMonthRentPrepaid"
-            hint="Optional"
-          >
-            <Input
-              id="firstMonthRentPrepaid"
-              name="firstMonthRentPrepaid"
-              type="number"
-              step="0.01"
-              min={0}
-              defaultValue={
-                defaultValues?.firstMonthRentPrepaid
-                  ? String(defaultValues.firstMonthRentPrepaid)
-                  : ""
-              }
-            />
-          </Field>
-          <Field
-            label="Last month's rent prepaid"
-            htmlFor="lastMonthRentPrepaid"
-            hint="Optional"
-          >
-            <Input
-              id="lastMonthRentPrepaid"
-              name="lastMonthRentPrepaid"
-              type="number"
-              step="0.01"
-              min={0}
-              defaultValue={
-                defaultValues?.lastMonthRentPrepaid
-                  ? String(defaultValues.lastMonthRentPrepaid)
-                  : ""
-              }
-            />
-          </Field>
+          {!renewalOf && (
+            <>
+              <Field label="Signed date" htmlFor="signedDate">
+                <Input
+                  id="signedDate"
+                  name="signedDate"
+                  type="date"
+                  defaultValue={fmt(defaultValues?.signedDate ?? null)}
+                />
+              </Field>
+              {/* Empty on purpose — keeps First month's rent collected from
+                  sliding up next to Signed date, so it still starts its own
+                  row below. */}
+              <div aria-hidden="true" className="hidden sm:block" />
+              <Field
+                label="First month's rent collected"
+                htmlFor="firstMonthRentPrepaid"
+                hint="Optional"
+              >
+                <Input
+                  id="firstMonthRentPrepaid"
+                  name="firstMonthRentPrepaid"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  defaultValue={
+                    defaultValues?.firstMonthRentPrepaid
+                      ? String(defaultValues.firstMonthRentPrepaid)
+                      : ""
+                  }
+                />
+              </Field>
+              <Field
+                label="Last month's rent prepaid"
+                htmlFor="lastMonthRentPrepaid"
+                hint="Optional"
+              >
+                <Input
+                  id="lastMonthRentPrepaid"
+                  name="lastMonthRentPrepaid"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  defaultValue={
+                    defaultValues?.lastMonthRentPrepaid
+                      ? String(defaultValues.lastMonthRentPrepaid)
+                      : ""
+                  }
+                />
+              </Field>
+            </>
+          )}
           <div className="sm:col-span-2">
-            <Field label="Pets" htmlFor="pets" hint='Optional, e.g. "dog, cat"'>
+            <Field
+              label={renewalOf ? "Any new pets?" : "Pets"}
+              htmlFor="pets"
+              hint='Optional, e.g. "dog, cat"'
+            >
               <Input
                 id="pets"
                 name="pets"
@@ -179,7 +192,11 @@ export function LeaseForm({
           </div>
         </div>
 
-        <Field label="Notes" htmlFor="notes" hint="Also editable inline from the Leases list">
+        <Field
+          label={renewalOf ? "New lease terms under renewal" : "Notes"}
+          htmlFor="notes"
+          hint={renewalOf ? undefined : "Also editable inline from the Leases list"}
+        >
           <Textarea
             id="notes"
             name="notes"
@@ -228,10 +245,16 @@ export function LeaseForm({
         )}
 
         <div className="flex gap-2 pt-2">
-          <Button type="submit">Save</Button>
-          <LinkButton href="/leases" variant="secondary">
-            Cancel
-          </LinkButton>
+          {renewalOf ? (
+            <Button type="submit">Send renewal for signature</Button>
+          ) : (
+            <>
+              <Button type="submit">Save</Button>
+              <LinkButton href="/leases" variant="secondary">
+                Cancel
+              </LinkButton>
+            </>
+          )}
         </div>
       </form>
     </Card>

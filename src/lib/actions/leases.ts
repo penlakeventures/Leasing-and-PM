@@ -7,6 +7,7 @@ import { checkRentEscalation, checkRentIncreaseFrequency, pickActiveLease } from
 import { prepareLeaseFolder, uploadFile } from "@/lib/dropbox";
 import { sendForSignature } from "@/lib/dropbox-sign";
 import { unitTypeFromAddress } from "@/lib/unit-type";
+import { buildLeaseRenewalMergeFields, projectLegalEntityName, unitPremises } from "@/lib/lease-document";
 
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
@@ -208,6 +209,136 @@ export async function createLease(formData: FormData) {
   revalidatePath("/leases");
   revalidatePath("/renewals");
   revalidatePath(`/units/${data.unitId}`);
+  redirect(`/leases/${lease.id}`);
+}
+
+// The Renewals tab's one-click "Send renewal for signature": creates the
+// renewal lease and immediately sends it for e-signature in one step,
+// rather than the two-step save-then-send flow a brand-new lease uses.
+// Only reachable from the renewal form (lease-form.tsx), which always
+// carries renewedFromLeaseId through as a hidden field — the predecessor
+// lease is the source of truth for the tenant(s), the Dropbox folder, and
+// the rent-prepaid figures that aren't changing on a renewal, none of
+// which this form asks for again.
+export async function createLeaseRenewalAndSend(formData: FormData) {
+  const renewedFromLeaseId = (formData.get("renewedFromLeaseId") as string)?.trim();
+  if (!renewedFromLeaseId) redirect("/renewals");
+
+  const predecessor = await prisma.lease.findUnique({
+    where: { id: renewedFromLeaseId },
+    include: { tenants: { include: { tenant: true } }, unit: { include: { projectEntity: true } } },
+  });
+  if (!predecessor) redirect("/renewals");
+
+  const errorRedirect = (reason: string) =>
+    redirect(`/leases/new?renewFromLeaseId=${renewedFromLeaseId}&error=${encodeURIComponent(reason)}`);
+
+  const unitId = (formData.get("unitId") as string) || predecessor.unitId;
+  const startDate = new Date(formData.get("startDate") as string);
+  const endDateRaw = formData.get("endDate") as string;
+  const endDate = endDateRaw ? new Date(endDateRaw) : null;
+  const periodic = formData.get("periodic") === "on";
+  const rentAmount = Number(formData.get("rentAmount"));
+  const pets = (formData.get("pets") as string)?.trim() || null;
+  const notes = (formData.get("notes") as string)?.trim() || null;
+
+  if (periodic || !endDate) {
+    errorRedirect("A renewal needs a fixed end date to send for signature — periodic renewals are handled outside the app.");
+  }
+
+  const rentError = await checkAffordableRent(unitId, rentAmount);
+  if (rentError) errorRedirect(rentError);
+
+  const tenants = predecessor.tenants.map((lt) => lt.tenant);
+  if (tenants.length === 0) {
+    errorRedirect("This lease has no tenant on file — add one before renewing.");
+  }
+  if (tenants.length > 2) {
+    errorRedirect(
+      "This lease has more than 2 tenants — the renewal template only supports 2. Renew this one manually instead.",
+    );
+  }
+  const missingEmail = tenants.find((t) => !t.email);
+  if (missingEmail) {
+    errorRedirect(`${missingEmail!.name} has no email on file — add one on their tenant page before sending a renewal.`);
+  }
+
+  const settings = await prisma.signingSettings.findUnique({ where: { id: "singleton" } });
+  if (!settings?.landlordSignerName || !settings.landlordSignerEmail || !settings.leaseRenewalTemplateId) {
+    errorRedirect(
+      "Renewal signing isn't fully set up yet — fill in the landlord signer and the Lease renewal template ID under Settings → Signing.",
+    );
+  }
+
+  const lease = await prisma.lease.create({
+    data: {
+      unitId,
+      startDate,
+      endDate,
+      periodic: false,
+      rentAmount,
+      firstMonthRentPrepaid: predecessor.firstMonthRentPrepaid,
+      lastMonthRentPrepaid: predecessor.lastMonthRentPrepaid,
+      pets,
+      signedDate: null,
+      documentLink: predecessor.documentsFolderPath ? predecessor.documentLink : null,
+      documentsFolderPath: predecessor.documentsFolderPath,
+      renewedFromLeaseId: predecessor.id,
+      notes,
+      tenants: { create: tenants.map((t) => ({ tenantId: t.id })) },
+    },
+  });
+
+  await syncUnitCurrentRent(unitId);
+
+  const mergeFields = buildLeaseRenewalMergeFields({
+    landlordName: projectLegalEntityName(predecessor.unit.projectEntity.internalName),
+    tenantNames: tenants.map((t) => t.name),
+    premises: unitPremises(
+      predecessor.unit.unitNumber,
+      predecessor.unit.projectEntity.address,
+      predecessor.unit.projectEntity.neighbourhood,
+    ),
+    renewalStart: startDate,
+    renewalEnd: endDate!,
+    rentAmount,
+    newPets: pets,
+    newLeaseTerms: notes,
+  });
+
+  const signers: { role: "Landlord" | "Tenant 1" | "Tenant 2"; name: string; email: string }[] = [
+    { role: "Landlord", name: settings!.landlordSignerName!, email: settings!.landlordSignerEmail! },
+    { role: "Tenant 1", name: tenants[0].name, email: tenants[0].email! },
+  ];
+  if (tenants[1]) {
+    signers.push({ role: "Tenant 2", name: tenants[1].name, email: tenants[1].email! });
+  }
+
+  try {
+    const { signatureRequestId } = await sendForSignature({
+      templateIds: [settings!.leaseRenewalTemplateId!],
+      subject: `Lease renewal for ${predecessor.unit.projectEntity.internalName} — Unit ${predecessor.unit.unitNumber}`,
+      message: "Please review and sign your lease renewal. Reach out if you have any questions.",
+      signers,
+      customFields: mergeFields,
+      testMode: false,
+    });
+    await prisma.lease.update({
+      where: { id: lease.id },
+      data: { signatureRequestId, signatureSentAt: new Date() },
+    });
+  } catch (e) {
+    console.error("[createLeaseRenewalAndSend] sendForSignature failed:", e);
+    revalidatePath("/leases");
+    revalidatePath("/renewals");
+    redirect(
+      `/leases/${lease.id}?error=${encodeURIComponent("The renewal was saved, but sending it for signature failed — check the Dropbox Sign connection under Settings and try Send for signature again from this page.")}`,
+    );
+  }
+
+  revalidatePath("/leases");
+  revalidatePath("/renewals");
+  revalidatePath(`/units/${unitId}`);
   redirect(`/leases/${lease.id}`);
 }
 
