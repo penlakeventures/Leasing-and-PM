@@ -514,11 +514,20 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
     templateIds.push(settings.additionalTermsTemplateId);
   }
 
+  const tenantName1 = (formData.get("tenant_name_1") as string) ?? "";
+  const tenantName2 = (formData.get("tenant_name_2") as string) ?? "";
+
   const customFields: Record<string, string> = {
     agreement_date: (formData.get("agreement_date") as string) ?? "",
     landlord_name: (formData.get("landlord_name") as string) ?? "",
-    tenant_name_1: (formData.get("tenant_name_1") as string) ?? "",
-    tenant_name_2: (formData.get("tenant_name_2") as string) ?? "",
+    tenant_name_1: tenantName1,
+    tenant_name_2: tenantName2,
+    // The lease/addendum templates' "BETWEEN ... - and - ___" preamble has
+    // one combined blank for every tenant's name together, not one blank
+    // per tenant (tenant_name_1/2 above are for the separate per-tenant
+    // signature lines further down) — same split as the Lease Amendment
+    // template's tenant_names field.
+    tenant_names: [tenantName1, tenantName2].filter(Boolean).join(" and "),
     premises: (formData.get("premises") as string) ?? "",
     term_start: (formData.get("term_start") as string) ?? "",
     term_end: (formData.get("term_end") as string) ?? "",
