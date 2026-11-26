@@ -46,10 +46,15 @@ export async function GET(req: NextRequest) {
   try {
     const content = await downloadFile(path);
     const filename = path.split("/").pop() || "document";
+    // "view"/"download" aren't real Content-Disposition types — only
+    // "inline" and "attachment" are, and sending anything else leaves the
+    // browser to guess, which in practice meant View always downloaded
+    // too.
+    const disposition = mode === "download" ? "attachment" : "inline";
     return new NextResponse(content, {
       headers: {
         "Content-Type": contentTypeFor(filename),
-        "Content-Disposition": `${mode}; filename="${filename.replace(/"/g, "")}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+        "Content-Disposition": `${disposition}; filename="${filename.replace(/"/g, "")}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
         "Cache-Control": "private, no-store",
       },
     });
