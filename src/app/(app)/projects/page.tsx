@@ -20,7 +20,7 @@ export default async function ProjectsPage() {
             <Th>Internal name</Th>
             <Th>Website code</Th>
             <Th>Neighbourhood</Th>
-            <Th>Address</Th>
+            <Th>Project address</Th>
             <Th>Occupancy</Th>
             <Th>Units</Th>
           </tr>

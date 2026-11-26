@@ -294,11 +294,7 @@ export async function createLeaseRenewalAndSend(formData: FormData) {
   const mergeFields = buildLeaseRenewalMergeFields({
     landlordName: projectLegalEntityName(predecessor.unit.projectEntity.internalName),
     tenantNames: tenants.map((t) => t.name),
-    premises: unitPremises(
-      predecessor.unit.unitNumber,
-      predecessor.unit.projectEntity.address,
-      predecessor.unit.projectEntity.neighbourhood,
-    ),
+    premises: unitPremises(predecessor.unit.unitNumber, predecessor.unit.projectEntity.neighbourhood),
     originalLeaseDate: predecessor.signedDate ?? predecessor.startDate,
     renewalStart: startDate,
     renewalEnd: endDate!,

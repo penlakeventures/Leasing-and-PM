@@ -62,7 +62,11 @@ export function ProjectForm({
               defaultValue={occupancyDate}
             />
           </Field>
-          <Field label="Address" htmlFor="address">
+          <Field
+            label="Project address"
+            htmlFor="address"
+            hint="The city-assigned address for the project as a whole — not any one unit's address"
+          >
             <Input
               id="address"
               name="address"

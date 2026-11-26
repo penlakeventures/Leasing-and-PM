@@ -166,23 +166,17 @@ export function projectLegalEntityName(internalName: string): string {
 }
 
 // A unit's own civic address (unitNumber, e.g. "3768 23 AVE SW") already
-// fully identifies it — a project's own Address field exists to describe
-// the project as a whole, which for a multi-building project like
-// Killarney23 is a composite covering every street in it (e.g. "3760,
-// 3764, 3768 23 AVE SW & 2240 37th ST SW, Killarney, Calgary, AB").
-// Prepending the unit's address to that whole composite string (as this
-// app used to) jams two overlapping civic addresses together into one
-// garbled line. Every project's Address reliably ends with "{its own
-// Neighbourhood}, {City}, {Province}" regardless of what (if anything)
-// precedes it, so this keeps only that tail — the actual city/province
-// context a lease's Premises needs — and pairs it with the unit's own
-// address instead of the project's.
-export function unitPremises(
-  unitNumber: string,
-  projectAddress: string,
-  projectNeighbourhood: string,
-): string {
-  const idx = projectAddress.indexOf(projectNeighbourhood);
-  const cityProvince = idx === -1 ? projectAddress : projectAddress.slice(idx);
-  return `Unit ${unitNumber}, ${cityProvince}`;
+// fully identifies it — all it needs added is the neighbourhood/city/
+// province context. That used to be sliced out of the project's own
+// Address field (reliably ending "{Neighbourhood}, {City}, {Province}"
+// for a multi-building project like Killarney23, whose Address is a
+// composite covering every street in it), but Address now holds the
+// project's own separate civic address (the one the city assigns the
+// site as a whole, e.g. for permits) — a different address entirely,
+// not a superset of the unit's, so it can't be sliced for this anymore.
+// Every current project is in Calgary, AB (same confirmed rule as
+// projectLegalEntityName above) — a one-line change here, not a data
+// migration, if that ever stops being true.
+export function unitPremises(unitNumber: string, projectNeighbourhood: string): string {
+  return `Unit ${unitNumber}, ${projectNeighbourhood}, Calgary, AB`;
 }
