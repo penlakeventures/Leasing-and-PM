@@ -8,6 +8,7 @@ export function LeaseSigningPanel({
   signatureSentAt,
   signatureTestMode,
   signatureCompletedAt,
+  signedDate,
   defaults,
   sendAction,
 }: {
@@ -17,6 +18,12 @@ export function LeaseSigningPanel({
   signatureSentAt: Date | null;
   signatureTestMode: boolean;
   signatureCompletedAt: Date | null;
+  // A lease signed some other way (on paper, or any lease that predates
+  // this feature) — distinct from signatureCompletedAt, which only ever
+  // gets set by this app's own Dropbox Sign webhook. Used only to decide
+  // whether the full send-form below makes sense to show at all; nothing
+  // here reads it for any other purpose.
+  signedDate: Date | null;
   defaults: LeaseMergeFields;
   sendAction: (formData: FormData) => Promise<void>;
 }) {
@@ -27,6 +34,26 @@ export function LeaseSigningPanel({
         <p className="text-sm text-neutral-500">
           Only a fixed-term lease (with an end date) can be sent for signature from here —
           periodic leases are handled outside the app.
+        </p>
+      </Card>
+    );
+  }
+
+  // Already signed some other way — most real leases on file predate
+  // this feature, or were signed on paper. Sending one of these through
+  // Dropbox Sign now would just be noise (and a second, confusing
+  // signature request for an already-settled lease), so this collapses
+  // to a plain status instead of the full form below. If a lease
+  // genuinely needs to be re-signed electronically, clearing its Signed
+  // date on the form above brings this panel back to the normal
+  // send-form state.
+  if (!signatureRequestId && signedDate) {
+    return (
+      <Card>
+        <h2 className="mb-2 text-sm font-semibold text-neutral-900">Send for signature</h2>
+        <p className="text-sm">
+          <Badge tone="green">Already signed</Badge> {signedDate.toLocaleDateString()} — outside
+          Dropbox Sign, so there&apos;s nothing to send here.
         </p>
       </Card>
     );
