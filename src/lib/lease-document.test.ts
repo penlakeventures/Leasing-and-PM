@@ -1,20 +1,31 @@
 import { describe, it, expect } from "vitest";
-import { unitPremises, buildLeaseRenewalMergeFields } from "./lease-document";
+import { unitPremises, buildLeaseRenewalMergeFields, splitLongDate } from "./lease-document";
 
 describe("unitPremises", () => {
-  it("pairs the unit's own civic address with its project's neighbourhood and Calgary, AB", () => {
-    // Real case: Killarney23's own Address is now the city-assigned
-    // project address (a different address than any unit in it) — the
-    // unit's premises no longer derives from that field at all.
-    expect(unitPremises("3768 23 AVE SW", "Killarney")).toBe(
-      "Unit 3768 23 AVE SW, Killarney, Calgary, AB",
-    );
+  it("pairs the unit's own civic address with Calgary, AB — no 'Unit' prefix or neighbourhood", () => {
+    // Confirmed against a real signed test lease: staff didn't want the
+    // "Unit" prefix (it isn't a numbered unit within a shared building,
+    // just its own street address) or the neighbourhood name repeated.
+    expect(unitPremises("3768 23 AVE SW")).toBe("3768 23 AVE SW, Calgary, AB");
+    expect(unitPremises("810 14 ST SE")).toBe("810 14 ST SE, Calgary, AB");
+  });
+});
+
+describe("splitLongDate", () => {
+  it("splits a formatLongDate()-shaped string into day/month/2-digit-year", () => {
+    expect(splitLongDate("26th day of November, 2026")).toEqual({
+      day: "26th",
+      month: "November",
+      year: "26",
+    });
   });
 
-  it("works the same for any other project's neighbourhood", () => {
-    expect(unitPremises("810 14 ST SE", "Inglewood")).toBe(
-      "Unit 810 14 ST SE, Inglewood, Calgary, AB",
-    );
+  it("falls back to putting the whole string in `day` if it doesn't match that shape", () => {
+    expect(splitLongDate("November 26, 2026")).toEqual({
+      day: "November 26, 2026",
+      month: "",
+      year: "",
+    });
   });
 });
 

@@ -7,7 +7,7 @@ import { checkRentEscalation, checkRentIncreaseFrequency, pickActiveLease } from
 import { prepareLeaseFolder, uploadFile } from "@/lib/dropbox";
 import { sendForSignature } from "@/lib/dropbox-sign";
 import { unitTypeFromAddress } from "@/lib/unit-type";
-import { buildLeaseRenewalMergeFields, projectLegalEntityName, unitPremises } from "@/lib/lease-document";
+import { buildLeaseRenewalMergeFields, projectLegalEntityName, splitLongDate, unitPremises } from "@/lib/lease-document";
 
 function parseLeaseForm(formData: FormData) {
   const endDateRaw = formData.get("endDate") as string;
@@ -294,7 +294,7 @@ export async function createLeaseRenewalAndSend(formData: FormData) {
   const mergeFields = buildLeaseRenewalMergeFields({
     landlordName: projectLegalEntityName(predecessor.unit.projectEntity.internalName),
     tenantNames: tenants.map((t) => t.name),
-    premises: unitPremises(predecessor.unit.unitNumber, predecessor.unit.projectEntity.neighbourhood),
+    premises: unitPremises(predecessor.unit.unitNumber),
     originalLeaseDate: predecessor.signedDate ?? predecessor.startDate,
     renewalStart: startDate,
     renewalEnd: endDate!,
@@ -549,6 +549,27 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
   customFields.landlord_name_c = customFields.landlord_name;
   customFields.tenant_name_1_b = customFields.tenant_name_1;
   customFields.tenant_name_2_b = customFields.tenant_name_2;
+  // The lease template's "made as of the ___ day of ___, 20___" phrasing
+  // (and the same shape for its commencing/ending term dates) has printed
+  // words between the blanks that a merge field can't safely overlay —
+  // confirmed against a real signed lease, where "day of" and "20___"
+  // showed through underneath the merged text instead of being hidden by
+  // it. Split into three small fields sized to the three actual blanks
+  // instead, carrying the same values apart. The combined field above is
+  // kept too, for templates (Additional Lease Terms, the Lease Amendment)
+  // whose own date blank has no printed words around it to clash with.
+  Object.assign(
+    customFields,
+    Object.fromEntries(
+      Object.entries(splitLongDate(customFields.agreement_date)).map(([k, v]) => [`agreement_date_${k}`, v]),
+    ),
+    Object.fromEntries(
+      Object.entries(splitLongDate(customFields.term_start)).map(([k, v]) => [`term_start_${k}`, v]),
+    ),
+    Object.fromEntries(
+      Object.entries(splitLongDate(customFields.term_end)).map(([k, v]) => [`term_end_${k}`, v]),
+    ),
+  );
   if (customTermsText) customFields.custom_terms_text = customTermsText;
 
   const signers: { role: "Landlord" | "Tenant 1" | "Tenant 2"; name: string; email: string }[] = [

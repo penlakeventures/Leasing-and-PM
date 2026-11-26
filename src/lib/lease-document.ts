@@ -21,11 +21,33 @@ function ordinal(n: number): string {
   }
 }
 
-// "17th day of September, 2026" — matches the template's "made as of the
-// ___ day of ___, 20__" phrasing as one merged phrase rather than three
-// separate blanks, so template setup only needs one wide field there.
+// "17th day of September, 2026" — a standalone merge field for a
+// template whose date blank has no printed words around it (just one
+// wide blank), e.g. the Lease Amendment's "DATED ___" or "From ___ to
+// ___" lines.
 export function formatLongDate(d: Date): string {
   return `${ordinal(d.getDate())} day of ${MONTHS[d.getMonth()]}, ${d.getFullYear()}`;
+}
+
+// For a template whose date instead reads "made as of the ___ day of
+// ___, 20___" — three separate blanks with "day of" and "20" printed
+// between them, not something a merge field can safely overlay (a field
+// wide enough to cover those printed words doesn't reliably hide them in
+// the final signed document — confirmed against a real signed lease,
+// where the printed words showed through underneath the merged text).
+// Three small fields sized to the three actual blanks avoids covering
+// any printed text at all. Splits apart whatever ended up in the
+// corresponding formatLongDate()-shaped field (the default, or staff's
+// own edit to it before sending) rather than re-deriving from the
+// original Date, so an edit to that field is still respected. Falls
+// back to putting the whole string in `day` if it doesn't match that
+// shape — better to show something than silently drop an edit staff
+// made into a format this doesn't recognize.
+export function splitLongDate(formatted: string): { day: string; month: string; year: string } {
+  const match = formatted.match(/^(.+) day of (\w+), (\d{4})$/);
+  if (!match) return { day: formatted, month: "", year: "" };
+  const [, day, month, year] = match;
+  return { day, month, year: year.slice(-2) };
 }
 
 export function formatMoney(amount: number): string {
@@ -171,17 +193,14 @@ export function projectLegalEntityName(internalName: string): string {
 }
 
 // A unit's own civic address (unitNumber, e.g. "3768 23 AVE SW") already
-// fully identifies it — all it needs added is the neighbourhood/city/
-// province context. That used to be sliced out of the project's own
-// Address field (reliably ending "{Neighbourhood}, {City}, {Province}"
-// for a multi-building project like Killarney23, whose Address is a
-// composite covering every street in it), but Address now holds the
-// project's own separate civic address (the one the city assigns the
-// site as a whole, e.g. for permits) — a different address entirely,
-// not a superset of the unit's, so it can't be sliced for this anymore.
-// Every current project is in Calgary, AB (same confirmed rule as
-// projectLegalEntityName above) — a one-line change here, not a data
-// migration, if that ever stops being true.
-export function unitPremises(unitNumber: string, projectNeighbourhood: string): string {
-  return `Unit ${unitNumber}, ${projectNeighbourhood}, Calgary, AB`;
+// fully identifies it on a signed lease — no "Unit" prefix (confirmed
+// against a real signed test lease: it isn't a numbered unit within a
+// shared building, just its own street address) and no neighbourhood
+// name (already redundant with the civic address itself), just the
+// address plus city/province context. Every current project is in
+// Calgary, AB (same confirmed rule as projectLegalEntityName above) — a
+// one-line change here, not a data migration, if that ever stops being
+// true.
+export function unitPremises(unitNumber: string): string {
+  return `${unitNumber}, Calgary, AB`;
 }
