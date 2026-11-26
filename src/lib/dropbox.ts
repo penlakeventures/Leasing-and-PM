@@ -447,6 +447,26 @@ export async function listFiles(path: string): Promise<DropboxFileEntry[]> {
 }
 
 // Downloads one file's raw bytes straight from Dropbox, server-side — the
+// The content-transfer endpoints (download/upload below) take their
+// arguments as a "Dropbox-API-Arg" HTTP *header*, not a request body —
+// and header values can only hold Latin-1 bytes (0-255), unlike a body,
+// which accepts arbitrary UTF-8. A path or filename built from ordinary
+// app text (e.g. "(TEST — not binding) Signed lease — {id}.pdf", which
+// this app actually generates) routinely contains characters like an em
+// dash well outside that range, which crashes the fetch call outright
+// when passed to JSON.stringify() directly — confirmed against a real
+// signed lease, where the webhook's upload failed with "Cannot convert
+// argument to a ByteString" for exactly this reason. Escaping any
+// character above the ASCII range to a \uXXXX sequence keeps the JSON
+// valid while keeping the header itself pure ASCII; Dropbox decodes it
+// back to the real character on their end.
+export function apiArgHeader(value: unknown): string {
+  return JSON.stringify(value).replace(
+    /[\u0080-￿]/g,
+    (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
 // read counterpart to uploadFile() below, used to let staff view or
 // download a lease's actual documents from inside the app instead of
 // opening Dropbox itself.
@@ -456,7 +476,7 @@ export async function downloadFile(path: string): Promise<ArrayBuffer> {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "Dropbox-API-Arg": JSON.stringify({ path }),
+      "Dropbox-API-Arg": apiArgHeader({ path }),
     },
   });
   if (!res.ok) {
@@ -487,7 +507,7 @@ export async function uploadFile({
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/octet-stream",
-      "Dropbox-API-Arg": JSON.stringify({
+      "Dropbox-API-Arg": apiArgHeader({
         path: `${path}/${filename}`,
         mode: "add",
         autorename: true,

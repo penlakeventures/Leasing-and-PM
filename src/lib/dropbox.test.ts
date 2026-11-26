@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { matchesUnitFolder } from "./dropbox";
+import { matchesUnitFolder, apiArgHeader } from "./dropbox";
 
 describe("matchesUnitFolder", () => {
   it("matches when the unit number leads the folder name", () => {
@@ -54,5 +54,25 @@ describe("matchesUnitFolder", () => {
     expect(
       matchesUnitFolder("8. 3760B 23 AVE SW - David Okemakinde, Rachel Yee", "3760B 23 AVE SW"),
     ).toBe(true);
+  });
+});
+
+describe("apiArgHeader", () => {
+  it("escapes a character outside the Latin-1 header range instead of leaving it raw", () => {
+    // Real case: a generated filename like "(TEST — not binding) Signed
+    // lease — {id}.pdf" crashed the fetch call outright when this went
+    // through plain JSON.stringify(), since HTTP header values can only
+    // hold bytes 0-255 and an em dash (U+2014 = 8212) is nowhere close.
+    const header = apiArgHeader({ path: "/Signed lease — abc123.pdf" });
+    expect(header).not.toContain("—");
+    expect(header).toContain("\\u2014");
+    // Still valid JSON carrying the real character once parsed back.
+    expect(JSON.parse(header).path).toBe("/Signed lease — abc123.pdf");
+  });
+
+  it("leaves plain ASCII untouched", () => {
+    expect(apiArgHeader({ path: "/Signed lease - abc123.pdf", mode: "add" })).toBe(
+      '{"path":"/Signed lease - abc123.pdf","mode":"add"}',
+    );
   });
 });
