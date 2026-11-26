@@ -516,9 +516,11 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
 
   const tenantName1 = (formData.get("tenant_name_1") as string) ?? "";
   const tenantName2 = (formData.get("tenant_name_2") as string) ?? "";
+  const agreementDateRaw = (formData.get("agreement_date") as string) ?? "";
+  const termStartRaw = (formData.get("term_start") as string) ?? "";
+  const termEndRaw = (formData.get("term_end") as string) ?? "";
 
   const customFields: Record<string, string> = {
-    agreement_date: (formData.get("agreement_date") as string) ?? "",
     landlord_name: (formData.get("landlord_name") as string) ?? "",
     tenant_name_1: tenantName1,
     tenant_name_2: tenantName2,
@@ -529,8 +531,6 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
     // template's tenant_names field.
     tenant_names: [tenantName1, tenantName2].filter(Boolean).join(" and "),
     premises: (formData.get("premises") as string) ?? "",
-    term_start: (formData.get("term_start") as string) ?? "",
-    term_end: (formData.get("term_end") as string) ?? "",
     rent_amount: (formData.get("rent_amount") as string) ?? "",
     partial_rent_amount: (formData.get("partial_rent_amount") as string) ?? "",
     partial_rent_period: (formData.get("partial_rent_period") as string) ?? "",
@@ -543,8 +543,14 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
   // has two) — but Dropbox Sign requires every placed field's API ID to
   // be unique within a template, so the same value can't just be pasted
   // into a second spot under the same ID. Each repeat instead gets its
-  // own suffixed ID carrying the identical value; a template that doesn't
-  // happen to place a given suffix just ignores it.
+  // own suffixed ID carrying the identical value. Unlike agreement_date
+  // below, the lease template (always part of this send) defines every
+  // one of these suffixes, so they're always safe to include — Dropbox
+  // Sign rejects any custom field that isn't defined by at least one
+  // template actually being used in a given send, confirmed against a
+  // real send once the lease's "made as of" date fields were replaced
+  // (see next comment) and its old combined fields were no longer
+  // defined anywhere in that send's templates.
   customFields.landlord_name_b = customFields.landlord_name;
   customFields.landlord_name_c = customFields.landlord_name;
   customFields.tenant_name_1_b = customFields.tenant_name_1;
@@ -555,22 +561,30 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
   // confirmed against a real signed lease, where "day of" and "20___"
   // showed through underneath the merged text instead of being hidden by
   // it. Split into three small fields sized to the three actual blanks
-  // instead, carrying the same values apart. The combined field above is
-  // kept too, for templates (Additional Lease Terms, the Lease Amendment)
-  // whose own date blank has no printed words around it to clash with.
+  // instead, carrying the same values apart. Safe to always include,
+  // same reasoning as above — the lease template always defines these.
   Object.assign(
     customFields,
     Object.fromEntries(
-      Object.entries(splitLongDate(customFields.agreement_date)).map(([k, v]) => [`agreement_date_${k}`, v]),
+      Object.entries(splitLongDate(agreementDateRaw)).map(([k, v]) => [`agreement_date_${k}`, v]),
     ),
     Object.fromEntries(
-      Object.entries(splitLongDate(customFields.term_start)).map(([k, v]) => [`term_start_${k}`, v]),
+      Object.entries(splitLongDate(termStartRaw)).map(([k, v]) => [`term_start_${k}`, v]),
     ),
     Object.fromEntries(
-      Object.entries(splitLongDate(customFields.term_end)).map(([k, v]) => [`term_end_${k}`, v]),
+      Object.entries(splitLongDate(termEndRaw)).map(([k, v]) => [`term_end_${k}`, v]),
     ),
   );
-  if (customTermsText) customFields.custom_terms_text = customTermsText;
+  // The combined (unsplit) agreement_date — unlike the split fields above,
+  // this is only ever defined by the Additional Lease Terms template's own
+  // "DATED ___" blank (a single blank with no printed words around it to
+  // clash with, so no split needed there) — so only include it when that
+  // template is actually part of this send, or it's a custom field this
+  // send's templates don't define at all, which Dropbox Sign rejects.
+  if (customTermsText) {
+    customFields.agreement_date = agreementDateRaw;
+    customFields.custom_terms_text = customTermsText;
+  }
 
   const signers: { role: "Landlord" | "Tenant 1" | "Tenant 2"; name: string; email: string }[] = [
     { role: "Landlord", name: settings.landlordSignerName, email: settings.landlordSignerEmail },
