@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Table, Th, Td, LinkButton, Badge, EmptyState } from "@/components/ui";
+import { Table, Th, Td, Badge, EmptyState } from "@/components/ui";
 import { EntitySearch } from "@/components/entity-search";
 import { pickActiveLease } from "@/lib/rules";
 import Link from "next/link";
@@ -34,14 +34,13 @@ export default async function TenantsPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <Link
           href={showAll ? "/tenants" : "/tenants?all=1"}
           className="text-sm text-neutral-600 underline"
         >
           {showAll ? "Show current only" : "Show all tenants (including past)"}
         </Link>
-        <LinkButton href="/tenants/new">+ New tenant</LinkButton>
       </div>
       <EntitySearch
         items={allTenants.map((t) => ({ id: t.id, label: t.name }))}

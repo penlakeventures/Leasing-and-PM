@@ -16,13 +16,6 @@ function parseTenantForm(formData: FormData) {
   };
 }
 
-export async function createTenant(formData: FormData) {
-  const data = parseTenantForm(formData);
-  await prisma.tenant.create({ data });
-  revalidatePath("/tenants");
-  redirect("/tenants");
-}
-
 export async function updateTenant(id: string, formData: FormData) {
   const data = parseTenantForm(formData);
   await prisma.tenant.update({ where: { id }, data });
