@@ -182,6 +182,12 @@ export function buildLeaseRenewalMergeFields({
     tenant_name_2: tenantNames[1] ?? "",
     renewal_term_start: formatLongDate(renewalStart),
     renewal_term_end: formatLongDate(renewalEnd),
+    // This flow only ever produces an extension of the current fixed
+    // term, never a shortening — so "Extension of current fixed term" is
+    // always checked, as a Dropbox Sign checkbox field like the rent ones
+    // below, rather than something edited permanently into the source
+    // file before it's uploaded as a template.
+    extension_checked: "true",
     rent_unchanged: rentChanged ? "false" : "true",
     rent_amended: rentChanged ? "true" : "false",
     new_rent_amount: rentChanged ? formatMoney(newRentAmount) : "",

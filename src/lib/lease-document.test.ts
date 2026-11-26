@@ -57,6 +57,7 @@ describe("buildLeaseRenewalMergeFields", () => {
     expect(fields.tenant_name_2).toBe("");
     expect(fields.renewal_term_start).toBe("1st day of December, 2026");
     expect(fields.renewal_term_end).toBe("30th day of December, 2027");
+    expect(fields.extension_checked).toBe("true");
     expect(fields.rent_unchanged).toBe("true");
     expect(fields.rent_amended).toBe("false");
     expect(fields.new_rent_amount).toBe("");
