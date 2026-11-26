@@ -32,6 +32,7 @@ describe("buildLeaseRenewalMergeFields", () => {
     });
     expect(fields.original_lease_date).toBe("1st day of January, 2025");
     expect(fields.tenant_names).toBe("Lauren Munroe");
+    expect(fields.landlord_name_b).toBe("Killarney23 Inc.");
     expect(fields.tenant_name_1).toBe("Lauren Munroe");
     expect(fields.tenant_name_2).toBe("");
     expect(fields.renewal_term_start).toBe("1st day of December, 2026");

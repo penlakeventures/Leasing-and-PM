@@ -140,6 +140,11 @@ export function buildLeaseRenewalMergeFields({
     original_lease_date: formatLongDate(originalLeaseDate),
     premises,
     landlord_name: landlordName,
+    // The document shows the landlord's name twice (the "BETWEEN" preamble
+    // and again on the signature line) — Dropbox Sign requires every
+    // placed field's API ID to be unique within a template, so the second
+    // occurrence needs its own suffixed field carrying the same value.
+    landlord_name_b: landlordName,
     // The document's "BETWEEN... - and -" line has one blank for every
     // tenant's name together, not one blank per tenant — tenant_name_1/2
     // below are for the separate per-tenant signature lines further down.

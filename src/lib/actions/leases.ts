@@ -537,6 +537,18 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
     deposit_amount: (formData.get("deposit_amount") as string) ?? "",
     deposit_date: (formData.get("deposit_date") as string) ?? "",
   };
+  // The lease (and its addendum templates sent alongside it) show the
+  // landlord's and tenants' names in more than one place — the "BETWEEN"
+  // preamble, and again on each signature-block page (the lease template
+  // has two) — but Dropbox Sign requires every placed field's API ID to
+  // be unique within a template, so the same value can't just be pasted
+  // into a second spot under the same ID. Each repeat instead gets its
+  // own suffixed ID carrying the identical value; a template that doesn't
+  // happen to place a given suffix just ignores it.
+  customFields.landlord_name_b = customFields.landlord_name;
+  customFields.landlord_name_c = customFields.landlord_name;
+  customFields.tenant_name_1_b = customFields.tenant_name_1;
+  customFields.tenant_name_2_b = customFields.tenant_name_2;
   if (customTermsText) customFields.custom_terms_text = customTermsText;
 
   const signers: { role: "Landlord" | "Tenant 1" | "Tenant 2"; name: string; email: string }[] = [
