@@ -7,7 +7,7 @@ import { DepositPanel } from "@/components/deposit-panel";
 import { DocumentUploadPanel } from "@/components/document-upload-panel";
 import { LeaseSigningPanel } from "@/components/lease-signing-panel";
 import { updateLease, uploadLeaseDocument, sendLeaseForSignature } from "@/lib/actions/leases";
-import { buildLeaseMergeFields, projectLegalEntityName } from "@/lib/lease-document";
+import { buildLeaseMergeFields, projectLegalEntityName, unitPremises } from "@/lib/lease-document";
 
 export default async function LeaseDetailPage({
   params,
@@ -53,7 +53,11 @@ export default async function LeaseDetailPage({
   const signingDefaults = buildLeaseMergeFields({
     landlordName: projectLegalEntityName(lease.unit.projectEntity.internalName),
     tenantNames: leaseTenants.map((t) => t.name),
-    premises: `Unit ${lease.unit.unitNumber}, ${lease.unit.projectEntity.address}`,
+    premises: unitPremises(
+      lease.unit.unitNumber,
+      lease.unit.projectEntity.address,
+      lease.unit.projectEntity.neighbourhood,
+    ),
     startDate: lease.startDate,
     endDate: lease.endDate ?? lease.startDate,
     rentAmount: Number(lease.rentAmount),

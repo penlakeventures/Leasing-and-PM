@@ -103,3 +103,25 @@ export function buildLeaseMergeFields({
 export function projectLegalEntityName(internalName: string): string {
   return `${internalName} Inc.`;
 }
+
+// A unit's own civic address (unitNumber, e.g. "3768 23 AVE SW") already
+// fully identifies it — a project's own Address field exists to describe
+// the project as a whole, which for a multi-building project like
+// Killarney23 is a composite covering every street in it (e.g. "3760,
+// 3764, 3768 23 AVE SW & 2240 37th ST SW, Killarney, Calgary, AB").
+// Prepending the unit's address to that whole composite string (as this
+// app used to) jams two overlapping civic addresses together into one
+// garbled line. Every project's Address reliably ends with "{its own
+// Neighbourhood}, {City}, {Province}" regardless of what (if anything)
+// precedes it, so this keeps only that tail — the actual city/province
+// context a lease's Premises needs — and pairs it with the unit's own
+// address instead of the project's.
+export function unitPremises(
+  unitNumber: string,
+  projectAddress: string,
+  projectNeighbourhood: string,
+): string {
+  const idx = projectAddress.indexOf(projectNeighbourhood);
+  const cityProvince = idx === -1 ? projectAddress : projectAddress.slice(idx);
+  return `Unit ${unitNumber}, ${cityProvince}`;
+}
