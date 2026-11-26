@@ -244,6 +244,14 @@ export function LeaseForm({
           </div>
         )}
 
+        {renewalOf && (
+          <label className="flex items-center gap-2 text-sm text-neutral-700">
+            <input type="checkbox" name="test_mode" className="rounded border-neutral-300" />
+            Send as a test — doesn&apos;t count against your Dropbox Sign plan and isn&apos;t
+            legally binding. Use this to confirm everything works before sending a real renewal.
+          </label>
+        )}
+
         <div className="flex gap-2 pt-2">
           {renewalOf ? (
             <Button type="submit">Send renewal for signature</Button>

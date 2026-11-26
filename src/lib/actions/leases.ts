@@ -241,6 +241,7 @@ export async function createLeaseRenewalAndSend(formData: FormData) {
   const rentAmount = Number(formData.get("rentAmount"));
   const pets = (formData.get("pets") as string)?.trim() || null;
   const notes = (formData.get("notes") as string)?.trim() || null;
+  const testMode = formData.get("test_mode") === "on";
 
   if (periodic || !endDate) {
     errorRedirect("A renewal needs a fixed end date to send for signature — periodic renewals are handled outside the app.");
@@ -319,11 +320,11 @@ export async function createLeaseRenewalAndSend(formData: FormData) {
       message: "Please review and sign your lease renewal. Reach out if you have any questions.",
       signers,
       customFields: mergeFields,
-      testMode: false,
+      testMode,
     });
     await prisma.lease.update({
       where: { id: lease.id },
-      data: { signatureRequestId, signatureSentAt: new Date() },
+      data: { signatureRequestId, signatureSentAt: new Date(), signatureTestMode: testMode },
     });
   } catch (e) {
     console.error("[createLeaseRenewalAndSend] sendForSignature failed:", e);
