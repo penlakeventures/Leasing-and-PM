@@ -46,7 +46,6 @@ export default async function RenewalsPage({
     rent: Number(l.rentAmount),
     leaseEnd: l.endDate ? l.endDate.toISOString() : null,
     periodic: l.periodic,
-    status: !l.endDate || l.endDate > now ? (l.signedDate ? "Active" : "Unsigned") : "Ended",
     notes: l.notes ?? "",
   }));
 

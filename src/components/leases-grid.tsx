@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui";
 import { updateLeaseNotes } from "@/lib/actions/leases";
 
 export type LeaseRow = {
@@ -14,11 +13,10 @@ export type LeaseRow = {
   rent: number;
   leaseEnd: string | null; // ISO date, or null for periodic/no end date
   periodic: boolean;
-  status: "Active" | "Unsigned" | "Ended";
   notes: string;
 };
 
-type ColumnKey = "address" | "community" | "type" | "tenants" | "rent" | "leaseEnd" | "status";
+type ColumnKey = "address" | "community" | "type" | "tenants" | "rent" | "leaseEnd";
 
 const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "address", label: "Address" },
@@ -27,7 +25,6 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: "tenants", label: "Tenant(s)" },
   { key: "rent", label: "Rent" },
   { key: "leaseEnd", label: "Lease end" },
-  { key: "status", label: "Status" },
 ];
 
 function displayValue(row: LeaseRow, key: ColumnKey): string {
@@ -44,8 +41,6 @@ function displayValue(row: LeaseRow, key: ColumnKey): string {
       return `$${row.rent.toLocaleString()}`;
     case "leaseEnd":
       return row.periodic ? "Periodic" : row.leaseEnd ? new Date(row.leaseEnd).toLocaleDateString() : "—";
-    case "status":
-      return row.status;
   }
 }
 
@@ -260,15 +255,6 @@ export function LeasesGrid({ rows }: { rows: LeaseRow[] }) {
               <td className="px-4 py-2 text-neutral-700">${row.rent.toLocaleString()}</td>
               <td className="px-4 py-2 text-neutral-700">
                 {row.periodic ? "Periodic" : row.leaseEnd ? new Date(row.leaseEnd).toLocaleDateString() : "—"}
-              </td>
-              <td className="px-4 py-2 text-neutral-700">
-                <Badge
-                  tone={
-                    row.status === "Ended" ? "neutral" : row.status === "Active" ? "green" : "amber"
-                  }
-                >
-                  {row.status}
-                </Badge>
               </td>
               <td className="px-2 py-1 text-neutral-700">
                 <NotesCell leaseId={row.id} initialNotes={row.notes} />
