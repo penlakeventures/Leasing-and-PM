@@ -193,9 +193,13 @@ export function LeaseForm({
         </div>
 
         <Field
-          label={renewalOf ? "New lease terms under renewal" : "Notes"}
+          label={renewalOf ? "New lease terms under renewal" : "Additional lease terms"}
           htmlFor="notes"
-          hint={renewalOf ? undefined : "Also editable inline from the Leases list"}
+          hint={
+            renewalOf
+              ? undefined
+              : "Also editable inline from the Leases list. Feeds the Additional Lease Terms addendum sent for signature — left blank, that addendum goes out reading \"None.\""
+          }
         >
           <Textarea
             id="notes"

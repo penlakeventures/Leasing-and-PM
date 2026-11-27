@@ -92,7 +92,6 @@ export function buildLeaseMergeFields({
   rentAmount,
   depositAmount,
   depositDate,
-  additionalTermsText,
 }: {
   asOf?: Date;
   landlordName: string;
@@ -103,7 +102,6 @@ export function buildLeaseMergeFields({
   rentAmount: number;
   depositAmount: number;
   depositDate: Date;
-  additionalTermsText?: string | null;
 }): LeaseMergeFields {
   const partial = partialRent(startDate, rentAmount);
   const fields: LeaseMergeFields = {
@@ -120,7 +118,6 @@ export function buildLeaseMergeFields({
     deposit_amount: formatMoney(depositAmount),
     deposit_date: depositDate.toLocaleDateString("en-CA"),
   };
-  if (additionalTermsText) fields.custom_terms_text = additionalTermsText;
   return fields;
 }
 

@@ -139,7 +139,7 @@ function NotesCell({ leaseId, initialNotes }: { leaseId: string; initialNotes: s
     <input
       type="text"
       value={value}
-      placeholder="Add a note…"
+      placeholder="Add additional lease terms…"
       onChange={(e) => setValue(e.target.value)}
       onBlur={() => {
         if (value !== initialNotes) {
@@ -234,7 +234,7 @@ export function LeasesGrid({ rows }: { rows: LeaseRow[] }) {
               </th>
             ))}
             <th className="whitespace-nowrap px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-neutral-500">
-              Notes
+              Additional lease terms
             </th>
             <th className="whitespace-nowrap px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-neutral-500" />
           </tr>

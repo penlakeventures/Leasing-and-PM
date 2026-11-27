@@ -97,7 +97,7 @@ export default async function SigningSettingsPage() {
           <Field
             label="Additional Lease Terms template ID"
             htmlFor="additionalTermsTemplateId"
-            hint="Optional"
+            hint="Required — sent with every lease now, filled from that lease's own Additional lease terms field"
           >
             <Input
               id="additionalTermsTemplateId"

@@ -1,4 +1,4 @@
-import { Card, Field, Input, Textarea, Button, Badge } from "@/components/ui";
+import { Card, Field, Input, Button, Badge } from "@/components/ui";
 import type { LeaseMergeFields } from "@/lib/lease-document";
 
 export function LeaseSigningPanel({
@@ -141,13 +141,11 @@ export function LeaseSigningPanel({
           <Input id="deposit_date" name="deposit_date" defaultValue={defaults.deposit_date} />
         </Field>
         <div className="sm:col-span-2">
-          <Field
-            label="Additional custom terms"
-            htmlFor="custom_terms_text"
-            hint="Optional — if filled in, the Additional Lease Terms addendum is included too"
-          >
-            <Textarea id="custom_terms_text" name="custom_terms_text" defaultValue={defaults.custom_terms_text ?? ""} />
-          </Field>
+          <p className="text-xs text-neutral-500">
+            The Additional Lease Terms addendum is always included, filled in from this lease&apos;s
+            own &quot;Additional lease terms&quot; box above (or &quot;None&quot; if that was left
+            blank).
+          </p>
         </div>
         <div className="sm:col-span-2">
           <label className="flex items-center gap-2 text-sm text-neutral-700">

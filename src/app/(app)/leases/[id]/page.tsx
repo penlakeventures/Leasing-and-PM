@@ -2,11 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, Card, Table, Th, Td, Badge } from "@/components/ui";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { LeaseForm } from "@/components/lease-form";
 import { DepositPanel } from "@/components/deposit-panel";
 import { DocumentUploadPanel } from "@/components/document-upload-panel";
 import { LeaseSigningPanel } from "@/components/lease-signing-panel";
-import { updateLease, uploadLeaseDocument, sendLeaseForSignature } from "@/lib/actions/leases";
+import { updateLease, uploadLeaseDocument, sendLeaseForSignature, deleteLease } from "@/lib/actions/leases";
 import { buildLeaseMergeFields, projectLegalEntityName, unitPremises } from "@/lib/lease-document";
 
 export default async function LeaseDetailPage({
@@ -48,6 +49,12 @@ export default async function LeaseDetailPage({
   const updateWithId = updateLease.bind(null, id);
   const uploadWithId = uploadLeaseDocument.bind(null, id);
   const sendForSignatureWithId = sendLeaseForSignature.bind(null, id);
+  const deleteWithId = deleteLease.bind(null, id);
+
+  // A real signed lease is never deletable from here — only while it's
+  // still a test send, or a prospect's unsigned lease that never went
+  // anywhere (ghosted).
+  const canDelete = !lease.signatureCompletedAt && !lease.signedDate;
 
   const leaseTenants = lease.tenants.map((lt) => lt.tenant);
   const signingDefaults = buildLeaseMergeFields({
@@ -162,6 +169,24 @@ export default async function LeaseDetailPage({
         monthlyRent={Number(lease.rentAmount)}
         tenancyEndDate={lease.endDate}
       />
+
+      {canDelete && (
+        <Card>
+          <h2 className="mb-2 text-sm font-semibold text-neutral-900">Delete this lease</h2>
+          <p className="mb-3 text-sm text-neutral-500">
+            Only available because this lease hasn&apos;t been signed yet — use this to remove a
+            test send, or a lease a prospect never signed and ghosted on.
+          </p>
+          <form action={deleteWithId}>
+            <ConfirmSubmitButton
+              variant="danger"
+              confirmMessage="Delete this lease permanently? This can't be undone."
+            >
+              Delete lease
+            </ConfirmSubmitButton>
+          </form>
+        </Card>
+      )}
     </div>
   );
 }

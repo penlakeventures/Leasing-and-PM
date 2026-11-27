@@ -181,14 +181,19 @@ model Lease {
   // doesn't count against the paid plan. Tracked so the status shown on
   // the lease is never mistaken for a real signed lease.
   signatureTestMode  Boolean   @default(false)
-  // What was actually sent in the optional "Additional Lease Terms"
-  // addendum, if anything — kept for the record, not just the live draft.
+  // What was actually sent in the Additional Lease Terms addendum — a
+  // snapshot of `notes` below at send time, or "None" if it was blank —
+  // kept for the record, not just the live draft.
   additionalTermsText String?
 
-  // Free-text staff notes — the Leases page's equivalent of the
-  // "Leasing notes"/"Other" columns on Alina's lease-expiry spreadsheet,
-  // combined into one field rather than two (the owner's call). Editable
-  // inline from that page's grid, not just from this lease's own page.
+  // Shown to staff as "Additional lease terms" — the Leases page's
+  // equivalent of the "Leasing notes"/"Other" columns on Alina's
+  // lease-expiry spreadsheet, combined into one field rather than two
+  // (the owner's call). Editable inline from that page's grid, not just
+  // from this lease's own page. Always sent as the Additional Lease Terms
+  // addendum's content when this lease goes out for signature (falling
+  // back to "None" if left blank), which is why it's labeled the way it
+  // is rather than as a plain internal note.
   notes String?
 
   // Set when this lease was created via the Renewals page's "Create

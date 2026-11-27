@@ -403,9 +403,9 @@ export async function updateLease(id: string, formData: FormData) {
   redirect(`/leases/${id}`);
 }
 
-// Quick inline edit from the Leases list grid — same field as the Notes
-// textarea on the lease's own page, just without round-tripping the rest
-// of that form for what's usually a one-line note.
+// Quick inline edit from the Leases list grid — same field as the
+// Additional lease terms textarea on the lease's own page, just without
+// round-tripping the rest of that form for what's usually a one-line note.
 export async function updateLeaseNotes(leaseId: string, notes: string) {
   await prisma.lease.update({
     where: { id: leaseId },
@@ -448,12 +448,13 @@ export async function uploadLeaseDocument(leaseId: string, formData: FormData) {
   redirect(`/leases/${leaseId}`);
 }
 
-// Sends this lease (plus the Smoking/Cannabis Addendum, and Additional
-// Lease Terms if custom_terms_text was filled in) as one combined
-// Dropbox Sign signature request. Every value here comes from the
-// submitted form, not recomputed — the LeaseSigningPanel pre-fills it
-// from buildLeaseMergeFields() but staff can edit anything before
-// sending, since this is what actually ends up on a binding document.
+// Sends this lease, the Smoking/Cannabis Addendum, and the Additional
+// Lease Terms addendum (always, filled from this lease's own "Additional
+// lease terms" notes, or "None") as one combined Dropbox Sign signature
+// request. Every other value here comes from the submitted form, not
+// recomputed — the LeaseSigningPanel pre-fills it from
+// buildLeaseMergeFields() but staff can edit anything before sending,
+// since this is what actually ends up on a binding document.
 // Never re-sends once a signatureRequestId is on file (no "send again"
 // from here — that'd risk two live signature requests for one lease).
 export async function sendLeaseForSignature(leaseId: string, formData: FormData) {
@@ -498,22 +499,25 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
   const leaseTemplateId = unitTypeFromAddress(lease.unit.unitNumber) === "Suite"
     ? settings?.leaseSuiteTemplateId
     : settings?.leaseTownhomeTemplateId;
-  if (!settings?.landlordSignerName || !settings.landlordSignerEmail || !leaseTemplateId || !settings.smokingAddendumTemplateId) {
+  if (
+    !settings?.landlordSignerName ||
+    !settings.landlordSignerEmail ||
+    !leaseTemplateId ||
+    !settings.smokingAddendumTemplateId ||
+    !settings.additionalTermsTemplateId
+  ) {
     redirect(
       `/leases/${leaseId}?error=${encodeURIComponent("Signing isn't fully set up yet — fill in the landlord signer and template IDs under Settings → Signing.")}`,
     );
   }
 
-  const customTermsText = (formData.get("custom_terms_text") as string)?.trim() || null;
-  const templateIds = [leaseTemplateId, settings.smokingAddendumTemplateId];
-  if (customTermsText) {
-    if (!settings.additionalTermsTemplateId) {
-      redirect(
-        `/leases/${leaseId}?error=${encodeURIComponent("Custom terms were entered, but the Additional Lease Terms template ID isn't set under Settings → Signing.")}`,
-      );
-    }
-    templateIds.push(settings.additionalTermsTemplateId);
-  }
+  // The Additional Lease Terms addendum is always part of the send now —
+  // sourced straight from this lease's own "Additional lease terms" box
+  // (the notes field), not a separate box on this form, so it's never
+  // silently skipped just because nobody scrolled to a second input.
+  // Falls back to "None" rather than leaving the addendum's blank empty.
+  const customTermsText = lease.notes?.trim() || "None";
+  const templateIds = [leaseTemplateId, settings.smokingAddendumTemplateId, settings.additionalTermsTemplateId];
 
   const tenantName1 = (formData.get("tenant_name_1") as string) ?? "";
   const tenantName2 = (formData.get("tenant_name_2") as string) ?? "";
@@ -576,16 +580,13 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
       Object.entries(splitLongDate(termEndRaw)).map(([k, v]) => [`term_end_${k}`, v]),
     ),
   );
-  // The combined (unsplit) agreement_date — unlike the split fields above,
-  // this is only ever defined by the Additional Lease Terms template's own
-  // "DATED ___" blank (a single blank with no printed words around it to
-  // clash with, so no split needed there) — so only include it when that
-  // template is actually part of this send, or it's a custom field this
-  // send's templates don't define at all, which Dropbox Sign rejects.
-  if (customTermsText) {
-    customFields.agreement_date = agreementDateRaw;
-    customFields.custom_terms_text = customTermsText;
-  }
+  // The combined (unsplit) agreement_date is only ever defined by the
+  // Additional Lease Terms template's own "DATED ___" blank (a single
+  // blank with no printed words around it to clash with, so no split
+  // needed there) — safe to always include now that template is always
+  // part of this send.
+  customFields.agreement_date = agreementDateRaw;
+  customFields.custom_terms_text = customTermsText;
 
   const signers: { role: "Landlord" | "Tenant 1" | "Tenant 2"; name: string; email: string }[] = [
     { role: "Landlord", name: settings.landlordSignerName, email: settings.landlordSignerEmail },
@@ -624,4 +625,40 @@ export async function sendLeaseForSignature(leaseId: string, formData: FormData)
 
   revalidatePath(`/leases/${leaseId}`);
   redirect(`/leases/${leaseId}`);
+}
+
+// Deletes a lease outright, but only while it's still unsigned —
+// signatureCompletedAt (a real Dropbox Sign completion) and signedDate (a
+// lease signed some other way, on paper) both block it, so a real signed
+// lease is never one click from gone. Covers two cases: cleaning up a
+// test send used to verify Dropbox Sign, and a prospect who never signs
+// and ghosts, so that dead lease record doesn't just sit around forever.
+// RentPayment and SecurityDeposit both block a Lease delete at the
+// database level (onDelete: Restrict) — in practice neither should exist
+// yet on an unsigned lease, but they're cleared first regardless so the
+// delete can't fail partway through.
+export async function deleteLease(leaseId: string) {
+  const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+  if (!lease) redirect("/leases");
+
+  if (lease.signatureCompletedAt || lease.signedDate) {
+    redirect(
+      `/leases/${leaseId}?error=${encodeURIComponent("This lease has already been signed — it can't be deleted.")}`,
+    );
+  }
+
+  await prisma.rentPayment.deleteMany({ where: { leaseId } });
+  const deposit = await prisma.securityDeposit.findUnique({ where: { leaseId } });
+  if (deposit) {
+    await prisma.securityDepositDeduction.deleteMany({ where: { securityDepositId: deposit.id } });
+    await prisma.securityDeposit.delete({ where: { id: deposit.id } });
+  }
+  await prisma.lease.delete({ where: { id: leaseId } });
+
+  await syncUnitCurrentRent(lease.unitId);
+
+  revalidatePath("/leases");
+  revalidatePath("/renewals");
+  revalidatePath(`/units/${lease.unitId}`);
+  redirect("/leases");
 }
