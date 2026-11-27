@@ -58,7 +58,12 @@ export default async function LeaseDetailPage({
     endDate: lease.endDate ?? lease.startDate,
     rentAmount: Number(lease.rentAmount),
     depositAmount: lease.securityDeposit ? Number(lease.securityDeposit.amount) : Number(lease.rentAmount),
-    depositDate: lease.securityDeposit?.dateReceived ?? new Date(),
+    // Before a deposit's actually been recorded, the lease's own Start
+    // date (the real move-in day) is a far better placeholder than
+    // today — a lease is typically signed well before occupancy, and a
+    // deposit is normally collected at or before move-in, not on
+    // whatever day the document happens to be sent for signature.
+    depositDate: lease.securityDeposit?.dateReceived ?? lease.startDate,
   });
 
   return (
